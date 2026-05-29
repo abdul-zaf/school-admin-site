@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - lms_data:/app/data
+    environment:
+      DATABASE_URL: sqlite:///./data/lms.db
+    restart: unless-stopped
+
+volumes:
+  lms_data:

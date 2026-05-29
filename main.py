@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -36,7 +37,9 @@ def seed_admin():
         db.close()
 
 
-seed_admin()
+# Skip automatic seeding when running under pytest (fixtures handle test data)
+if not os.getenv("TESTING"):
+    seed_admin()
 
 
 @app.get("/")

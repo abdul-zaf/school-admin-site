@@ -1,0 +1,82 @@
+name: CD — Build & Push Docker Image
+
+# Only runs after CI passes on master/main
+on:
+  workflow_run:
+    workflows: ["CI"]
+    branches: [master, main]
+    types: [completed]
+
+jobs:
+  docker:
+    name: Build & Push to GHCR
+    runs-on: ubuntu-latest
+
+    # Skip if CI failed
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    permissions:
+      contents: read
+      packages: write   # needed to push to ghcr.io
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      # ── Auth ────────────────────────────────────────────────────────────────
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Metadata (tags & labels) ─────────────────────────────────────────────
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      # ── Build ────────────────────────────────────────────────────────────────
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags:   ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha          # GitHub Actions cache — speeds up repeated builds
+          cache-to:   type=gha,mode=max
+
+      # ── Summary ──────────────────────────────────────────────────────────────
+      - name: Print image tags
+        run: echo "${{ steps.meta.outputs.tags }}"
+
+      # ── Deploy (plug in your platform here) ──────────────────────────────────
+      # Uncomment and configure ONE of the options below:
+      #
+      # -- Render --
+      # - name: Trigger Render deploy
+      #   run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+      #
+      # -- Railway --
+      # - name: Deploy to Railway
+      #   run: railway up --detach
+      #   env:
+      #     RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      #
+      # -- Fly.io --
+      # - name: Deploy to Fly.io
+      #   uses: superfly/flyctl-actions/setup-flyctl@master
+      # - run: flyctl deploy --remote-only
+      #   env:
+      #     FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

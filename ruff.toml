@@ -1,0 +1,14 @@
+line-length = 130
+target-version = "py311"
+
+[lint]
+select = ["E", "F", "W"]
+ignore = [
+    "E501",  # line too long  — covered by line-length setting
+    "E711",  # comparison to None  — intentional SQLAlchemy idiom
+    "E712",  # comparison to True/False  — SQLAlchemy idiom
+    "F401",  # imported but unused  — re-exports & SQLAlchemy side-effects
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["E402"]   # module-level import order in conftest
