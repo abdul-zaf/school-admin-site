@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session as DBSession
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+
 from database import get_db
 import models
 import security
@@ -52,8 +53,12 @@ def create_session(
     db: DBSession = Depends(get_db),
     current_user: models.User = Depends(security.require_role("admin", "teacher")),
 ):
+    # Verify the caller owns this course (or is admin)
+    security.require_course_access(course_id, current_user, db)
+
     if data.session_type not in ("virtual", "physical"):
         raise HTTPException(400, "session_type must be 'virtual' or 'physical'")
+
     s = models.ClassSession(
         course_id=course_id,
         title=data.title,
@@ -78,6 +83,8 @@ def delete_session(
     s = db.query(models.ClassSession).filter(models.ClassSession.id == session_id).first()
     if not s:
         raise HTTPException(404, "Session not found")
+    # Only the course's teacher or an admin may delete sessions
+    security.require_course_access(s.course_id, current_user, db)
     db.delete(s)
     db.commit()
     return {"ok": True}

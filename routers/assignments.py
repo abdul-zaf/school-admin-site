@@ -69,6 +69,7 @@ def create_assignment(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(security.require_role("admin", "teacher")),
 ):
+    security.require_course_access(course_id, current_user, db)
     a = models.Assignment(
         course_id=course_id,
         title=data.title,
@@ -145,6 +146,7 @@ def delete_assignment(
     a = db.query(models.Assignment).filter(models.Assignment.id == assignment_id).first()
     if not a:
         raise HTTPException(404, "Assignment not found")
+    security.require_course_access(a.course_id, current_user, db)
     db.delete(a)
     db.commit()
     return {"ok": True}
@@ -187,6 +189,8 @@ def grade_submission(
     s = db.query(models.Submission).filter(models.Submission.id == submission_id).first()
     if not s:
         raise HTTPException(404, "Submission not found")
+    # Only the assignment's course teacher (or admin) may grade
+    security.require_course_access(s.assignment.course_id, current_user, db)
     s.score = data.score
     s.feedback = data.feedback
     s.graded_at = datetime.utcnow()

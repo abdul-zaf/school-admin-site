@@ -20,7 +20,7 @@ def test_list_users_forbidden_for_teacher(client, teacher_h):
 def test_create_user(client, admin_h):
     r = client.post("/api/users/", json={
         "name": "New Student", "email": "new@test.com",
-        "password": "pass1234", "role": "student",
+        "password": "Pass1234", "role": "student",
     }, headers=admin_h)
     assert r.status_code == 200
     body = r.json()
@@ -29,18 +29,19 @@ def test_create_user(client, admin_h):
 
 
 def test_create_user_duplicate_email(client, admin_h):
+    # Names must be >= 2 chars per the name policy
     client.post("/api/users/", json={
-        "name": "A", "email": "dup@test.com", "password": "pass1234",
+        "name": "Alice", "email": "dup@test.com", "password": "Pass1234",
     }, headers=admin_h)
     r = client.post("/api/users/", json={
-        "name": "B", "email": "dup@test.com", "password": "pass1234",
+        "name": "Bob", "email": "dup@test.com", "password": "Pass1234",
     }, headers=admin_h)
     assert r.status_code == 400
 
 
 def test_delete_user(client, admin_h):
     uid = client.post("/api/users/", json={
-        "name": "Temp", "email": "temp@test.com", "password": "pass1234",
+        "name": "Temp", "email": "temp@test.com", "password": "Pass1234",
     }, headers=admin_h).json()["id"]
     r = client.delete(f"/api/users/{uid}", headers=admin_h)
     assert r.status_code == 200

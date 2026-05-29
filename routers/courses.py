@@ -102,8 +102,13 @@ def get_course(
             .first()
             is not None
         )
+    # Only the course's own teacher (or an admin) may see the enrolled student list.
+    # Another teacher browsing the catalogue has no need to see student data.
+    is_course_teacher = (
+        current_user.role == "teacher" and course.teacher_id == current_user.id
+    )
     students = []
-    if current_user.role in ("admin", "teacher"):
+    if current_user.role == "admin" or is_course_teacher:
         students = [
             {"id": e.student.id, "name": e.student.name, "email": e.student.email}
             for e in course.enrollments
@@ -223,6 +228,7 @@ def add_material(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(security.require_role("admin", "teacher")),
 ):
+    security.require_course_access(course_id, current_user, db)
     m = models.Material(course_id=course_id, title=data.title, content=data.content, url=data.url)
     db.add(m)
     db.commit()
@@ -237,6 +243,7 @@ def delete_material(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(security.require_role("admin", "teacher")),
 ):
+    security.require_course_access(course_id, current_user, db)
     m = db.query(models.Material).filter(
         models.Material.id == material_id, models.Material.course_id == course_id
     ).first()
@@ -256,6 +263,7 @@ def mark_attendance(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(security.require_role("admin", "teacher")),
 ):
+    security.require_course_access(course_id, current_user, db)
     for rec in data.records:
         existing = db.query(models.Attendance).filter(
             models.Attendance.course_id == course_id,

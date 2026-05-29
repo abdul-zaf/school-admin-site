@@ -3,8 +3,10 @@ import pytest
 SESSION_DATE = "2027-06-01T10:00:00"
 
 
-def test_create_virtual_session(client, teacher_h, course_id):
-    r = client.post(f"/api/sessions/course/{course_id}", json={
+def test_create_virtual_session(client, teacher_h):
+    # Teacher creates their own course first, then adds a session
+    cid = client.post("/api/courses/", json={"title": "Teacher Course"}, headers=teacher_h).json()["id"]
+    r = client.post(f"/api/sessions/course/{cid}", json={
         "title": "Online Class",
         "session_type": "virtual",
         "date": SESSION_DATE,

@@ -35,7 +35,7 @@ def _add_user(name, email, role):
     u = models.User(
         name=name,
         email=email,
-        password_hash=security.hash_password("testpass"),
+        password_hash=security.hash_password("testPass1"),
         role=role,
     )
     db.add(u)
@@ -67,7 +67,7 @@ def client():
 def _login(client, email):
     r = client.post(
         "/api/auth/login",
-        data={"username": email, "password": "testpass"},
+        data={"username": email, "password": "testPass1"},
     )
     assert r.status_code == 200, f"Login failed for {email}: {r.text}"
     return {"Authorization": f"Bearer {r.json()['access_token']}"}

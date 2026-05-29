@@ -1,5 +1,5 @@
 def test_login_success(client):
-    r = client.post("/api/auth/login", data={"username": "admin@test.com", "password": "testpass"})
+    r = client.post("/api/auth/login", data={"username": "admin@test.com", "password": "testPass1"})
     assert r.status_code == 200
     data = r.json()
     assert "access_token" in data
@@ -13,7 +13,7 @@ def test_login_wrong_password(client):
 
 
 def test_login_unknown_email(client):
-    r = client.post("/api/auth/login", data={"username": "nobody@test.com", "password": "testpass"})
+    r = client.post("/api/auth/login", data={"username": "nobody@test.com", "password": "testPass1"})
     assert r.status_code == 401
 
 

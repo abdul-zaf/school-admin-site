@@ -122,6 +122,7 @@ def create_quiz(
     db: DBSession = Depends(get_db),
     current_user: models.User = Depends(security.require_role("admin", "teacher")),
 ):
+    security.require_course_access(course_id, current_user, db)
     q = models.Quiz(
         course_id=course_id,
         title=data.title,
@@ -147,7 +148,9 @@ def get_quiz(
     if not q:
         raise HTTPException(404, "Quiz not found")
 
-    is_teacher = current_user.role in ("admin", "teacher")
+    is_teacher = current_user.role in ("admin", "teacher") or (
+        current_user.role == "teacher" and q.course.teacher_id == current_user.id
+    )
 
     my_attempt = None
     hide_correct = not is_teacher
@@ -187,6 +190,7 @@ def delete_quiz(
     q = db.query(models.Quiz).filter(models.Quiz.id == quiz_id).first()
     if not q:
         raise HTTPException(404, "Quiz not found")
+    security.require_course_access(q.course_id, current_user, db)
     db.delete(q)
     db.commit()
     return {"ok": True}
@@ -204,6 +208,7 @@ def add_question(
     q = db.query(models.Quiz).filter(models.Quiz.id == quiz_id).first()
     if not q:
         raise HTTPException(404, "Quiz not found")
+    security.require_course_access(q.course_id, current_user, db)
 
     question = models.QuizQuestion(
         quiz_id=quiz_id,
