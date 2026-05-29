@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>School LMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&family=Noto+Naskh+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <!-- Login Page -->
+  <div id="login-page" class="login-page">
+    <div class="login-box">
+      <div class="login-logo">
+        <div class="logo-icon">LMS</div>
+        <h1>School LMS</h1>
+        <p>Learning Management System</p>
+      </div>
+      <form id="login-form">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="login-email" class="form-control" placeholder="admin@school.edu" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
+        </div>
+        <div id="login-error" class="alert alert-error hidden"></div>
+        <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+      </form>
+      <p class="login-hint">Default admin: admin@school.edu / admin123</p>
+    </div>
+  </div>
+
+  <!-- App Shell -->
+  <div id="app" class="app hidden">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">LMS</div>
+        <span>School LMS</span>
+      </div>
+      <nav id="sidebar-nav" class="sidebar-nav"></nav>
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="user-avatar" id="user-avatar">A</div>
+          <div>
+            <div id="user-name" class="user-name"></div>
+            <span id="user-role-badge" class="role-badge"></span>
+          </div>
+        </div>
+        <button id="logout-btn" class="btn-logout">Sign out</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div id="page-content" class="page-content"></div>
+    </main>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-title"></h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div id="modal-body" class="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
