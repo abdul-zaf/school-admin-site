@@ -43,6 +43,13 @@
       </div>
       <nav id="sidebar-nav" class="sidebar-nav"></nav>
       <div class="sidebar-footer">
+        <div class="notif-bell-wrapper">
+          <button class="notif-bell-btn" onclick="toggleNotifDropdown()">
+            🔔 Notifications
+            <span id="notif-count-badge" class="notif-unread-badge" style="display:none">0</span>
+          </button>
+          <div id="notif-dropdown" class="notif-dropdown hidden"></div>
+        </div>
         <div class="user-info">
           <div class="user-avatar" id="user-avatar">A</div>
           <div>

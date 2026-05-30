@@ -191,8 +191,44 @@ def grade_submission(
         raise HTTPException(404, "Submission not found")
     # Only the assignment's course teacher (or admin) may grade
     security.require_course_access(s.assignment.course_id, current_user, db)
+    old_score = s.score
     s.score = data.score
     s.feedback = data.feedback
     s.graded_at = datetime.utcnow()
+    # Record grade change in audit trail
+    gc = models.GradeChange(
+        submission_id=submission_id,
+        changed_by=current_user.id,
+        old_score=old_score,
+        new_score=data.score,
+        reason=data.feedback or "",
+    )
+    db.add(gc)
     db.commit()
     return {"ok": True}
+
+
+@router.get("/submissions/{submission_id}/grade-history")
+def grade_history(
+    submission_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("admin", "teacher")),
+):
+    s = db.query(models.Submission).filter(models.Submission.id == submission_id).first()
+    if not s:
+        raise HTTPException(404, "Submission not found")
+    security.require_course_access(s.assignment.course_id, current_user, db)
+    changes = db.query(models.GradeChange).filter(
+        models.GradeChange.submission_id == submission_id
+    ).order_by(models.GradeChange.changed_at.desc()).all()
+    return [
+        {
+            "id": gc.id,
+            "old_score": gc.old_score,
+            "new_score": gc.new_score,
+            "reason": gc.reason,
+            "changed_by": gc.changer.name if gc.changer else "?",
+            "changed_at": str(gc.changed_at),
+        }
+        for gc in changes
+    ]

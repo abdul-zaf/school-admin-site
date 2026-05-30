@@ -291,3 +291,91 @@ def get_attendance(
 ):
     records = db.query(models.Attendance).filter(models.Attendance.course_id == course_id).all()
     return [{"student_id": r.student_id, "date": str(r.date), "status": r.status} for r in records]
+
+
+@router.post("/{course_id}/duplicate")
+def duplicate_course(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("admin", "teacher")),
+):
+    """Duplicate a full course — copies assignments, materials, quizzes, sessions."""
+    source = db.query(models.Course).filter(models.Course.id == course_id).first()
+    if not source:
+        raise HTTPException(404, "Course not found")
+    security.require_course_access(course_id, current_user, db)
+
+    new_course = models.Course(
+        title=source.title + " (Copy)",
+        description=source.description,
+        subject=source.subject,
+        grade_level=source.grade_level,
+        teacher_id=current_user.id,
+    )
+    db.add(new_course)
+    db.flush()
+
+    # Copy materials
+    for m in source.materials:
+        db.add(models.Material(
+            course_id=new_course.id,
+            title=m.title,
+            content=m.content,
+            url=m.url,
+        ))
+
+    # Copy assignments
+    for a in source.assignments:
+        db.add(models.Assignment(
+            course_id=new_course.id,
+            title=a.title,
+            description=a.description,
+            due_date=a.due_date,
+            max_score=a.max_score,
+            is_extra_credit=a.is_extra_credit,
+        ))
+
+    # Copy sessions
+    for s in source.sessions:
+        db.add(models.ClassSession(
+            course_id=new_course.id,
+            title=s.title,
+            session_type=s.session_type,
+            date=s.date,
+            duration_minutes=s.duration_minutes,
+            location=s.location,
+            notes=s.notes,
+        ))
+
+    # Copy quizzes + questions + options
+    for q in source.quizzes:
+        new_q = models.Quiz(
+            course_id=new_course.id,
+            title=q.title,
+            description=q.description,
+            time_limit=q.time_limit,
+            due_date=q.due_date,
+            shuffle=q.shuffle,
+        )
+        db.add(new_q)
+        db.flush()
+        for qq in q.questions:
+            new_qq = models.QuizQuestion(
+                quiz_id=new_q.id,
+                question_text=qq.question_text,
+                question_type=qq.question_type,
+                points=qq.points,
+                order_num=qq.order_num,
+            )
+            db.add(new_qq)
+            db.flush()
+            for opt in qq.options:
+                db.add(models.QuizOption(
+                    question_id=new_qq.id,
+                    option_text=opt.option_text,
+                    is_correct=opt.is_correct,
+                ))
+
+    db.commit()
+    db.refresh(new_course)
+    return {"id": new_course.id, "title": new_course.title, "ok": True}

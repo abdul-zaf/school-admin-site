@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+import csv
+import io
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, ConfigDict, field_validator
 from typing import List, Optional
@@ -93,8 +95,8 @@ def create_user(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(security.require_role("admin")),
 ):
-    if data.role not in ("admin", "teacher", "student"):
-        raise HTTPException(400, "Invalid role — must be admin, teacher, or student")
+    if data.role not in ("admin", "teacher", "student", "parent"):
+        raise HTTPException(400, "Invalid role — must be admin, teacher, student, or parent")
     if db.query(models.User).filter(models.User.email == data.email).first():
         raise HTTPException(400, "Email already registered")
     user = models.User(
@@ -143,3 +145,56 @@ def delete_user(
     db.delete(user)
     db.commit()
     return {"ok": True}
+
+
+@router.post("/import")
+async def bulk_import_users(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("admin")),
+):
+    """Bulk import users from CSV. Expected columns: name,email,password,role"""
+    content = await file.read()
+    text = content.decode("utf-8-sig")  # handle BOM
+    reader = csv.DictReader(io.StringIO(text))
+
+    created = []
+    errors = []
+    for i, row in enumerate(reader, start=2):  # row 1 = header
+        try:
+            name = row.get("name", "").strip()
+            email = row.get("email", "").strip().lower()
+            password = row.get("password", "").strip()
+            role = row.get("role", "student").strip()
+
+            if not name or not email or not password:
+                errors.append({"row": i, "error": "Missing required field"})
+                continue
+            if role not in ("admin", "teacher", "student", "parent"):
+                errors.append({"row": i, "error": f"Invalid role: {role}"})
+                continue
+
+            try:
+                security.validate_password(password)
+            except ValueError as e:
+                errors.append({"row": i, "error": str(e)})
+                continue
+
+            if db.query(models.User).filter(models.User.email == email).first():
+                errors.append({"row": i, "error": f"Email already exists: {email}"})
+                continue
+
+            user = models.User(
+                name=name,
+                email=email,
+                password_hash=security.hash_password(password),
+                role=role,
+            )
+            db.add(user)
+            db.flush()
+            created.append({"email": email, "role": role})
+        except Exception as e:
+            errors.append({"row": i, "error": str(e)})
+
+    db.commit()
+    return {"created": len(created), "errors": errors, "users": created}

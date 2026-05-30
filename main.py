@@ -9,7 +9,11 @@ from starlette.requests import Request as StarletteRequest
 from database import Base, engine, SessionLocal
 import models
 import security
-from routers import auth, users, courses, assignments, announcements, sessions, quizzes
+from routers import (
+    auth, users, courses, assignments, announcements, sessions, quizzes,
+    discussions, messages, notifications, gradebook, rubrics, question_banks,
+    modules, analytics, badges, parents, surveys, portfolio,
+)
 
 Base.metadata.create_all(bind=engine)
 
@@ -50,13 +54,25 @@ class _SecurityHeadersMiddleware(BaseHTTPMiddleware):
 app.add_middleware(_SecurityHeadersMiddleware)
 
 # ── Routers ────────────────────────────────────────────────────────────────────
-app.include_router(auth.router,          prefix="/api/auth",          tags=["auth"])
-app.include_router(users.router,         prefix="/api/users",         tags=["users"])
-app.include_router(courses.router,       prefix="/api/courses",       tags=["courses"])
-app.include_router(assignments.router,   prefix="/api/assignments",   tags=["assignments"])
-app.include_router(announcements.router, prefix="/api/announcements", tags=["announcements"])
-app.include_router(sessions.router,      prefix="/api/sessions",      tags=["sessions"])
-app.include_router(quizzes.router,       prefix="/api/quizzes",       tags=["quizzes"])
+app.include_router(auth.router,           prefix="/api/auth",           tags=["auth"])
+app.include_router(users.router,          prefix="/api/users",          tags=["users"])
+app.include_router(courses.router,        prefix="/api/courses",        tags=["courses"])
+app.include_router(assignments.router,    prefix="/api/assignments",    tags=["assignments"])
+app.include_router(announcements.router,  prefix="/api/announcements",  tags=["announcements"])
+app.include_router(sessions.router,       prefix="/api/sessions",       tags=["sessions"])
+app.include_router(quizzes.router,        prefix="/api/quizzes",        tags=["quizzes"])
+app.include_router(discussions.router,    prefix="/api/discussions",    tags=["discussions"])
+app.include_router(messages.router,       prefix="/api/messages",       tags=["messages"])
+app.include_router(notifications.router,  prefix="/api/notifications",  tags=["notifications"])
+app.include_router(gradebook.router,      prefix="/api/gradebook",      tags=["gradebook"])
+app.include_router(rubrics.router,        prefix="/api/rubrics",        tags=["rubrics"])
+app.include_router(question_banks.router, prefix="/api/question-banks", tags=["question-banks"])
+app.include_router(modules.router,        prefix="/api/modules",        tags=["modules"])
+app.include_router(analytics.router,      prefix="/api/analytics",      tags=["analytics"])
+app.include_router(badges.router,         prefix="/api/badges",         tags=["badges"])
+app.include_router(parents.router,        prefix="/api/parents",        tags=["parents"])
+app.include_router(surveys.router,        prefix="/api/surveys",        tags=["surveys"])
+app.include_router(portfolio.router,      prefix="/api/portfolio",      tags=["portfolio"])
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -84,3 +100,24 @@ if not os.getenv("TESTING"):
 @app.get("/")
 def root():
     return FileResponse("static/index.html")
+
+
+# ── External integration stubs ─────────────────────────────────────────────────
+# The following integrations require external services and are intentionally
+# left as stubs. Implement by registering dedicated routers below.
+
+# SCORM / LTI — uncomment and implement routers/scorm.py + routers/lti.py
+# app.include_router(scorm.router, prefix="/api/scorm", tags=["scorm"])
+# app.include_router(lti.router,   prefix="/api/lti",   tags=["lti"])
+
+# Turnitin plagiarism detection — requires Turnitin API credentials
+# app.include_router(turnitin.router, prefix="/api/turnitin", tags=["turnitin"])
+
+# SSO / LDAP — implement via python-ldap or authlib (SAML/OAuth2)
+# app.include_router(sso.router, prefix="/api/sso", tags=["sso"])
+
+# Live video (Zoom/Google Meet/BigBlueButton) — requires vendor SDK
+# app.include_router(video.router, prefix="/api/video", tags=["video"])
+
+# AI Proctoring — requires computer vision service integration
+# app.include_router(proctoring.router, prefix="/api/proctoring", tags=["proctoring"])
