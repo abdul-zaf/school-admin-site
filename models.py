@@ -571,3 +571,206 @@ class GradeChange(Base):
 
     submission = relationship("Submission", back_populates="grade_changes")
     changer = relationship("User", foreign_keys=[changed_by])
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEARNING INTELLIGENCE & SOCIAL FEATURES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── 1. Spaced Repetition (SM-2 algorithm) ────────────────────────────────────
+
+class SRCard(Base):
+    """One flash-card per (student, quiz_question) pair, managed by the SM-2 algorithm."""
+    __tablename__ = "sr_cards"
+    id            = Column(Integer, primary_key=True)
+    student_id    = Column(Integer, ForeignKey("users.id"), nullable=False)
+    question_id   = Column(Integer, ForeignKey("quiz_questions.id"), nullable=False)
+    interval      = Column(Integer, default=1)    # days until next review
+    ease_factor   = Column(Float,   default=2.5)  # SM-2 difficulty multiplier
+    repetitions   = Column(Integer, default=0)    # consecutive correct recalls
+    due_date      = Column(DateTime, default=datetime.utcnow)
+    last_reviewed = Column(DateTime)
+    last_quality  = Column(Integer)               # 0-5 quality of most recent answer
+
+    student  = relationship("User")
+    question = relationship("QuizQuestion")
+
+
+# ── 2. Teach-it-back ──────────────────────────────────────────────────────────
+
+class TeachBackPrompt(Base):
+    """A 'explain this concept in your own words' challenge set by a teacher."""
+    __tablename__ = "teach_back_prompts"
+    id         = Column(Integer, primary_key=True)
+    course_id  = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    teacher_id = Column(Integer, ForeignKey("users.id"),  nullable=False)
+    concept    = Column(String(200), nullable=False)
+    description = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    course       = relationship("Course")
+    teacher      = relationship("User")
+    submissions  = relationship("TeachBackSubmission", back_populates="prompt",
+                                cascade="all, delete")
+
+
+class TeachBackSubmission(Base):
+    __tablename__ = "teach_back_submissions"
+    id           = Column(Integer, primary_key=True)
+    prompt_id    = Column(Integer, ForeignKey("teach_back_prompts.id"), nullable=False)
+    student_id   = Column(Integer, ForeignKey("users.id"), nullable=False)
+    explanation  = Column(Text, nullable=False)
+    score        = Column(Float)   # teacher-assigned score (0-100)
+    feedback     = Column(Text)
+    submitted_at = Column(DateTime, default=datetime.utcnow)
+
+    prompt  = relationship("TeachBackPrompt", back_populates="submissions")
+    student = relationship("User")
+    votes   = relationship("TeachBackVote", back_populates="submission",
+                           cascade="all, delete")
+
+
+class TeachBackVote(Base):
+    """Peer upvote on a teach-back submission (one per student per submission)."""
+    __tablename__ = "teach_back_votes"
+    id            = Column(Integer, primary_key=True)
+    submission_id = Column(Integer, ForeignKey("teach_back_submissions.id"), nullable=False)
+    voter_id      = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+    submission = relationship("TeachBackSubmission", back_populates="votes")
+
+
+# ── 3. Confusion heatmap ──────────────────────────────────────────────────────
+
+class ConfusionSignal(Base):
+    """Student presses 'confused' or 'clear' during a live session."""
+    __tablename__ = "confusion_signals"
+    id         = Column(Integer, primary_key=True)
+    session_id = Column(Integer, ForeignKey("class_sessions.id"), nullable=False)
+    student_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    signal     = Column(SAEnum("confused", "clear"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    session = relationship("ClassSession")
+    student = relationship("User")
+
+
+# ── 4. Anonymous peer help board ──────────────────────────────────────────────
+
+class HelpPost(Base):
+    """A question posted by a student (optionally anonymously) per course."""
+    __tablename__ = "help_posts"
+    id           = Column(Integer, primary_key=True)
+    course_id    = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    author_id    = Column(Integer, ForeignKey("users.id"),   nullable=False)
+    is_anonymous = Column(Boolean, default=True)
+    title        = Column(String(200), nullable=False)
+    body         = Column(Text, nullable=False)
+    is_resolved  = Column(Boolean, default=False)
+    created_at   = Column(DateTime, default=datetime.utcnow)
+
+    course   = relationship("Course")
+    author   = relationship("User")
+    answers  = relationship("HelpAnswer", back_populates="post", cascade="all, delete")
+    votes    = relationship("HelpVote",   back_populates="post", cascade="all, delete")
+
+
+class HelpAnswer(Base):
+    __tablename__ = "help_answers"
+    id           = Column(Integer, primary_key=True)
+    post_id      = Column(Integer, ForeignKey("help_posts.id"), nullable=False)
+    author_id    = Column(Integer, ForeignKey("users.id"),      nullable=False)
+    is_anonymous = Column(Boolean, default=False)
+    body         = Column(Text, nullable=False)
+    is_endorsed  = Column(Boolean, default=False)  # teacher-marked as correct
+    created_at   = Column(DateTime, default=datetime.utcnow)
+
+    post   = relationship("HelpPost", back_populates="answers")
+    author = relationship("User")
+    votes  = relationship("HelpAnswerVote", back_populates="answer", cascade="all, delete")
+
+
+class HelpVote(Base):
+    """Upvote on a question (one per user per post)."""
+    __tablename__ = "help_votes"
+    id       = Column(Integer, primary_key=True)
+    post_id  = Column(Integer, ForeignKey("help_posts.id"), nullable=False)
+    voter_id = Column(Integer, ForeignKey("users.id"),      nullable=False)
+
+    post = relationship("HelpPost", back_populates="votes")
+
+
+class HelpAnswerVote(Base):
+    """Upvote on an answer (one per user per answer)."""
+    __tablename__ = "help_answer_votes"
+    id        = Column(Integer, primary_key=True)
+    answer_id = Column(Integer, ForeignKey("help_answers.id"), nullable=False)
+    voter_id  = Column(Integer, ForeignKey("users.id"),        nullable=False)
+
+    answer = relationship("HelpAnswer", back_populates="votes")
+
+
+# ── 5. Knowledge graph ────────────────────────────────────────────────────────
+
+class Concept(Base):
+    """A named concept (e.g. 'Quadratic Equations') that can span multiple courses."""
+    __tablename__ = "concepts"
+    id          = Column(Integer, primary_key=True)
+    name        = Column(String(100), nullable=False, unique=True)
+    description = Column(Text)
+    color       = Column(String(7), default="#2563eb")  # hex for graph node colour
+
+    links_out   = relationship("ConceptLink", foreign_keys="ConceptLink.from_id",
+                               back_populates="from_concept", cascade="all, delete")
+    links_in    = relationship("ConceptLink", foreign_keys="ConceptLink.to_id",
+                               back_populates="to_concept",   cascade="all, delete")
+    course_tags = relationship("ConceptCourseTag", back_populates="concept",
+                               cascade="all, delete")
+
+
+class ConceptLink(Base):
+    """Directed edge between two concepts (e.g. 'Algebra → Calculus')."""
+    __tablename__ = "concept_links"
+    id      = Column(Integer, primary_key=True)
+    from_id = Column(Integer, ForeignKey("concepts.id"), nullable=False)
+    to_id   = Column(Integer, ForeignKey("concepts.id"), nullable=False)
+    label   = Column(String(100), default="relates to")
+
+    from_concept = relationship("Concept", foreign_keys=[from_id], back_populates="links_out")
+    to_concept   = relationship("Concept", foreign_keys=[to_id],   back_populates="links_in")
+
+
+class ConceptCourseTag(Base):
+    """Tags a concept as appearing in a specific course."""
+    __tablename__ = "concept_course_tags"
+    id         = Column(Integer, primary_key=True)
+    concept_id = Column(Integer, ForeignKey("concepts.id"), nullable=False)
+    course_id  = Column(Integer, ForeignKey("courses.id"),  nullable=False)
+
+    concept = relationship("Concept", back_populates="course_tags")
+    course  = relationship("Course")
+
+
+# ── 6. Study group auto-matcher ───────────────────────────────────────────────
+
+class StudyGroup(Base):
+    __tablename__ = "study_groups"
+    id              = Column(Integer, primary_key=True)
+    course_id       = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    name            = Column(String(100), nullable=False)
+    is_auto_matched = Column(Boolean, default=False)
+    created_at      = Column(DateTime, default=datetime.utcnow)
+
+    course   = relationship("Course")
+    members  = relationship("StudyGroupMember", back_populates="group",
+                            cascade="all, delete")
+
+
+class StudyGroupMember(Base):
+    __tablename__ = "study_group_members"
+    id         = Column(Integer, primary_key=True)
+    group_id   = Column(Integer, ForeignKey("study_groups.id"), nullable=False)
+    student_id = Column(Integer, ForeignKey("users.id"),         nullable=False)
+
+    group   = relationship("StudyGroup", back_populates="members")
+    student = relationship("User")

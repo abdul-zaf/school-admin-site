@@ -13,6 +13,9 @@ from routers import (
     auth, users, courses, assignments, announcements, sessions, quizzes,
     discussions, messages, notifications, gradebook, rubrics, question_banks,
     modules, analytics, badges, parents, surveys, portfolio,
+    # ── New: Learning Intelligence & Social ──────────────────────────────────
+    spaced_repetition, teach_back, confusion, help_board, knowledge_graph,
+    study_groups,
 )
 
 Base.metadata.create_all(bind=engine)
@@ -73,6 +76,13 @@ app.include_router(badges.router,         prefix="/api/badges",         tags=["b
 app.include_router(parents.router,        prefix="/api/parents",        tags=["parents"])
 app.include_router(surveys.router,        prefix="/api/surveys",        tags=["surveys"])
 app.include_router(portfolio.router,      prefix="/api/portfolio",      tags=["portfolio"])
+# ── Learning Intelligence & Social ─────────────────────────────────────────
+app.include_router(spaced_repetition.router, prefix="/api/sr",             tags=["spaced-repetition"])
+app.include_router(teach_back.router,        prefix="/api/teach-back",     tags=["teach-back"])
+app.include_router(confusion.router,         prefix="/api/confusion",      tags=["confusion"])
+app.include_router(help_board.router,        prefix="/api/help",           tags=["help-board"])
+app.include_router(knowledge_graph.router,   prefix="/api/graph",          tags=["knowledge-graph"])
+app.include_router(study_groups.router,      prefix="/api/study-groups",   tags=["study-groups"])
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 

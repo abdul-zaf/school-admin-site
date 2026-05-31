@@ -400,7 +400,10 @@ function navigate(page, params = {}) {
   else if (page === 'quiz-builder')  renderQuizBuilder(params.id, el);
   else if (page === 'quiz-take')     renderQuizTake(params.id, el);
   else if (page === 'discussion-board') renderDiscussionBoard(params.id, el);
-  else if (pages[page])              pages[page](el);
+  // ── Learning Intelligence & Social ───────────────────────────────────────
+  else if (page === 'sr')    { if (typeof renderSRReview    !== 'undefined') renderSRReview(el); }
+  else if (page === 'graph') { if (typeof renderKnowledgeGraph !== 'undefined') renderKnowledgeGraph(el); }
+  else if (pages[page])      pages[page](el);
 }
 
 function fmtDate(d) {
@@ -683,6 +686,10 @@ async function renderCourseDetail(courseId, el) {
         <button class="tab" onclick="showTab('modules',this);renderModulesTab(${courseId},document.getElementById('tab-modules'),${canManage})">${t('modules')}</button>
         <button class="tab" onclick="showTab('discussions',this);renderDiscussionsTab(${courseId},document.getElementById('tab-discussions'),${canManage})">${t('discussions')}</button>
         <button class="tab" onclick="showTab('surveys',this);renderSurveysTab(${courseId},document.getElementById('tab-surveys'),${canManage})">${t('surveys')}</button>
+        <!-- ── New feature tabs ── -->
+        <button class="tab" onclick="showTab('helpboard',this);renderHelpBoardTab(${courseId}).then(h=>document.getElementById('tab-helpboard').innerHTML=h)">${t('help_board')}</button>
+        <button class="tab" onclick="showTab('teachback',this);renderTeachBackTab(${courseId},${canManage}).then(h=>document.getElementById('tab-teachback').innerHTML=h)">${t('teach_back')}</button>
+        <button class="tab" onclick="showTab('studygroups',this);renderStudyGroupsTab(${courseId},${canManage}).then(h=>document.getElementById('tab-studygroups').innerHTML=h)">${t('study_groups')}</button>
         ${canManage ? `<button class="tab" onclick="showTab('students',this)">${t('students')} (${course.students.length})</button>` : ''}
         ${canManage ? `<button class="tab" onclick="showTab('anns',this)">${t('announcements')}</button>` : ''}
       </div>
@@ -768,6 +775,21 @@ async function renderCourseDetail(courseId, el) {
       <!-- SURVEYS -->
       <div id="tab-surveys" class="hidden">
         <div class="card"><div class="card-body"><p class="text-muted">Loading surveys…</p></div></div>
+      </div>
+
+      <!-- HELP BOARD (async rendered by features.js) -->
+      <div id="tab-helpboard" class="hidden">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+
+      <!-- TEACH-BACK (async rendered by features.js) -->
+      <div id="tab-teachback" class="hidden">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+
+      <!-- STUDY GROUPS (async rendered by features.js) -->
+      <div id="tab-studygroups" class="hidden">
+        <div class="loading"><div class="spinner"></div></div>
       </div>
 
       <!-- STUDENTS (teacher/admin) -->

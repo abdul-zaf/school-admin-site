@@ -618,3 +618,75 @@ select.form-control { cursor: pointer; }
 [dir="rtl"] .calendar-event { border-left: 1px solid var(--border); border-right: 4px solid var(--primary); }
 [dir="rtl"] .calendar-event.overdue { border-right-color: var(--danger); }
 [dir="rtl"] .notif-dropdown { left: auto; right: 0; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LEARNING INTELLIGENCE & SOCIAL FEATURES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Spaced Repetition ── */
+.sr-card-wrap { max-width: 620px; }
+
+/* ── Teach-Back ── */
+.tb-prompt { border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 10px; background: #fafafa; }
+.tb-prompt-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.tb-sub { border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+.tb-sub-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+
+/* ── Confusion Heatmap ── */
+.confusion-widget {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 8px 12px; background: var(--primary-light); border-radius: 8px; margin-top: 8px;
+}
+.conf-bar { display: flex; align-items: center; gap: 6px; }
+
+/* ── Help Board ── */
+.help-post {
+  display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border);
+}
+.help-post:last-child { border-bottom: none; }
+.help-post.resolved { opacity: .7; }
+.help-post-votes { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 36px; }
+.btn-vote {
+  background: none; border: 1px solid var(--border); border-radius: 4px;
+  cursor: pointer; font-size: 14px; width: 32px; height: 28px;
+  transition: background .15s, color .15s;
+}
+.btn-vote.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.btn-vote:hover  { background: var(--primary-light); }
+.vote-count { font-size: 13px; font-weight: 700; color: var(--muted); }
+.help-post-body { flex: 1; cursor: pointer; }
+.help-post-body:hover .help-post-title strong { color: var(--primary); }
+.help-post-title { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.help-post-meta  { font-size: 12px; color: var(--muted); }
+.help-answer { border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+.help-answer.endorsed { border-color: var(--success); background: #f0fdf4; }
+.help-answer-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+
+/* ── Knowledge Graph ── */
+.graph-canvas-wrap {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; margin-bottom: 16px;
+}
+#knowledge-canvas { display: block; width: 100%; }
+.concept-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.concept-row:last-child { border-bottom: none; }
+.concept-dot { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Study Groups ── */
+.study-groups-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px;
+}
+.study-group-card {
+  border: 1px solid var(--border); border-radius: 8px; padding: 14px;
+  background: var(--card); box-shadow: var(--shadow);
+}
+.sg-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.sg-members { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.sg-avatar {
+  width: 30px; height: 30px; border-radius: 50%; background: var(--primary);
+  color: #fff; font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
