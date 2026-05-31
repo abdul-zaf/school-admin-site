@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./lms.db")
@@ -15,3 +15,13 @@ def get_db():
         yield db
     finally:
         db.close()
+
+def apply_migrations():
+    """Lightweight schema migrations so existing DBs gain new columns without data loss."""
+    with engine.connect() as conn:
+        # v2: quiz publish flag
+        try:
+            conn.execute(text("ALTER TABLE quizzes ADD COLUMN is_published BOOLEAN NOT NULL DEFAULT 0"))
+            conn.commit()
+        except Exception:
+            pass  # column already exists

@@ -160,6 +160,7 @@ class Quiz(Base):
     time_limit = Column(Integer)        # minutes; None = unlimited
     due_date = Column(DateTime)
     shuffle = Column(Boolean, default=False)
+    is_published = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     course = relationship("Course", back_populates="quizzes")

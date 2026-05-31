@@ -99,6 +99,20 @@ const i18n = {
     endorse:'Endorse', no_boards:'No discussion boards yet.', post:'Post',
     surveys:'Surveys', new_survey:'+ New Survey', take_survey:'Take Survey',
     view_results:'View Results', submit_survey:'Submit Survey',
+    // Quiz publish / edit
+    quiz_published:'Published', quiz_draft:'Draft',
+    publish_quiz:'Publish to Students', unpublish_quiz:'Unpublish',
+    edit_quiz:'Edit Details', quiz_edit_saved:'Quiz updated!',
+    urgent_quizzes:'⚡ Urgent: Quizzes & Tests',
+    no_urgent:'No pending quizzes — you\'re all caught up!',
+    start_now:'Start Now', resume_quiz:'Resume',
+    urgent:'Urgent',
+    // Post-quiz results popup
+    quiz_score_result:'Your Result',
+    outstanding_quizzes:'Outstanding Quizzes & Tests',
+    no_outstanding_quizzes:'No outstanding quizzes or tests! 🎉 Well done!',
+    outstanding_quizzes_msg:'You still have these quizzes / tests to complete:',
+    pending_grading:'Awaiting teacher grading',
     // Post-submit assignment check
     outstanding_assignments:'Outstanding Assignments',
     no_outstanding:'No outstanding assignments! Well done! 🎉',
@@ -191,6 +205,20 @@ const i18n = {
     portfolio:'پورٹ فولیو', my_portfolio:'میرا پورٹ فولیو',
     modules:'ماڈیولز', discussions:'بحث', surveys:'سروے',
     question_banks:'سوال بینک',
+    // Quiz publish / edit (Urdu)
+    quiz_published:'شائع شدہ', quiz_draft:'مسودہ',
+    publish_quiz:'طلبا کو دکھائیں', unpublish_quiz:'چھپائیں',
+    edit_quiz:'تفصیل ترمیم', quiz_edit_saved:'کوئز اپڈیٹ ہو گئی!',
+    urgent_quizzes:'⚡ ضروری: کوئز اور ٹیسٹ',
+    no_urgent:'کوئی زیر التواء کوئز نہیں — آپ نے سب مکمل کر لیے!',
+    start_now:'ابھی شروع کریں', resume_quiz:'جاری رکھیں',
+    urgent:'ضروری',
+    // Post-quiz results (Urdu)
+    quiz_score_result:'آپ کا نتیجہ',
+    outstanding_quizzes:'باقی کوئز اور ٹیسٹ',
+    no_outstanding_quizzes:'کوئی کوئز یا ٹیسٹ باقی نہیں! 🎉 شاباش!',
+    outstanding_quizzes_msg:'آپ کے ابھی یہ کوئز / ٹیسٹ باقی ہیں:',
+    pending_grading:'استاد کی جانب سے گریڈنگ کا انتظار ہے',
     // Post-submit assignment check (Urdu)
     outstanding_assignments:'باقی اسائنمنٹس',
     no_outstanding:'کوئی اسائنمنٹ باقی نہیں! شاباش! 🎉',
@@ -579,6 +607,13 @@ async function renderDashboard(el) {
           <div class="stat-card stat-card-green"  data-icon="📚"><div class="stat-number">${enrolled.length}</div><div class="stat-label">${t('enrolled_courses')}</div></div>
           <div class="stat-card stat-card-teal"   data-icon="🔍"><div class="stat-number">${courses.length-enrolled.length}</div><div class="stat-label">${t('available_courses')}</div></div>
         </div>
+        <!-- Urgent quizzes panel (populated async below) -->
+        <div class="card" id="urgent-quizzes-card">
+          <div class="card-header ch-red"><h3>${t('urgent_quizzes')}</h3></div>
+          <div class="card-body" id="urgent-quizzes-body">
+            <div class="loading"><div class="spinner"></div></div>
+          </div>
+        </div>
         <div class="card"><div class="card-header ch-green"><h3>📚 ${t('my_courses')}</h3>
           <button class="btn btn-sm btn-primary" onclick="navigate('courses')">${t('browse_courses')}</button></div>
           <div class="card-body">
@@ -594,6 +629,8 @@ async function renderDashboard(el) {
             <div class="announcement-item"><strong>${a.title}</strong><p>${a.content}</p>
             <small>${t('by')} ${a.author_name} &bull; ${fmtDate(a.created_at)}</small></div>`).join('')}
           </div></div>` : ''}`;
+      // Populate urgent quizzes asynchronously
+      loadUrgentQuizzes(enrolled);
     }
   } catch(err) { el.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
 }
@@ -874,34 +911,52 @@ function showTab(name, btn) {
 
 // ── Quiz card (in course detail list) ──
 function quizCard(q, canManage, courseId) {
-  const attempted = q.my_attempt && q.my_attempt.submitted_at;
+  const attempted  = q.my_attempt && q.my_attempt.submitted_at;
+  const inProgress = q.my_attempt && !q.my_attempt.submitted_at;
   const scoreLabel = attempted
-    ? `${t('score')}: ${q.my_attempt.score!=null?q.my_attempt.score:'?'}/${q.total_points}`
-    : (q.my_attempt ? t('attempted') : t('not_attempted'));
-  const badgeCls = attempted ? 'badge-success' : (q.my_attempt ? 'badge-warning' : 'badge-info');
+    ? `${t('score')}: ${q.my_attempt.score!=null ? q.my_attempt.score : '?'}/${q.total_points}`
+    : (inProgress ? t('attempted') : t('not_attempted'));
+  const attemptBadgeCls = attempted ? 'badge-success' : (inProgress ? 'badge-warning' : 'badge-secondary');
+
+  // Students: flag unpublished-but-not-attempted as urgent
+  const isUrgent = !canManage && q.is_published && !attempted && !inProgress;
 
   return `
-    <div class="quiz-card">
+    <div class="quiz-card${isUrgent ? ' quiz-urgent' : ''}">
       <div class="quiz-card-body">
-        <strong>${q.title}</strong>
+        <div class="quiz-title-row">
+          <strong>${q.title}</strong>
+          ${isUrgent ? `<span class="badge badge-danger">⚡ ${t('urgent')}</span>` : ''}
+          ${canManage
+            ? (q.is_published
+              ? `<span class="badge badge-success">✓ ${t('quiz_published')}</span>`
+              : `<span class="badge badge-warning">✏️ ${t('quiz_draft')}</span>`)
+            : ''}
+        </div>
         ${q.description ? `<p class="text-muted" style="margin-top:4px;font-size:13px">${q.description}</p>` : ''}
         <div class="quiz-meta">
           <small>${q.question_count} ${t('question_text')}(s) &bull; ${q.total_points} ${t('pts')}</small>
-          ${q.time_limit ? `<small>${t('time_limit')}: ${q.time_limit} ${t('minutes')}</small>` : ''}
-          ${q.due_date ? `<small>${t('due_date')}: ${fmtDate(q.due_date)}</small>` : ''}
-          ${canManage && q.attempt_count!=null ? `<small>${q.attempt_count} ${t('attempt_count')}</small>` : ''}
+          ${q.time_limit ? `<small>⏱ ${q.time_limit} ${t('minutes')}</small>` : ''}
+          ${q.due_date ? `<small>📅 ${t('due_date')}: ${fmtDate(q.due_date)}</small>` : ''}
+          ${canManage && q.attempt_count!=null ? `<small>👥 ${q.attempt_count} ${t('attempt_count')}</small>` : ''}
         </div>
       </div>
       <div class="quiz-card-actions">
-        ${!canManage ? `<span class="badge ${badgeCls}">${scoreLabel}</span>` : ''}
-        ${!canManage && !attempted && q.question_count>0
-          ? `<button class="btn btn-sm btn-primary" onclick="startQuiz(${q.id})">${t('start_quiz')}</button>` : ''}
+        ${!canManage ? `<span class="badge ${attemptBadgeCls}">${scoreLabel}</span>` : ''}
+        ${!canManage && !attempted && !inProgress && q.question_count > 0
+          ? `<button class="btn btn-sm btn-primary" onclick="startQuiz(${q.id})">▶ ${t('start_quiz')}</button>` : ''}
+        ${!canManage && inProgress
+          ? `<button class="btn btn-sm btn-warning" onclick="navigate('quiz-take',{id:${q.id}})">▶ ${t('resume_quiz')}</button>` : ''}
         ${!canManage && attempted
           ? `<button class="btn btn-sm" onclick="navigate('quiz-take',{id:${q.id}})">${t('quiz_results')}</button>` : ''}
-        ${canManage
-          ? `<button class="btn btn-sm btn-primary" onclick="navigate('quiz-builder',{id:${q.id}})">${t('quiz_builder')}</button>` : ''}
-        ${canManage
-          ? `<button class="btn btn-sm btn-danger" onclick="deleteQuiz(${q.id},${courseId})">${t('delete')}</button>` : ''}
+        ${canManage ? `
+          <button class="btn btn-sm ${q.is_published ? 'btn-warning' : 'btn-success'}"
+            onclick="togglePublishQuiz(${q.id},${q.is_published},${courseId})">
+            ${q.is_published ? t('unpublish_quiz') : t('publish_quiz')}
+          </button>
+          <button class="btn btn-sm btn-primary" onclick="navigate('quiz-builder',{id:${q.id}})">${t('quiz_builder')}</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteQuiz(${q.id},${courseId})">${t('delete')}</button>
+        ` : ''}
       </div>
     </div>`;
 }
@@ -1268,21 +1323,88 @@ async function renderQuizBuilder(quizId, el) {
   loading(el);
   try {
     const quiz = await api('GET',`/quizzes/${quizId}`);
+    const pubBadge = quiz.is_published
+      ? `<span class="badge badge-success">✓ ${t('quiz_published')}</span>`
+      : `<span class="badge badge-warning">✏️ ${t('quiz_draft')}</span>`;
     el.innerHTML = `
       <div class="page-header">
         <div>
           <button class="btn btn-sm" onclick="navigate('course',{id:${quiz.course_id}})" style="margin-bottom:8px">${t('back')}</button>
           <h2>${t('quiz_builder')}: ${quiz.title}</h2>
-          <small class="text-muted">${quiz.question_count} ${t('question_text')}(s) &bull; ${quiz.total_points} ${t('pts')} total
-          ${quiz.time_limit ? ` &bull; ${quiz.time_limit} ${t('minutes')}` : ''}</small>
+          <div style="display:flex;gap:8px;margin-top:6px;align-items:center">
+            ${pubBadge}
+            <small class="text-muted">${quiz.question_count} ${t('question_text')}(s) &bull; ${quiz.total_points} ${t('pts')}${quiz.time_limit ? ` &bull; ${quiz.time_limit} ${t('minutes')}` : ''}</small>
+          </div>
         </div>
-        <button class="btn btn-primary" onclick="openAddQuestionModal(${quizId})">${t('add_question')}</button>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-sm" onclick="openEditQuizModal(${quizId})">${t('edit_quiz')}</button>
+          <button class="btn btn-sm ${quiz.is_published ? 'btn-warning' : 'btn-success'}"
+            onclick="togglePublishQuiz(${quizId},${quiz.is_published},${quiz.course_id})">
+            ${quiz.is_published ? t('unpublish_quiz') : t('publish_quiz')}
+          </button>
+          <button class="btn btn-primary" onclick="openAddQuestionModal(${quizId})">${t('add_question')}</button>
+        </div>
       </div>
+      ${!quiz.is_published ? `
+        <div class="alert alert-warning" style="margin-bottom:16px">
+          📋 ${t('quiz_draft')} — ${t('publish_quiz').toLowerCase()} when you\'re ready for students to see it.
+        </div>` : ''}
       <div id="question-list">
         ${quiz.questions.length ? quiz.questions.map((q,i)=>questionBuilderCard(q,i,quizId)).join('')
-                                : `<div class="card"><div class="card-body"><p class="text-muted">${t('add_question')} to get started.</p></div></div>`}
+                                : `<div class="card"><div class="card-body"><p class="text-muted">No questions yet — click "${t('add_question')}" to get started.</p></div></div>`}
       </div>`;
   } catch(err) { el.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
+}
+
+// ── Edit quiz metadata (title / description / time limit / due date) ──
+async function openEditQuizModal(quizId) {
+  const quiz = await api('GET', `/quizzes/${quizId}`);
+  if (!quiz) return;
+  const dueFmt = quiz.due_date ? quiz.due_date.replace(' ','T').slice(0,16) : '';
+  openModal(t('edit_quiz'), `
+    <form id="modal-form">
+      <div class="form-group"><label>${t('title_label')} *</label>
+        <input name="title" class="form-control" required value="${quiz.title.replace(/"/g,'&quot;')}"></div>
+      <div class="form-group"><label>${t('description')}</label>
+        <textarea name="description" class="form-control" rows="3">${quiz.description||''}</textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>${t('time_limit')} <small class="text-muted">(0 = ${t('no')} limit)</small></label>
+          <input name="time_limit" type="number" class="form-control" value="${quiz.time_limit||0}" min="0"></div>
+        <div class="form-group"><label>${t('due_date')}</label>
+          <input name="due_date" type="datetime-local" class="form-control" value="${dueFmt}"></div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
+        <button type="submit" class="btn btn-primary">${t('save')}</button>
+      </div>
+    </form>`,
+    async (fd) => {
+      try {
+        const tl = parseInt(fd.get('time_limit')) || 0;
+        await api('PUT', `/quizzes/${quizId}`, {
+          title: fd.get('title'),
+          description: fd.get('description') || null,
+          time_limit: tl > 0 ? tl : null,
+          due_date: fd.get('due_date') || null,
+        });
+        closeModal();
+        toast(t('quiz_edit_saved'));
+        navigate('quiz-builder', {id: quizId});
+      } catch(err) { toast(err.message, 'error'); }
+    });
+}
+
+// ── Publish / unpublish toggle ──
+async function togglePublishQuiz(quizId, isPublished, courseId) {
+  try {
+    await api('PATCH', `/quizzes/${quizId}/publish`, { is_published: !isPublished });
+    toast(!isPublished ? '✅ ' + t('publish_quiz') : t('unpublish_quiz'));
+    if (state.currentPage === 'quiz-builder') {
+      navigate('quiz-builder', {id: quizId});
+    } else {
+      navigate('course', {id: courseId});
+    }
+  } catch(err) { toast(err.message, 'error'); }
 }
 
 function questionBuilderCard(q, idx, quizId) {
@@ -1472,7 +1594,7 @@ function startQuizTimer(seconds, onExpire) {
 
 async function submitQuiz(quizId, courseId) {
   if (state.quizTimer) { clearInterval(state.quizTimer); state.quizTimer = null; }
-  // Collect answers
+  // Collect answers from the live DOM
   const quiz = await api('GET',`/quizzes/${quizId}`).catch(() => null);
   if (!quiz) return;
   const answers = quiz.questions.map(q => {
@@ -1485,8 +1607,186 @@ async function submitQuiz(quizId, courseId) {
   try {
     const result = await api('POST',`/quizzes/${quizId}/submit`,{ answers });
     toast(t('quiz_submitted'));
-    navigate('quiz-take',{id:quizId}); // re-render as results
+    navigate('quiz-take',{id:quizId}); // re-render page as results view
+    setTimeout(() => showPostQuizModal(quizId, result), 450);
   } catch(err) { toast(err.message,'error'); }
+}
+
+// ── Post-quiz popup: score + outstanding quizzes across all courses ──
+async function showPostQuizModal(quizId, result) {
+  try {
+    // Fetch all enrolled-course quiz lists in parallel
+    const courses = await api('GET', '/courses/');
+    if (!courses) return;
+    const enrolled = courses.filter(c => c.enrolled);
+
+    const perCourse = await Promise.all(
+      enrolled.map(c =>
+        api('GET', `/quizzes/course/${c.id}`)
+          .then(quizzes => ({ course: c, quizzes: quizzes || [] }))
+          .catch(() => ({ course: c, quizzes: [] }))
+      )
+    );
+
+    const pending = [];
+    const now = new Date();
+    perCourse.forEach(({ course, quizzes }) => {
+      quizzes.forEach(q => {
+        // Outstanding = published, not this quiz, and not yet fully submitted
+        if (q.id !== quizId && q.is_published && !(q.my_attempt && q.my_attempt.submitted_at)) {
+          pending.push({ ...q, course_title: course.title, course_id: course.id });
+        }
+      });
+    });
+
+    // Sort: overdue first → nearest due date → undated
+    pending.sort((a, b) => {
+      const da = a.due_date ? new Date(a.due_date) : null;
+      const db = b.due_date ? new Date(b.due_date) : null;
+      if (!da && !db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return da - db;
+    });
+
+    // ── Score section ──
+    const score    = result.score;
+    const total    = result.total_possible;
+    const hasShort = result.has_short_answer;
+    const pct      = (!hasShort && total > 0 && score != null) ? Math.round(score / total * 100) : null;
+    const ringColor = pct === null ? 'var(--muted)'
+                    : pct >= 80   ? 'var(--success)'
+                    : pct >= 50   ? 'var(--warning)'
+                    : 'var(--danger)';
+
+    const scoreHtml = hasShort
+      ? `<div class="pq-score-pending">
+           <span class="pq-pending-icon">📝</span>
+           <p>${t('pending_grading')}</p>
+         </div>`
+      : `<div class="pq-score-ring" style="--ring-clr:${ringColor};--ring-pct:${pct}">
+           <svg class="pq-ring-svg" viewBox="0 0 80 80">
+             <circle cx="40" cy="40" r="34" fill="none" stroke="#e5e7eb" stroke-width="8"/>
+             <circle cx="40" cy="40" r="34" fill="none" stroke="${ringColor}" stroke-width="8"
+               stroke-dasharray="${Math.round(2*Math.PI*34*pct/100)} 214"
+               stroke-linecap="round" transform="rotate(-90 40 40)"/>
+           </svg>
+           <div class="pq-ring-inner">
+             <span class="pq-score-num">${score}</span>
+             <span class="pq-score-slash">/ ${total}</span>
+           </div>
+         </div>
+         <p class="pq-score-pct" style="color:${ringColor}">${pct}%</p>`;
+
+    // ── Outstanding section ──
+    const outHtml = pending.length === 0
+      ? `<div class="post-submit-empty" style="padding:16px 0 8px">
+           <div class="post-submit-trophy">🎉</div>
+           <p class="post-submit-congrats">${t('no_outstanding_quizzes')}</p>
+         </div>`
+      : `<p class="post-submit-subtitle">${t('outstanding_quizzes_msg')}</p>
+         <div class="outstanding-list">
+           ${pending.map(q => {
+             const due = q.due_date ? new Date(q.due_date) : null;
+             const overdue = due && due < now;
+             const dueTxt = due
+               ? `${t('due_date')}: <strong class="${overdue?'text-danger':''}">${fmtDate(q.due_date)}${overdue?' ⚠️':''}</strong>`
+               : '';
+             const resume = q.my_attempt && !q.my_attempt.submitted_at;
+             return `
+               <div class="outstanding-item">
+                 <div class="outstanding-info">
+                   <span class="outstanding-title">📋 ${q.title}</span>
+                   <span class="outstanding-course">📚 ${q.course_title}</span>
+                   ${dueTxt ? `<span class="outstanding-due">${dueTxt}</span>` : ''}
+                 </div>
+                 <button class="btn btn-sm btn-primary"
+                   onclick="closeModal();${resume ? `navigate('quiz-take',{id:${q.id}})` : `startQuiz(${q.id})`}">
+                   ${resume ? t('resume_quiz') : t('start_now')}
+                 </button>
+               </div>`;
+           }).join('')}
+         </div>`;
+
+    openModal(t('quiz_score_result'), `
+      <div class="pq-modal">
+        <div class="pq-result-section">
+          ${scoreHtml}
+        </div>
+        <div class="pq-divider"></div>
+        <div class="pq-outstanding-section">
+          <h4 class="pq-section-title">📋 ${t('outstanding_quizzes')}</h4>
+          ${outHtml}
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn" onclick="closeModal()">${t('cancel')}</button>
+        <button class="btn btn-primary" onclick="closeModal();navigate('quiz-take',{id:${quizId}})">${t('quiz_results')}</button>
+      </div>`);
+  } catch(e) { /* silent — never block the user if the lookup fails */ }
+}
+
+// ── Load urgent quizzes into student dashboard panel ──
+async function loadUrgentQuizzes(enrolled) {
+  const body = document.getElementById('urgent-quizzes-body');
+  const card = document.getElementById('urgent-quizzes-card');
+  if (!body) return;
+  try {
+    const perCourse = await Promise.all(
+      enrolled.map(c =>
+        api('GET', `/quizzes/course/${c.id}`)
+          .then(qs => ({ course: c, quizzes: qs || [] }))
+          .catch(() => ({ course: c, quizzes: [] }))
+      )
+    );
+
+    const now = new Date();
+    const urgent = [];
+    perCourse.forEach(({ course, quizzes }) => {
+      quizzes.forEach(q => {
+        if (q.is_published && !(q.my_attempt && q.my_attempt.submitted_at)) {
+          urgent.push({ ...q, course_title: course.title, course_id: course.id });
+        }
+      });
+    });
+
+    // Sort: overdue → nearest due date → undated
+    urgent.sort((a, b) => {
+      const da = a.due_date ? new Date(a.due_date) : null;
+      const db = b.due_date ? new Date(b.due_date) : null;
+      if (!da && !db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return da - db;
+    });
+
+    if (urgent.length === 0) {
+      if (card) card.classList.add('hidden');
+      return;
+    }
+
+    body.innerHTML = urgent.map(q => {
+      const due     = q.due_date ? new Date(q.due_date) : null;
+      const overdue = due && due < now;
+      const resume  = q.my_attempt && !q.my_attempt.submitted_at;
+      return `
+        <div class="urgent-quiz-item">
+          <div class="urgent-quiz-info">
+            <span class="urgent-quiz-title">📋 ${q.title}</span>
+            <span class="urgent-quiz-course">📚 ${q.course_title}</span>
+            ${due ? `<span class="urgent-quiz-due${overdue?' text-danger':''}">
+              ${t('due_date')}: ${fmtDate(q.due_date)}${overdue?' ⚠️':''}
+            </span>` : ''}
+          </div>
+          <button class="btn btn-sm btn-primary"
+            onclick="${resume ? `navigate('quiz-take',{id:${q.id}})` : `startQuiz(${q.id})`}">
+            ⚡ ${resume ? t('resume_quiz') : t('start_now')}
+          </button>
+        </div>`;
+    }).join('');
+  } catch(e) {
+    if (body) body.innerHTML = `<p class="text-muted">—</p>`;
+  }
 }
 
 function renderQuizResults(quiz, el) {

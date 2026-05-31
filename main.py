@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request as StarletteRequest
 
-from database import Base, engine, SessionLocal
+from database import Base, engine, SessionLocal, apply_migrations
 import models
 import security
 from routers import (
@@ -19,6 +19,7 @@ from routers import (
 )
 
 Base.metadata.create_all(bind=engine)
+apply_migrations()   # safe no-op if columns already exist
 
 app = FastAPI(title="School LMS", docs_url="/api/docs")
 

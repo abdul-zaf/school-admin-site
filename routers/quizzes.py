@@ -20,6 +20,18 @@ class QuizCreate(BaseModel):
     shuffle: bool = False
 
 
+class QuizUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    time_limit: Optional[int] = None
+    due_date: Optional[datetime] = None
+    shuffle: Optional[bool] = None
+
+
+class PublishToggle(BaseModel):
+    is_published: bool
+
+
 class OptionCreate(BaseModel):
     option_text: str
     is_correct: bool = False
@@ -53,6 +65,7 @@ def serialise_quiz(q: models.Quiz, hide_correct: bool = True, my_attempt=None):
         "time_limit": q.time_limit,
         "due_date": str(q.due_date) if q.due_date else None,
         "shuffle": q.shuffle,
+        "is_published": q.is_published,
         "created_at": str(q.created_at),
         "question_count": len(q.questions),
         "total_points": sum(qq.points for qq in q.questions),
@@ -89,6 +102,10 @@ def list_quizzes(
     quizzes = db.query(models.Quiz).filter(models.Quiz.course_id == course_id).all()
     result = []
     for q in quizzes:
+        # Students only see published quizzes
+        if current_user.role == "student" and not q.is_published:
+            continue
+
         my_attempt = None
         if current_user.role == "student":
             a = db.query(models.QuizAttempt).filter(
@@ -107,6 +124,7 @@ def list_quizzes(
             "description": q.description,
             "time_limit": q.time_limit,
             "due_date": str(q.due_date) if q.due_date else None,
+            "is_published": q.is_published,
             "question_count": len(q.questions),
             "total_points": sum(qq.points for qq in q.questions),
             "attempt_count": len(q.attempts) if current_user.role in ("admin", "teacher") else None,
@@ -130,6 +148,7 @@ def create_quiz(
         time_limit=data.time_limit,
         due_date=data.due_date,
         shuffle=data.shuffle,
+        is_published=False,  # always starts as draft
     )
     db.add(q)
     db.commit()
@@ -148,9 +167,7 @@ def get_quiz(
     if not q:
         raise HTTPException(404, "Quiz not found")
 
-    is_teacher = current_user.role in ("admin", "teacher") or (
-        current_user.role == "teacher" and q.course.teacher_id == current_user.id
-    )
+    is_teacher = current_user.role in ("admin", "teacher")
 
     my_attempt = None
     hide_correct = not is_teacher
@@ -179,6 +196,54 @@ def get_quiz(
                 hide_correct = False   # reveal answers after submission
 
     return serialise_quiz(q, hide_correct=hide_correct, my_attempt=my_attempt)
+
+
+@router.put("/{quiz_id}")
+def update_quiz(
+    quiz_id: int,
+    data: QuizUpdate,
+    db: DBSession = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("admin", "teacher")),
+):
+    q = db.query(models.Quiz).filter(models.Quiz.id == quiz_id).first()
+    if not q:
+        raise HTTPException(404, "Quiz not found")
+    security.require_course_access(q.course_id, current_user, db)
+
+    if data.title is not None:
+        q.title = data.title
+    if data.description is not None:
+        q.description = data.description
+    if data.time_limit is not None:
+        q.time_limit = data.time_limit if data.time_limit > 0 else None
+    if data.due_date is not None:
+        q.due_date = data.due_date
+    if data.shuffle is not None:
+        q.shuffle = data.shuffle
+
+    db.commit()
+    db.refresh(q)
+    return {"id": q.id, "title": q.title, "is_published": q.is_published}
+
+
+@router.patch("/{quiz_id}/publish")
+def toggle_publish(
+    quiz_id: int,
+    data: PublishToggle,
+    db: DBSession = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("admin", "teacher")),
+):
+    q = db.query(models.Quiz).filter(models.Quiz.id == quiz_id).first()
+    if not q:
+        raise HTTPException(404, "Quiz not found")
+    security.require_course_access(q.course_id, current_user, db)
+
+    if data.is_published and len(q.questions) == 0:
+        raise HTTPException(400, "Cannot publish a quiz with no questions. Add at least one question first.")
+
+    q.is_published = data.is_published
+    db.commit()
+    return {"id": q.id, "is_published": q.is_published}
 
 
 @router.delete("/{quiz_id}")
@@ -254,8 +319,11 @@ def start_quiz(
     db: DBSession = Depends(get_db),
     current_user: models.User = Depends(security.require_role("student")),
 ):
-    if not db.query(models.Quiz).filter(models.Quiz.id == quiz_id).first():
+    q = db.query(models.Quiz).filter(models.Quiz.id == quiz_id).first()
+    if not q:
         raise HTTPException(404, "Quiz not found")
+    if not q.is_published:
+        raise HTTPException(403, "This quiz is not yet available.")
 
     existing = db.query(models.QuizAttempt).filter(
         models.QuizAttempt.quiz_id == quiz_id,
