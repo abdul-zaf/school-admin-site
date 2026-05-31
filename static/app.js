@@ -99,6 +99,12 @@ const i18n = {
     endorse:'Endorse', no_boards:'No discussion boards yet.', post:'Post',
     surveys:'Surveys', new_survey:'+ New Survey', take_survey:'Take Survey',
     view_results:'View Results', submit_survey:'Submit Survey',
+    // Post-submit assignment check
+    outstanding_assignments:'Outstanding Assignments',
+    no_outstanding:'No outstanding assignments! Well done! 🎉',
+    outstanding_msg:'You still have assignments to complete:',
+    go_to_assignment:'Go to Assignment',
+    well_done:'Well done!',
     // Misc
     enrolled_courses:'Enrolled Courses', available_courses:'Available',
     total_students:'Total Students', manage_courses:'Manage Courses',
@@ -185,6 +191,12 @@ const i18n = {
     portfolio:'پورٹ فولیو', my_portfolio:'میرا پورٹ فولیو',
     modules:'ماڈیولز', discussions:'بحث', surveys:'سروے',
     question_banks:'سوال بینک',
+    // Post-submit assignment check (Urdu)
+    outstanding_assignments:'باقی اسائنمنٹس',
+    no_outstanding:'کوئی اسائنمنٹ باقی نہیں! شاباش! 🎉',
+    outstanding_msg:'آپ کے ابھی یہ اسائنمنٹس مکمل کرنے ہیں:',
+    go_to_assignment:'اسائنمنٹ دیکھیں',
+    well_done:'شاباش!',
     // Misc
     enrolled_courses:'داخل شدہ کورسز', available_courses:'دستیاب',
     total_students:'کل طلبا', manage_courses:'کورسز منظم کریں',
@@ -1054,8 +1066,91 @@ async function renderAssignmentDetail(assignmentId, el) {
 async function submitAssignment(id) {
   const content = document.getElementById('sub-content').value.trim();
   if (!content) { toast(t('submit_assignment'),'error'); return; }
-  try { await api('POST',`/assignments/${id}/submit`,{content}); toast(t('submit_assignment')+'!'); navigate('assignment',{id}); }
+  try {
+    await api('POST',`/assignments/${id}/submit`,{content});
+    toast(t('submit_assignment')+'!');
+    navigate('assignment',{id});
+    // Show outstanding-assignments window after a brief pause so the page re-renders first
+    setTimeout(() => showPostSubmitModal(id), 400);
+  }
   catch(err) { toast(err.message,'error'); }
+}
+
+// ── Post-submission: show remaining assignments across all enrolled courses ──
+async function showPostSubmitModal(submittedId) {
+  try {
+    const courses = await api('GET', '/courses/');
+    if (!courses) return;
+    const enrolled = courses.filter(c => c.enrolled);
+    const pending = [];
+
+    // Fetch assignments for every enrolled course in parallel
+    const perCourse = await Promise.all(
+      enrolled.map(c =>
+        api('GET', `/assignments/course/${c.id}`)
+          .then(asgns => ({ course: c, asgns: asgns || [] }))
+          .catch(() => ({ course: c, asgns: [] }))
+      )
+    );
+
+    perCourse.forEach(({ course, asgns }) => {
+      asgns.forEach(a => {
+        // Exclude the one just submitted, and any already submitted
+        if (a.id !== submittedId && !a.my_submission) {
+          pending.push({ ...a, course_title: course.title, course_id: course.id });
+        }
+      });
+    });
+
+    // Sort: overdue first, then by due date ascending, then undated
+    pending.sort((a, b) => {
+      const da = a.due_date ? new Date(a.due_date) : null;
+      const db = b.due_date ? new Date(b.due_date) : null;
+      if (!da && !db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return da - db;
+    });
+
+    if (pending.length === 0) {
+      openModal(t('well_done'), `
+        <div class="post-submit-empty">
+          <div class="post-submit-trophy">🏆</div>
+          <p class="post-submit-congrats">${t('no_outstanding')}</p>
+        </div>
+        <div class="form-actions" style="justify-content:center">
+          <button class="btn btn-primary" onclick="closeModal()">OK</button>
+        </div>`);
+    } else {
+      const now = new Date();
+      openModal(t('outstanding_assignments'), `
+        <p class="post-submit-subtitle">${t('outstanding_msg')}</p>
+        <div class="outstanding-list">
+          ${pending.map(a => {
+            const due = a.due_date ? new Date(a.due_date) : null;
+            const isOverdue = due && due < now;
+            const dueTxt = due
+              ? `${t('due_date')}: <strong class="${isOverdue?'text-danger':''}">${fmtDate(a.due_date)}</strong>${isOverdue?' ⚠️':''}`
+              : '';
+            return `
+              <div class="outstanding-item">
+                <div class="outstanding-info">
+                  <span class="outstanding-title">${a.title}</span>
+                  <span class="outstanding-course">📚 ${a.course_title}</span>
+                  ${dueTxt ? `<span class="outstanding-due">${dueTxt}</span>` : ''}
+                </div>
+                <button class="btn btn-sm btn-primary"
+                  onclick="closeModal();navigate('assignment',{id:${a.id}})">
+                  ${t('go_to_assignment')}
+                </button>
+              </div>`;
+          }).join('')}
+        </div>
+        <div class="form-actions">
+          <button class="btn" onclick="closeModal()">${t('cancel')}</button>
+        </div>`);
+    }
+  } catch(e) { /* silent — don't block the user if the lookup fails */ }
 }
 
 async function gradeSubmission(subId, aId) {

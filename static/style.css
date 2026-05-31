@@ -1101,3 +1101,88 @@ select.form-control { cursor: pointer; }
 [dir="rtl"] .toast              { left: 20px; right: auto; }
 [dir="rtl"] .nav-item           { border-left: none; border-right: 3px solid transparent; }
 [dir="rtl"] .nav-item.active    { border-right-color: var(--gold); }
+
+/* ══════════════════════════════════════════════════════════
+   POST-SUBMIT ASSIGNMENT MODAL
+   ══════════════════════════════════════════════════════════ */
+
+/* ── "All done!" empty-state ── */
+.post-submit-empty {
+  text-align: center;
+  padding: 28px 16px 16px;
+}
+.post-submit-trophy {
+  font-size: 56px;
+  line-height: 1;
+  animation: trophy-bounce .6s ease-out;
+}
+@keyframes trophy-bounce {
+  0%   { transform: scale(.5); opacity: 0; }
+  70%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.post-submit-congrats {
+  margin-top: 14px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--success);
+  line-height: 1.5;
+}
+
+/* ── Subtitle shown above the pending list ── */
+.post-submit-subtitle {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+/* ── List of outstanding assignments ── */
+.outstanding-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.outstanding-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: linear-gradient(90deg, #fffbeb, #fff);
+  border-left: 4px solid var(--gold);
+  transition: box-shadow .15s;
+}
+.outstanding-item:hover { box-shadow: var(--shadow-md); }
+.outstanding-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.outstanding-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.outstanding-course {
+  font-size: 12px;
+  color: var(--muted);
+}
+.outstanding-due {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.text-danger { color: var(--danger); }
+
+/* RTL overrides for the post-submit modal */
+[dir="rtl"] .outstanding-item { border-left: none; border-right: 4px solid var(--gold); }
