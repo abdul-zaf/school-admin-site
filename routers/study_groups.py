@@ -178,6 +178,8 @@ def delete_group(
     g = db.query(models.StudyGroup).filter(models.StudyGroup.id == group_id).first()
     if not g:
         raise HTTPException(404, "Group not found")
+    # Verify the caller owns the group's course
+    security.require_course_access(g.course_id, current_user, db)
     db.delete(g)
     db.commit()
     return {"ok": True}
@@ -194,6 +196,8 @@ def auto_match(
     Delete existing auto-matched groups for this course and regenerate them
     based on complementary quiz/assignment performance.
     """
+    if group_size < 2 or group_size > 20:
+        raise HTTPException(400, "group_size must be between 2 and 20")
     security.require_course_access(course_id, current_user, db)
 
     # Remove previous auto-matched groups

@@ -470,6 +470,16 @@ function navigate(page, params = {}) {
   else if (pages[page])      pages[page](el);
 }
 
+/** Escape a string for safe insertion into HTML attribute values or text nodes. */
+function htmlEsc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 function fmtDate(d) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
@@ -527,7 +537,7 @@ function renderSettings(el) {
         <p class="text-muted" style="margin-bottom:16px">${t('profile_desc')}</p>
         <div class="form-group">
           <label>${t('full_name')}</label>
-          <input id="profile-name" class="form-control" value="${state.user.name}">
+          <input id="profile-name" class="form-control" value="${htmlEsc(state.user.name)}">
         </div>
         <div class="form-group">
           <label>${t('new_password')}</label>
@@ -1076,7 +1086,7 @@ async function renderAssignmentDetail(assignmentId, el) {
           <div class="card-body">
             ${a.my_submission ? `
               <div style="margin-bottom:12px">
-                <div class="submission-content"><p>${a.my_submission.content}</p></div>
+                <div class="submission-content"><p>${htmlEsc(a.my_submission.content)}</p></div>
                 <small class="text-muted">${fmtDateTime(a.my_submission.submitted_at)}</small>
                 ${a.my_submission.score!=null
                   ? `<div class="grade-result mt-8"><strong>${t('score')}: ${a.my_submission.score} / ${a.max_score}</strong>
@@ -1086,7 +1096,7 @@ async function renderAssignmentDetail(assignmentId, el) {
               <button class="btn btn-sm" onclick="document.getElementById('sub-area').classList.toggle('hidden')">${t('edit_resubmit')}</button>
               <div id="sub-area" class="hidden" style="margin-top:14px">` : `<div id="sub-area">`}
             <div class="form-group" style="margin-top:${a.my_submission?'12px':'0'}"><label></label>
-              <textarea id="sub-content" class="form-control" rows="8">${a.my_submission?a.my_submission.content:''}</textarea></div>
+              <textarea id="sub-content" class="form-control" rows="8">${htmlEsc(a.my_submission ? a.my_submission.content : '')}</textarea></div>
             <button class="btn btn-primary" onclick="submitAssignment(${assignmentId})">
               ${a.my_submission?t('resubmit'):t('submit_assignment')}</button>
             </div>
@@ -1102,7 +1112,7 @@ async function renderAssignmentDetail(assignmentId, el) {
                   ${s.score!=null ? `<span class="badge badge-success">${s.score}/${a.max_score}</span>`
                                   : `<span class="badge badge-warning">${t('not_graded')}</span>`}
                 </div>
-                <div class="submission-content"><p>${s.content}</p></div>
+                <div class="submission-content"><p>${htmlEsc(s.content)}</p></div>
                 <div class="grade-form">
                   <div class="form-row">
                     <div class="form-group"><label>${t('score')} (max ${a.max_score})</label>
@@ -1364,9 +1374,9 @@ async function openEditQuizModal(quizId) {
   openModal(t('edit_quiz'), `
     <form id="modal-form">
       <div class="form-group"><label>${t('title_label')} *</label>
-        <input name="title" class="form-control" required value="${quiz.title.replace(/"/g,'&quot;')}"></div>
+        <input name="title" class="form-control" required value="${htmlEsc(quiz.title)}"></div>
       <div class="form-group"><label>${t('description')}</label>
-        <textarea name="description" class="form-control" rows="3">${quiz.description||''}</textarea></div>
+        <textarea name="description" class="form-control" rows="3">${htmlEsc(quiz.description||'')}</textarea></div>
       <div class="form-row">
         <div class="form-group"><label>${t('time_limit')} <small class="text-muted">(0 = ${t('no')} limit)</small></label>
           <input name="time_limit" type="number" class="form-control" value="${quiz.time_limit||0}" min="0"></div>

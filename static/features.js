@@ -533,11 +533,19 @@ async function toggleResolve(postId, courseId) {
 // ═══════════════════════════════════════════════════════════════════════════
 // 5. KNOWLEDGE GRAPH  (full-page with Canvas visualization)
 // ═══════════════════════════════════════════════════════════════════════════
+// Module-level cache so onclick handlers don't embed serialised data in HTML
+let _kgNodes   = [];
+let _kgCourses = [];
+
 async function renderKnowledgeGraph(el) {
   loading(el);
   try {
     const graph   = await api('GET', '/graph/');
     const courses = await api('GET', '/courses/');
+    // Store for use by openAddLinkModal / openTagCourseModal
+    _kgNodes   = graph.nodes   || [];
+    _kgCourses = courses       || [];
+
     const role    = state.user.role;
     const canEdit = role === 'admin' || role === 'teacher';
 
@@ -547,7 +555,7 @@ async function renderKnowledgeGraph(el) {
         ${canEdit ? `
           <div class="flex-gap">
             <button class="btn btn-primary btn-sm" onclick="openAddConceptModal()">${t('add_concept')}</button>
-            <button class="btn btn-sm" onclick="openAddLinkModal(${JSON.stringify(graph.nodes).replace(/"/g,"'")})">${t('add_link')}</button>
+            <button class="btn btn-sm" onclick="openAddLinkModal()">${t('add_link')}</button>
           </div>` : ''}
       </div>
       ${graph.nodes.length === 0
@@ -565,7 +573,7 @@ async function renderKnowledgeGraph(el) {
                 ${n.courses.map(c=>`<span class="badge badge-info" style="margin-left:4px">${c.title}</span>`).join('')}
               </div>
               ${canEdit ? `
-                <button class="btn btn-sm" onclick="openTagCourseModal(${n.id}, ${JSON.stringify(courses).replace(/"/g,"'")})">${t('tag_course')}</button>
+                <button class="btn btn-sm" onclick="openTagCourseModal(${n.id})">${t('tag_course')}</button>
                 <button class="btn btn-sm btn-danger" onclick="deleteConcept(${n.id})">${t('delete')}</button>` : ''}
             </div>`).join('')}
         </div>
@@ -679,7 +687,8 @@ function openAddConceptModal() {
     });
 }
 
-function openAddLinkModal(nodes) {
+function openAddLinkModal() {
+  const nodes = _kgNodes;
   const opts = nodes.map(n => `<option value="${n.id}">${n.name}</option>`).join('');
   openModal(t('add_link'), `
     <form id="modal-form">
@@ -710,8 +719,8 @@ async function deleteConcept(id) {
   catch(err) { toast(err.message, 'error'); }
 }
 
-function openTagCourseModal(conceptId, courses) {
-  const opts = courses.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+function openTagCourseModal(conceptId) {
+  const opts = _kgCourses.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
   openModal(t('tag_course'), `
     <form id="modal-form">
       <div class="form-group"><label>${t('courses')} *</label>

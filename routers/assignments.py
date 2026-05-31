@@ -95,6 +95,8 @@ def get_assignment(
 
     submissions = []
     if current_user.role in ("admin", "teacher"):
+        # Only the course's own teacher (or admin) may see student submissions
+        security.require_course_access(a.course_id, current_user, db)
         submissions = [
             {
                 "id": s.id,

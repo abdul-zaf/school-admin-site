@@ -356,6 +356,7 @@ def duplicate_course(
             time_limit=q.time_limit,
             due_date=q.due_date,
             shuffle=q.shuffle,
+            is_published=False,  # copies always start as draft
         )
         db.add(new_q)
         db.flush()

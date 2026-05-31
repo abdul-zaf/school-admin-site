@@ -306,6 +306,8 @@ def delete_question(
     qq = db.query(models.QuizQuestion).filter(models.QuizQuestion.id == question_id).first()
     if not qq:
         raise HTTPException(404, "Question not found")
+    # Verify the caller owns the quiz's course (prevents cross-teacher deletion)
+    security.require_course_access(qq.quiz.course_id, current_user, db)
     db.delete(qq)
     db.commit()
     return {"ok": True}

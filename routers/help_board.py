@@ -192,7 +192,8 @@ def vote_post(
     if existing:
         db.delete(existing)
         db.commit()
-        return {"voted": False, "upvotes": len(post.votes) - 1}
+        db.refresh(post)   # refresh so relationship reflects the deletion
+        return {"voted": False, "upvotes": len(post.votes)}
     db.add(models.HelpVote(post_id=post_id, voter_id=current_user.id))
     db.commit()
     db.refresh(post)
