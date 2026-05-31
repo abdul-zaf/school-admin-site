@@ -24,10 +24,15 @@ apply_migrations()   # safe no-op if columns already exist
 app = FastAPI(title="School LMS", docs_url="/api/docs")
 
 # ── CORS ───────────────────────────────────────────────────────────────────────
-# In production set ALLOWED_ORIGINS=https://yourdomain.com (comma-separated).
+# Priority order:
+#   1. ALLOWED_ORIGINS env var  (explicit, comma-separated list)
+#   2. RENDER_EXTERNAL_URL      (Render injects this automatically — no config needed)
+#   3. localhost fallback       (local dev)
+_render_url   = os.getenv("RENDER_EXTERNAL_URL", "").rstrip("/")
+_default_cors = f"http://localhost:8000,{_render_url}" if _render_url else "http://localhost:8000"
 _allowed_origins = [
     o.strip()
-    for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:8000").split(",")
+    for o in os.getenv("ALLOWED_ORIGINS", _default_cors).split(",")
     if o.strip()
 ]
 app.add_middleware(

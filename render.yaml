@@ -1,0 +1,46 @@
+# Render Blueprint — deploy the full stack in one click.
+# Dashboard → New → Blueprint → connect this repo → Deploy.
+#
+# What this creates:
+#   • A Docker web service running FastAPI + uvicorn
+#   • A free PostgreSQL database wired up automatically
+#   • A generated SECRET_KEY (Render manages the secret value)
+#
+# After first deploy, note your service URL (e.g. https://school-lms-xxxx.onrender.com)
+# and paste it into the ALLOWED_ORIGINS environment variable in the Render dashboard
+# if you need to allow cross-origin API access from a separate frontend.
+
+services:
+  - type: web
+    name: school-lms
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free                  # upgrade to starter/standard for always-on
+    healthCheckPath: /          # Render pings this to confirm the service is up
+
+    envVars:
+      # Injected automatically from the Postgres database below
+      - key: DATABASE_URL
+        fromDatabase:
+          name: school-lms-db
+          property: connectionString
+
+      # Render generates a cryptographically random value and stores it as a secret
+      - key: SECRET_KEY
+        generateValue: true
+
+      # Enables HSTS header and other production hardening in main.py
+      - key: ENVIRONMENT
+        value: production
+
+      # RENDER_EXTERNAL_URL is set by Render automatically — main.py reads it
+      # to configure CORS without any manual input required.
+      # If you ever add a separate frontend domain, set ALLOWED_ORIGINS here:
+      # - key: ALLOWED_ORIGINS
+      #   value: https://your-frontend.com
+
+databases:
+  - name: school-lms-db
+    databaseName: lms
+    plan: free                  # 1 GB storage, 97 compute hours/month on free tier

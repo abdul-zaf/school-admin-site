@@ -61,13 +61,15 @@ jobs:
       - name: Print image tags
         run: echo "${{ steps.meta.outputs.tags }}"
 
-      # ── Deploy (plug in your platform here) ──────────────────────────────────
-      # Uncomment and configure ONE of the options below:
-      #
-      # -- Render --
-      # - name: Trigger Render deploy
-      #   run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
-      #
+      # ── Deploy to Render ─────────────────────────────────────────────────────
+      # Render pulls the latest image from GHCR and restarts the service.
+      # Set RENDER_DEPLOY_HOOK_URL in repo Settings → Secrets and variables → Actions.
+      - name: Trigger Render deploy
+        run: |
+          curl --silent --show-error --fail \
+            -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+
+      # ── Other platforms (disabled) ────────────────────────────────────────────
       # -- Railway --
       # - name: Deploy to Railway
       #   run: railway up --detach
