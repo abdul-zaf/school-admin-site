@@ -3,61 +3,107 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>School LMS</title>
+  <title>School LMS — EduPortal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&family=Noto+Naskh+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;700&family=Noto+Naskh+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
-  <!-- Login Page -->
+  <!-- ── Login Page ─────────────────────────────────────────────── -->
   <div id="login-page" class="login-page">
-    <div class="login-box">
-      <div class="login-logo">
-        <div class="logo-icon">LMS</div>
-        <h1>School LMS</h1>
-        <p>Learning Management System</p>
+
+    <!-- Decorative background blobs -->
+    <div class="login-blob login-blob-1"></div>
+    <div class="login-blob login-blob-2"></div>
+    <div class="login-blob login-blob-3"></div>
+
+    <div class="login-card">
+      <!-- School seal -->
+      <div class="login-seal">
+        <svg class="seal-cap" viewBox="0 0 80 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M40 4L4 22L40 40L76 22L40 4Z" fill="white" fill-opacity=".95"/>
+          <path d="M22 32V52C22 52 30 60 40 60C50 60 58 52 58 52V32L40 40L22 32Z" fill="white" fill-opacity=".85"/>
+          <line x1="72" y1="24" x2="72" y2="46" stroke="white" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="72" cy="48" r="4" fill="white"/>
+        </svg>
       </div>
-      <form id="login-form">
+
+      <div class="login-brand">
+        <h1>EduPortal</h1>
+        <p>School Learning Management System</p>
+      </div>
+
+      <form id="login-form" class="login-form">
         <div class="form-group">
-          <label>Email</label>
-          <input type="email" id="login-email" class="form-control" placeholder="admin@school.edu" required>
+          <label>📧 Email Address</label>
+          <input type="email" id="login-email" class="form-control"
+            placeholder="you@school.edu" required autocomplete="email">
         </div>
         <div class="form-group">
-          <label>Password</label>
-          <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
+          <label>🔒 Password</label>
+          <input type="password" id="login-password" class="form-control"
+            placeholder="••••••••" required autocomplete="current-password">
         </div>
         <div id="login-error" class="alert alert-error hidden"></div>
-        <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+        <button type="submit" class="btn btn-primary btn-full btn-login">
+          Sign In &rarr;
+        </button>
       </form>
-      <p class="login-hint">Default admin: admin@school.edu / admin123</p>
+
+      <p class="login-hint">
+        Default admin: <code>admin@school.edu</code> / <code>Admin123</code>
+      </p>
+
+      <div class="login-footer-badges">
+        <span class="login-badge">🎓 Students</span>
+        <span class="login-badge">🧑‍🏫 Teachers</span>
+        <span class="login-badge">🛡️ Admins</span>
+        <span class="login-badge">👨‍👩‍👦 Parents</span>
+      </div>
     </div>
   </div>
 
-  <!-- App Shell -->
+  <!-- ── App Shell ───────────────────────────────────────────────── -->
   <div id="app" class="app hidden">
+
     <aside class="sidebar">
+      <!-- Brand -->
       <div class="sidebar-brand">
-        <div class="brand-icon">LMS</div>
-        <span>School LMS</span>
+        <div class="brand-seal">
+          <svg viewBox="0 0 40 36" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22">
+            <path d="M20 2L2 11L20 20L38 11L20 2Z" fill="white"/>
+            <path d="M11 16V26C11 26 15 30 20 30C25 30 29 26 29 26V16L20 20L11 16Z" fill="white" fill-opacity=".8"/>
+            <line x1="36" y1="12" x2="36" y2="24" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="36" cy="25" r="2" fill="white"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">EduPortal</span>
+          <span class="brand-sub">School LMS</span>
+        </div>
       </div>
+
+      <!-- Nav -->
       <nav id="sidebar-nav" class="sidebar-nav"></nav>
+
+      <!-- Footer -->
       <div class="sidebar-footer">
         <div class="notif-bell-wrapper">
           <button class="notif-bell-btn" onclick="toggleNotifDropdown()">
-            🔔 Notifications
+            🔔 <span>Notifications</span>
             <span id="notif-count-badge" class="notif-unread-badge" style="display:none">0</span>
           </button>
           <div id="notif-dropdown" class="notif-dropdown hidden"></div>
         </div>
-        <div class="user-info">
+        <div class="user-card">
           <div class="user-avatar" id="user-avatar">A</div>
-          <div>
+          <div class="user-card-info">
             <div id="user-name" class="user-name"></div>
             <span id="user-role-badge" class="role-badge"></span>
           </div>
         </div>
-        <button id="logout-btn" class="btn-logout">Sign out</button>
+        <button id="logout-btn" class="btn-logout">⬡ Sign out</button>
       </div>
     </aside>
 
@@ -66,7 +112,7 @@
     </main>
   </div>
 
-  <!-- Modal -->
+  <!-- ── Modal ──────────────────────────────────────────────────── -->
   <div id="modal-overlay" class="modal-overlay hidden">
     <div class="modal">
       <div class="modal-header">

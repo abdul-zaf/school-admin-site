@@ -304,9 +304,9 @@ function loading(el) {
 // Navigation
 // ═══════════════════════════════════════════════════════════
 const NAV_KEYS = {
-  admin:   ['dashboard','courses','users','announcements','gradebook','analytics','calendar','badges','settings'],
-  teacher: ['dashboard','courses','announcements','gradebook','analytics','calendar','messages','question_banks','settings'],
-  student: ['dashboard','courses','announcements','gradebook','calendar','messages','portfolio','badges','settings'],
+  admin:   ['dashboard','courses','users','announcements','gradebook','analytics','calendar','badges','graph','settings'],
+  teacher: ['dashboard','courses','announcements','gradebook','analytics','calendar','messages','question_banks','graph','settings'],
+  student: ['dashboard','courses','announcements','gradebook','calendar','messages','portfolio','badges','sr','graph','settings'],
   parent:  ['dashboard','settings'],
 };
 const NAV_I18N = {
@@ -314,14 +314,38 @@ const NAV_I18N = {
   announcements:'nav_announcements', settings:'nav_settings',
   gradebook:'nav_gradebook', analytics:'nav_analytics', calendar:'nav_calendar',
   badges:'nav_badges', messages:'nav_messages', question_banks:'nav_question_banks',
-  portfolio:'nav_portfolio',
+  portfolio:'nav_portfolio', sr:'nav_sr', graph:'nav_graph',
 };
+// Emoji icons for each nav page
+const NAV_ICONS = {
+  dashboard:'🏠', courses:'📚', users:'👥', announcements:'📢',
+  gradebook:'📊', analytics:'📈', calendar:'📅', badges:'🏅',
+  messages:'✉️', question_banks:'🗃️', portfolio:'🗂️',
+  sr:'🃏', graph:'🕸️', settings:'⚙️',
+};
+
+// ── Subject → accent colour (used on course cards) ─────────────────────────
+function subjectAccent(subject, title) {
+  const s = ((subject || '') + ' ' + (title || '')).toLowerCase();
+  if (/math|algebra|calculus|geometry|arithmetic|trig|stat/.test(s)) return '#2563eb';
+  if (/science|biology|chem|physics|ecology|zoology/.test(s))        return '#059669';
+  if (/english|lit|writing|reading|grammar|poetry/.test(s))          return '#7c3aed';
+  if (/history|social|civics|geo|economic|politic/.test(s))          return '#d97706';
+  if (/art|music|drama|creative|design|craft/.test(s))               return '#db2777';
+  if (/computer|tech|it|coding|program|digital/.test(s))             return '#0891b2';
+  if (/urdu|arabic|islamiat|quran|religion|ethic/.test(s))           return '#ea580c';
+  if (/physical|sport|health|pe|gym|fitness/.test(s))                return '#0d9488';
+  return '#4f46e5'; // default indigo
+}
 
 function updateSidebarNav() {
   if (!state.user) return;
   const r = state.user.role;
   document.getElementById('sidebar-nav').innerHTML = NAV_KEYS[r].map(p =>
-    `<a class="nav-item${state.currentPage===p?' active':''}" data-page="${p}" onclick="navigate('${p}')">${t(NAV_I18N[p])}</a>`
+    `<a class="nav-item${state.currentPage===p?' active':''}" data-page="${p}" onclick="navigate('${p}')">
+      <span class="nav-icon">${NAV_ICONS[p]||'•'}</span>
+      <span class="nav-label">${t(NAV_I18N[p])}</span>
+    </a>`
   ).join('');
 }
 
@@ -486,17 +510,17 @@ async function renderDashboard(el) {
         api('GET','/users/'), api('GET','/courses/'), api('GET','/announcements/')
       ]);
       el.innerHTML = `
-        <div class="page-header"><div>
-          <h2>${t('nav_dashboard')}</h2>
-          <p>${t('welcome')}, ${state.user.name}!</p>
-        </div></div>
-        <div class="stats-grid">
-          <div class="stat-card"><div class="stat-number">${users.filter(u=>u.role==='student').length}</div><div class="stat-label">${t('students')}</div></div>
-          <div class="stat-card"><div class="stat-number">${users.filter(u=>u.role==='teacher').length}</div><div class="stat-label">${t('teachers')}</div></div>
-          <div class="stat-card"><div class="stat-number">${courses.length}</div><div class="stat-label">${t('courses')}</div></div>
-          <div class="stat-card"><div class="stat-number">${anns.length}</div><div class="stat-label">${t('announcements')}</div></div>
+        <div class="welcome-banner">
+          <h2>👋 ${t('welcome')}, ${state.user.name}!</h2>
+          <p>${t('nav_dashboard')} — EduPortal School Management</p>
         </div>
-        <div class="card"><div class="card-header"><h3>${t('announcements')}</h3>
+        <div class="stats-grid">
+          <div class="stat-card stat-card-blue"   data-icon="🎓"><div class="stat-number">${users.filter(u=>u.role==='student').length}</div><div class="stat-label">${t('students')}</div></div>
+          <div class="stat-card stat-card-purple" data-icon="🧑‍🏫"><div class="stat-number">${users.filter(u=>u.role==='teacher').length}</div><div class="stat-label">${t('teachers')}</div></div>
+          <div class="stat-card stat-card-green"  data-icon="📚"><div class="stat-number">${courses.length}</div><div class="stat-label">${t('courses')}</div></div>
+          <div class="stat-card stat-card-gold"   data-icon="📢"><div class="stat-number">${anns.length}</div><div class="stat-label">${t('announcements')}</div></div>
+        </div>
+        <div class="card"><div class="card-header ch-gold"><h3>📢 ${t('announcements')}</h3>
           <button class="btn btn-sm btn-primary" onclick="navigate('announcements')">${t('nav_announcements')}</button></div>
           <div class="card-body">
             ${anns.length ? anns.slice(0,4).map(a=>`
@@ -511,14 +535,16 @@ async function renderDashboard(el) {
       const mine = courses.filter(c => c.teacher_id === state.user.id);
       el.innerHTML = `
         <div class="page-header"><div>
-          <h2>${t('nav_dashboard')}</h2>
-          <p>${t('welcome')}, ${state.user.name}!</p>
-        </div></div>
-        <div class="stats-grid">
-          <div class="stat-card"><div class="stat-number">${mine.length}</div><div class="stat-label">${t('my_courses')}</div></div>
-          <div class="stat-card"><div class="stat-number">${mine.reduce((s,c)=>s+c.student_count,0)}</div><div class="stat-label">${t('total_students')}</div></div>
         </div>
-        <div class="card"><div class="card-header"><h3>${t('my_courses')}</h3>
+        <div class="welcome-banner">
+          <h2>👋 ${t('welcome')}, ${state.user.name}!</h2>
+          <p>🧑‍🏫 ${t('teachers')} Dashboard — EduPortal</p>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card stat-card-blue"  data-icon="📚"><div class="stat-number">${mine.length}</div><div class="stat-label">${t('my_courses')}</div></div>
+          <div class="stat-card stat-card-green" data-icon="🎓"><div class="stat-number">${mine.reduce((s,c)=>s+c.student_count,0)}</div><div class="stat-label">${t('total_students')}</div></div>
+        </div>
+        <div class="card"><div class="card-header ch-green"><h3>📚 ${t('my_courses')}</h3>
           <button class="btn btn-sm btn-primary" onclick="openNewCourseModal()">${t('new_course')}</button></div>
           <div class="card-body">
             ${mine.length ? mine.map(c=>`
@@ -533,15 +559,15 @@ async function renderDashboard(el) {
       const [courses, anns] = await Promise.all([api('GET','/courses/'), api('GET','/announcements/')]);
       const enrolled = courses.filter(c => c.enrolled);
       el.innerHTML = `
-        <div class="page-header"><div>
-          <h2>${t('nav_dashboard')}</h2>
-          <p>${t('welcome')}, ${state.user.name}!</p>
-        </div></div>
-        <div class="stats-grid">
-          <div class="stat-card"><div class="stat-number">${enrolled.length}</div><div class="stat-label">${t('enrolled_courses')}</div></div>
-          <div class="stat-card"><div class="stat-number">${courses.length-enrolled.length}</div><div class="stat-label">${t('available_courses')}</div></div>
+        <div class="welcome-banner">
+          <h2>👋 ${t('welcome')}, ${state.user.name}!</h2>
+          <p>🎓 ${t('students')} Dashboard — EduPortal</p>
         </div>
-        <div class="card"><div class="card-header"><h3>${t('my_courses')}</h3>
+        <div class="stats-grid">
+          <div class="stat-card stat-card-green"  data-icon="📚"><div class="stat-number">${enrolled.length}</div><div class="stat-label">${t('enrolled_courses')}</div></div>
+          <div class="stat-card stat-card-teal"   data-icon="🔍"><div class="stat-number">${courses.length-enrolled.length}</div><div class="stat-label">${t('available_courses')}</div></div>
+        </div>
+        <div class="card"><div class="card-header ch-green"><h3>📚 ${t('my_courses')}</h3>
           <button class="btn btn-sm btn-primary" onclick="navigate('courses')">${t('browse_courses')}</button></div>
           <div class="card-body">
             ${enrolled.length ? enrolled.map(c=>`
@@ -579,18 +605,19 @@ async function renderCourses(el) {
 function courseCard(c) {
   const role = state.user.role;
   const canManage = role === 'admin' || (role === 'teacher' && c.teacher_id === state.user.id);
+  const accent = subjectAccent(c.subject, c.title);
   return `
-    <div class="course-card" onclick="navigate('course',{id:${c.id}})">
+    <div class="course-card" style="--accent:${accent}" onclick="navigate('course',{id:${c.id}})">
       <div class="course-card-header">
         <h3>${c.title}</h3>
         ${c.grade_level ? `<span class="badge badge-info">${c.grade_level}</span>` : ''}
       </div>
       <div class="course-card-body">
-        ${c.subject ? `<p>${c.subject}</p>` : ''}
+        ${c.subject ? `<p style="color:${accent};font-weight:600;font-size:12px">${c.subject}</p>` : ''}
         ${c.description ? `<p>${c.description.substring(0,90)}${c.description.length>90?'…':''}</p>` : ''}
         <div class="course-meta">
-          <small>${t('teacher')}: ${c.teacher_name||'?'}</small>
-          <small>${c.student_count} ${t('student_count')}</small>
+          <small>🧑‍🏫 ${c.teacher_name||'?'}</small>
+          <small>👥 ${c.student_count} ${t('student_count')}</small>
         </div>
       </div>
       <div class="course-card-footer" onclick="event.stopPropagation()">
