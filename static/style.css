@@ -1284,42 +1284,6 @@ select.form-control { cursor: pointer; }
    FORGOT / RESET PASSWORD — login card sub-sections
    ══════════════════════════════════════════════════════════ */
 
-/* Google sign-in button */
-.btn-google {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #fff;
-  color: #374151;
-  border: 1.5px solid #d1d5db;
-  border-radius: 8px;
-  padding: 11px 16px;
-  font-weight: 600;
-  font-size: 14px;
-  text-decoration: none;
-  transition: box-shadow .15s, background .15s;
-  cursor: pointer;
-  margin-top: 6px;
-}
-.btn-google:hover { box-shadow: 0 2px 8px rgba(0,0,0,.12); background: #f9fafb; text-decoration: none; }
-[data-theme="dark"] .btn-google { background: #1e1b3a; border-color: var(--border); color: var(--text); }
-
-/* Divider between password form and Google button */
-.sso-divider {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 14px 0 6px;
-  color: var(--muted);
-  font-size: 12px;
-}
-.sso-divider::before, .sso-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-
 /* "Forgot password?" link under the sign-in form */
 .forgot-link-wrap {
   text-align: center;

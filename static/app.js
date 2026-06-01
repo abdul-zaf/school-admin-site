@@ -115,9 +115,6 @@ const i18n = {
     // Retake limits
     max_attempts:'Max Attempts', unlimited:'Unlimited',
     attempts_remaining:'attempts left', no_attempts_left:'No attempts remaining',
-    // Google SSO
-    sign_in_google:'Sign in with Google',
-    sso_error:'Google sign-in failed. Please try again or use email/password.',
     // Quiz publish / edit
     quiz_published:'Published', quiz_draft:'Draft',
     publish_quiz:'Publish to Students', unpublish_quiz:'Unpublish',
@@ -240,9 +237,6 @@ const i18n = {
     // Retake (Urdu)
     max_attempts:'زیادہ سے زیادہ کوششیں', unlimited:'لامحدود',
     attempts_remaining:'کوششیں باقی', no_attempts_left:'کوئی کوشش باقی نہیں',
-    // Google SSO (Urdu)
-    sign_in_google:'گوگل سے سائن ان کریں',
-    sso_error:'گوگل سائن ان ناکام ہوا۔ دوبارہ کوشش کریں۔',
     // Quiz publish / edit (Urdu)
     quiz_published:'شائع شدہ', quiz_draft:'مسودہ',
     publish_quiz:'طلبا کو دکھائیں', unpublish_quiz:'چھپائیں',
@@ -3166,37 +3160,6 @@ async function downloadCertificate(courseId) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// Google SSO — detect ?sso_token= on page load
-// ═══════════════════════════════════════════════════════════
-function checkSSOToken() {
-  const params  = new URLSearchParams(window.location.search);
-  const token   = params.get('sso_token');
-  const ssoErr  = params.get('sso_error');
-
-  if (ssoErr) {
-    window.history.replaceState({}, '', '/');
-    document.getElementById('login-page').classList.remove('hidden');
-    const errEl = document.getElementById('login-error');
-    errEl.textContent = t('sso_error');
-    errEl.classList.remove('hidden');
-    return;
-  }
-
-  if (!token) return;
-
-  const userId = params.get('user_id');
-  const name   = params.get('name');
-  const role   = params.get('role');
-  window.history.replaceState({}, '', '/');
-
-  state.token = token;
-  state.user  = { id: parseInt(userId), name, role };
-  localStorage.setItem('lms_token', token);
-  localStorage.setItem('lms_user',  JSON.stringify(state.user));
-  showApp();
-}
-
-// ═══════════════════════════════════════════════════════════
 // Password Reset
 // ═══════════════════════════════════════════════════════════
 
@@ -3317,10 +3280,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target === document.getElementById('modal-overlay')) closeModal();
   });
 
-  // Google SSO — must run before restoreSession so the ?sso_token= param is consumed first
-  if (new URLSearchParams(window.location.search).get('sso_token')) {
-    checkSSOToken();
-  } else if (restoreSession()) {
+  if (restoreSession()) {
     showApp();
   } else {
     document.getElementById('login-page').classList.remove('hidden');

@@ -18,7 +18,6 @@ from routers import (
     study_groups,
     # ── Auth extras ──────────────────────────────────────────────────────────
     password_reset,
-    google_sso,
     # ── New features ─────────────────────────────────────────────────────────
     certificates,
     leaderboard,
@@ -71,7 +70,6 @@ app.add_middleware(_SecurityHeadersMiddleware)
 # ── Routers ────────────────────────────────────────────────────────────────────
 app.include_router(auth.router,           prefix="/api/auth",           tags=["auth"])
 app.include_router(password_reset.router, prefix="/api/auth",           tags=["auth"])
-app.include_router(google_sso.router,     prefix="/api/auth",           tags=["auth"])
 app.include_router(certificates.router,   prefix="/api/certificates",   tags=["certificates"])
 app.include_router(leaderboard.router,    prefix="/api/leaderboard",    tags=["leaderboard"])
 app.include_router(users.router,          prefix="/api/users",          tags=["users"])
