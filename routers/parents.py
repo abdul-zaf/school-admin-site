@@ -1,3 +1,11 @@
+"""
+parents.py — Parent-student account links.
+
+GET    /api/parents/my-children            Parent views linked children
+POST   /api/parents/link                   Link parent to a student
+DELETE /api/parents/link/{student_id}      Remove the link
+GET    /api/parents/child/{id}/summary     Grade + attendance summary
+"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel

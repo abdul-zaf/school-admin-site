@@ -1,3 +1,15 @@
+"""
+discussions.py — Per-course discussion boards and threaded posts.
+
+GET    /api/discussions/course/{id}            List boards for a course
+POST   /api/discussions/course/{id}            Create a board (teacher/admin)
+DELETE /api/discussions/boards/{id}            Delete a board
+GET    /api/discussions/boards/{id}/posts      List posts in a board
+POST   /api/discussions/boards/{id}/posts      Create a post
+DELETE /api/discussions/posts/{id}             Delete own post (or admin)
+POST   /api/discussions/posts/{id}/reply       Reply to a post
+POST   /api/discussions/posts/{id}/endorse     Teacher endorses a post
+"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel

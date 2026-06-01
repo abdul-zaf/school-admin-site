@@ -1,3 +1,10 @@
+"""
+announcements.py — School-wide and per-course announcements.
+
+GET    /api/announcements/           List announcements (filter by course_id)
+POST   /api/announcements/           Create announcement (teacher/admin)
+DELETE /api/announcements/{id}       Delete announcement (teacher/admin)
+"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel

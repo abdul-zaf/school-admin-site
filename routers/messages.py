@@ -1,3 +1,12 @@
+"""
+messages.py — Direct messaging between users.
+
+GET    /api/messages/inbox   Received messages for current user
+GET    /api/messages/sent    Sent messages from current user
+POST   /api/messages/        Send a new message
+GET    /api/messages/{id}    Read a single message (marks as read)
+DELETE /api/messages/{id}    Delete own message
+"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel

@@ -1,3 +1,10 @@
+"""
+sessions.py — Virtual and in-person class sessions.
+
+GET    /api/sessions/course/{id}  List sessions for a course
+POST   /api/sessions/course/{id}  Schedule a session (own teacher/admin)
+DELETE /api/sessions/{id}         Cancel / delete a session
+"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session as DBSession
 from pydantic import BaseModel

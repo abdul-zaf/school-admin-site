@@ -1,3 +1,16 @@
+"""
+users.py — User account management (admin only, except /me endpoints).
+
+GET    /api/users/        List users (filterable by role)
+POST   /api/users/        Create a user account
+GET    /api/users/me      Current user profile
+PUT    /api/users/me      Update own name or password
+DELETE /api/users/{id}    Delete a user (cannot delete self)
+POST   /api/users/import  Bulk-import users from CSV
+
+Validation: email normalised to lowercase; password >= 8 chars with
+at least one letter and one digit; name 2-100 chars.
+"""
 import csv
 import io
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File

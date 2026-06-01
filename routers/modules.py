@@ -1,3 +1,14 @@
+"""
+modules.py — Ordered course modules with completion tracking.
+
+GET    /api/modules/course/{id}         List modules for a course
+POST   /api/modules/course/{id}         Create a module (teacher/admin)
+PUT    /api/modules/{id}                Rename / reorder a module
+DELETE /api/modules/{id}                Delete a module
+POST   /api/modules/{id}/items          Add an item to a module
+DELETE /api/modules/items/{id}          Remove a module item
+POST   /api/modules/items/{id}/complete Student marks an item complete
+"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel

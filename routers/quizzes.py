@@ -1,3 +1,18 @@
+"""
+quizzes.py — Full quiz lifecycle: build, publish, attempt, auto-grade.
+
+GET    /api/quizzes/course/{id}     List quizzes (students: published only)
+POST   /api/quizzes/course/{id}     Create quiz as draft (teacher/admin)
+GET    /api/quizzes/{id}            Quiz detail with questions + my attempt
+PUT    /api/quizzes/{id}            Edit quiz metadata
+PATCH  /api/quizzes/{id}/publish    Toggle published state
+DELETE /api/quizzes/{id}            Delete quiz
+POST   /api/quizzes/{id}/questions  Add a question (MC / T-F / short-answer)
+DELETE /api/quizzes/questions/{id}  Delete a question (own course only)
+POST   /api/quizzes/{id}/start      Start an attempt (checks retake limit)
+POST   /api/quizzes/{id}/submit     Submit answers; MC/T-F auto-graded
+GET    /api/quizzes/{id}/attempts   All student attempts (teacher/admin)
+"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session as DBSession
 from pydantic import BaseModel

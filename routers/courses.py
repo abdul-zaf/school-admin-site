@@ -1,3 +1,20 @@
+"""
+courses.py — Course catalogue, enrolment, materials, and attendance.
+
+GET    /api/courses/                     List all courses
+POST   /api/courses/                     Create course (teacher/admin)
+GET    /api/courses/{id}                 Course detail + student list
+PUT    /api/courses/{id}                 Update course metadata
+DELETE /api/courses/{id}                 Delete course
+POST   /api/courses/{id}/enroll          Student self-enrols
+DELETE /api/courses/{id}/enroll          Student unenrols
+GET    /api/courses/{id}/materials       List materials
+POST   /api/courses/{id}/materials       Add material (own teacher/admin)
+DELETE /api/courses/{id}/materials/{mid} Remove material
+POST   /api/courses/{id}/attendance      Record attendance batch
+GET    /api/courses/{id}/attendance      Retrieve attendance records
+POST   /api/courses/{id}/duplicate       Clone course with all content
+"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel

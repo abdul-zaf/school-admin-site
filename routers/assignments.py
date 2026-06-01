@@ -1,3 +1,14 @@
+"""
+assignments.py — Assignment lifecycle: create, submit, grade.
+
+GET    /api/assignments/course/{id}               List assignments for a course
+POST   /api/assignments/course/{id}               Create assignment (teacher/admin)
+GET    /api/assignments/{id}                      Get assignment + submissions
+DELETE /api/assignments/{id}                      Delete (teacher/admin, own course)
+POST   /api/assignments/{id}/submit               Student submits work
+PUT    /api/assignments/submissions/{id}/grade    Grade a submission; emails student
+GET    /api/assignments/submissions/{id}/grade-history  Audit trail of grade changes
+"""
 import os
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session

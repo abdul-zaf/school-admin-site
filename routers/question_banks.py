@@ -1,3 +1,13 @@
+"""
+question_banks.py — Reusable question pools importable into quizzes.
+
+GET    /api/question-banks/                      List all banks
+POST   /api/question-banks/                      Create a bank
+GET    /api/question-banks/{id}                  Bank detail + questions
+POST   /api/question-banks/{id}/questions        Add a question
+DELETE /api/question-banks/{id}                  Delete a bank
+POST   /api/question-banks/{id}/import/{quiz_id} Import N random questions
+"""
 import random
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session

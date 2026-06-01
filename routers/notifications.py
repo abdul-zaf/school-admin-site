@@ -1,3 +1,10 @@
+"""
+notifications.py — In-app notification bell.
+
+GET /api/notifications/              List recent notifications
+GET /api/notifications/unread-count  Unread count (polled by frontend)
+PUT /api/notifications/{id}/read     Mark a notification as read
+"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Optional

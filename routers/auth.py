@@ -1,3 +1,13 @@
+"""
+auth.py — Login endpoint.
+
+POST /api/auth/login
+  Accepts OAuth2 password form (username = email).
+  Returns a JWT access token valid for 24 hours.
+  Rate-limited to 10 attempts per IP per 60 seconds.
+  Uses a dummy bcrypt hash for unknown emails to prevent timing-based
+  user enumeration.
+"""
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session

@@ -1,3 +1,14 @@
+"""
+surveys.py — Teacher-created surveys with multiple question types.
+
+GET    /api/surveys/course/{id}        List surveys for a course
+POST   /api/surveys/course/{id}        Create a survey (teacher/admin)
+GET    /api/surveys/{id}               Survey detail with questions
+DELETE /api/surveys/{id}               Delete a survey
+POST   /api/surveys/{id}/questions     Add a question
+POST   /api/surveys/{id}/respond       Student submits responses
+GET    /api/surveys/{id}/results       Aggregated results (teacher/admin)
+"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel

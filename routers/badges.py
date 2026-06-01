@@ -1,3 +1,11 @@
+"""
+badges.py — Achievement badge system.
+
+GET    /api/badges/              List all badge definitions
+POST   /api/badges/              Create a badge (admin)
+POST   /api/badges/{id}/award    Award badge to a student (admin/teacher)
+DELETE /api/badges/{id}          Delete a badge definition (admin)
+"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel

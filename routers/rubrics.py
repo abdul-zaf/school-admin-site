@@ -1,3 +1,13 @@
+"""
+rubrics.py — Criterion-based grading rubrics attached to assignments.
+
+GET    /api/rubrics/course/{id}           List rubrics for a course
+POST   /api/rubrics/course/{id}           Create a rubric
+GET    /api/rubrics/{id}                  Rubric detail
+PUT    /api/rubrics/{id}                  Update rubric
+DELETE /api/rubrics/{id}                  Delete rubric
+POST   /api/rubrics/{id}/grade/{sub_id}   Apply rubric to a submission
+"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel

@@ -1,3 +1,12 @@
+"""
+gradebook.py — Weighted grade calculation, GPA, and letter grades.
+
+GET    /api/gradebook/my              Student grades across all courses
+GET    /api/gradebook/course/{id}     Full gradebook grid (teacher/admin)
+POST   /api/gradebook/categories      Create a weighted grade category
+PUT    /api/gradebook/categories/{id} Update weight / drop-lowest setting
+DELETE /api/gradebook/categories/{id} Remove a grade category
+"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel

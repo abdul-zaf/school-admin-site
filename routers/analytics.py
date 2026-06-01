@@ -1,3 +1,11 @@
+"""
+analytics.py — Aggregate statistics for teachers and admins.
+
+GET /api/analytics/course/{id}   Per-course stats: grade distribution,
+                                  submission rate, active students, avg score.
+GET /api/analytics/school        School-wide summary (admin only):
+                                  total users, courses, weekly submissions.
+"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta

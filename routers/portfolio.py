@@ -1,3 +1,12 @@
+"""
+portfolio.py — Student portfolios (public or private).
+
+GET    /api/portfolio/my                  Current student portfolio
+PUT    /api/portfolio/my                  Update bio / visibility
+POST   /api/portfolio/my/items            Add a portfolio item
+DELETE /api/portfolio/my/items/{id}       Remove a portfolio item
+GET    /api/portfolio/public/{student_id} View a public portfolio
+"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
