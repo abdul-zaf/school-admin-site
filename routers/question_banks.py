@@ -124,34 +124,31 @@ def delete_bank(
 
 
 @router.post("/{bank_id}/questions")
-def add_questions(
+def add_question(
     bank_id: int,
-    questions: List[BankQuestionIn],
+    question: BankQuestionIn,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(security.require_role("admin", "teacher")),
 ):
+    """Add a single question to the bank. Call repeatedly to add multiple questions."""
     bank = db.query(models.QuestionBank).filter(models.QuestionBank.id == bank_id).first()
     if not bank:
         raise HTTPException(404, "Bank not found")
     if current_user.role != "admin" and bank.creator_id != current_user.id:
         raise HTTPException(403, "Access denied")
 
-    added = []
-    for q_data in questions:
-        q = models.BankQuestion(
-            bank_id=bank_id,
-            question_text=q_data.question_text,
-            question_type=q_data.question_type,
-            points=q_data.points,
-            options=q_data.options,
-            tags=q_data.tags,
-        )
-        db.add(q)
-        db.flush()
-        added.append(q.id)
-
+    q = models.BankQuestion(
+        bank_id=bank_id,
+        question_text=question.question_text,
+        question_type=question.question_type,
+        points=question.points,
+        options=question.options,
+        tags=question.tags,
+    )
+    db.add(q)
     db.commit()
-    return {"added": added}
+    db.refresh(q)
+    return {"id": q.id}
 
 
 @router.delete("/questions/{question_id}")

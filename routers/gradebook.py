@@ -24,6 +24,13 @@ class CategoryCreate(BaseModel):
     drop_lowest: int = 0
 
 
+class CategoryUpdate(BaseModel):
+    """All fields optional so callers can PATCH only what they need."""
+    name: Optional[str] = None
+    weight: Optional[float] = None
+    drop_lowest: Optional[int] = None
+
+
 def score_to_letter(score: float) -> str:
     if score >= 90:
         return "A"
@@ -203,7 +210,7 @@ def create_category(
 @router.put("/categories/{cat_id}")
 def update_category(
     cat_id: int,
-    data: CategoryCreate,
+    data: CategoryUpdate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(security.require_role("admin", "teacher")),
 ):
@@ -211,11 +218,14 @@ def update_category(
     if not cat:
         raise HTTPException(404, "Category not found")
     security.require_course_access(cat.course_id, current_user, db)
-    cat.name = data.name
-    cat.weight = data.weight
-    cat.drop_lowest = data.drop_lowest
+    if data.name is not None:
+        cat.name = data.name
+    if data.weight is not None:
+        cat.weight = data.weight
+    if data.drop_lowest is not None:
+        cat.drop_lowest = data.drop_lowest
     db.commit()
-    return {"ok": True}
+    return {"ok": True, "id": cat.id, "name": cat.name, "weight": cat.weight}
 
 
 @router.delete("/categories/{cat_id}")

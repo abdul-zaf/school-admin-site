@@ -35,11 +35,12 @@ def send_email(
     """Send an HTML email.  Safe to call from a BackgroundTask thread."""
     cfg = _smtp_cfg()
     if not cfg["user"] or not cfg["password"]:
+        sep = "-" * 60
         print(
-            f"\n{'─'*60}\n"
-            f"[EMAIL] SMTP not configured — printing instead.\n"
+            f"\n{sep}\n"
+            f"[EMAIL] SMTP not configured - printing instead.\n"
             f"To: {to_email}\nSubject: {subject}\n{plain_body or '(html only)'}\n"
-            f"{'─'*60}\n"
+            f"{sep}\n"
         )
         return
 
@@ -119,4 +120,4 @@ def send_grade_notification(
         f"Score: {score}/{max_score} ({pct}%)\n"
         f"{('Feedback: ' + feedback) if feedback else ''}\n"
     )
-    send_email(to_email, to_name, f"Grade posted — {assignment_title}", html, plain)
+    send_email(to_email, to_name, f"Grade posted - {assignment_title}", html, plain)

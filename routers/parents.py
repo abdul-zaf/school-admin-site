@@ -18,9 +18,10 @@ router = APIRouter()
 
 
 class LinkCreate(BaseModel):
-    parent_id: int
     student_id: int
     relation: str = "parent"
+    # parent_id only honoured when caller is admin; ignored for parent role
+    parent_id: Optional[int] = None
 
 
 @router.get("/my-students")
@@ -116,32 +117,32 @@ def student_overview(
 def create_link(
     data: LinkCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(security.require_role("admin")),
+    current_user: models.User = Depends(security.require_role("admin", "parent")),
 ):
-    parent = db.query(models.User).filter(models.User.id == data.parent_id).first()
-    if not parent:
-        raise HTTPException(404, "Parent user not found")
-    if parent.role != "parent":
-        raise HTTPException(400, "User must have role 'parent'")
+    # Parents link themselves; admins can specify any parent_id
+    if current_user.role == "parent":
+        parent_id = current_user.id
+    else:
+        if not data.parent_id:
+            raise HTTPException(400, "Admin must supply parent_id")
+        parent_id = data.parent_id
+
+    parent = db.query(models.User).filter(models.User.id == parent_id).first()
+    if not parent or parent.role != "parent":
+        raise HTTPException(400, "Target user must have role 'parent'")
 
     student = db.query(models.User).filter(models.User.id == data.student_id).first()
-    if not student:
-        raise HTTPException(404, "Student not found")
-    if student.role != "student":
+    if not student or student.role != "student":
         raise HTTPException(400, "Linked user must be a student")
 
-    existing = db.query(models.ParentLink).filter(
-        models.ParentLink.parent_id == data.parent_id,
+    if db.query(models.ParentLink).filter(
+        models.ParentLink.parent_id == parent_id,
         models.ParentLink.student_id == data.student_id,
-    ).first()
-    if existing:
+    ).first():
         raise HTTPException(400, "Link already exists")
 
-    link = models.ParentLink(
-        parent_id=data.parent_id,
-        student_id=data.student_id,
-        relation=data.relation,
-    )
+    link = models.ParentLink(parent_id=parent_id, student_id=data.student_id,
+                              relation=data.relation)
     db.add(link)
     db.commit()
     db.refresh(link)
@@ -152,11 +153,13 @@ def create_link(
 def delete_link(
     link_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(security.require_role("admin")),
+    current_user: models.User = Depends(security.require_role("admin", "parent")),
 ):
     link = db.query(models.ParentLink).filter(models.ParentLink.id == link_id).first()
     if not link:
         raise HTTPException(404, "Link not found")
+    if current_user.role == "parent" and link.parent_id != current_user.id:
+        raise HTTPException(403, "You can only remove your own links")
     db.delete(link)
     db.commit()
     return {"ok": True}

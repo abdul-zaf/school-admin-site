@@ -210,7 +210,9 @@ def download_certificate(
 
     course = db.query(models.Course).filter(models.Course.id == course_id).first()
     teacher_name = course.teacher.name if course.teacher else "EduPortal"
-    issue_date   = datetime.utcnow().strftime("%-d %B %Y") if hasattr(datetime, 'utcnow') else datetime.utcnow().strftime("%d %B %Y")
+    # %-d (no-zero-pad day) is Linux-only; strip manually for cross-platform
+    _now = datetime.utcnow()
+    issue_date = f"{_now.day} {_now.strftime('%B %Y')}"
 
     try:
         pdf_buf = _build_pdf(
