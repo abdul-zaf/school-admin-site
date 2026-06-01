@@ -15,7 +15,12 @@ POST   /api/courses/{id}/attendance      Record attendance batch
 GET    /api/courses/{id}/attendance      Retrieve attendance records
 POST   /api/courses/{id}/duplicate       Clone course with all content
 """
-from fastapi import APIRouter, Depends, HTTPException
+import os
+import uuid
+import mimetypes
+from pathlib import Path
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File as FFile, Form
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
@@ -23,6 +28,14 @@ from datetime import date
 from database import get_db
 import models
 import security
+
+# ── Upload directory ──────────────────────────────────────────────────────────
+_UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "./uploads/materials"))
+_MAX_MB = int(os.getenv("MAX_UPLOAD_MB", "200"))
+
+def _ensure_upload_dir() -> Path:
+    _UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    return _UPLOAD_DIR
 
 router = APIRouter()
 
@@ -233,7 +246,18 @@ def list_materials(
     current_user: models.User = Depends(security.get_current_user),
 ):
     return [
-        {"id": m.id, "title": m.title, "content": m.content, "url": m.url, "created_at": str(m.created_at)}
+        {
+            "id": m.id,
+            "title": m.title,
+            "content": m.content,
+            "url": m.url,
+            # Infer type for legacy rows that pre-date the material_type column
+            "material_type": m.material_type or ("link" if m.url else "text"),
+            "file_name": m.file_name,
+            "file_size": m.file_size,
+            "file_mime": m.file_mime,
+            "created_at": str(m.created_at),
+        }
         for m in db.query(models.Material).filter(models.Material.course_id == course_id).all()
     ]
 
@@ -246,11 +270,107 @@ def add_material(
     current_user: models.User = Depends(security.require_role("admin", "teacher")),
 ):
     security.require_course_access(course_id, current_user, db)
-    m = models.Material(course_id=course_id, title=data.title, content=data.content, url=data.url)
+    mat_type = "link" if data.url else "text"
+    m = models.Material(
+        course_id=course_id,
+        title=data.title,
+        content=data.content,
+        url=data.url,
+        material_type=mat_type,
+    )
     db.add(m)
     db.commit()
     db.refresh(m)
     return {"id": m.id, "title": m.title}
+
+
+@router.post("/{course_id}/materials/upload")
+async def upload_material(
+    course_id: int,
+    title: str = Form(...),
+    file: UploadFile = FFile(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("admin", "teacher")),
+):
+    """Upload a file (PDF, video, image, etc.) as course material."""
+    security.require_course_access(course_id, current_user, db)
+    upload_dir = _ensure_upload_dir()
+
+    content = await file.read()
+    if len(content) > _MAX_MB * 1024 * 1024:
+        raise HTTPException(413, f"File too large — maximum {_MAX_MB} MB allowed.")
+
+    original_name = file.filename or "upload"
+    ext = Path(original_name).suffix.lower()
+    if not ext and file.content_type:
+        ext = mimetypes.guess_extension(file.content_type) or ""
+    mime = file.content_type or mimetypes.guess_type(original_name)[0] or "application/octet-stream"
+
+    stored_name = f"{uuid.uuid4()}{ext}"
+    stored_path = upload_dir / stored_name
+    stored_path.write_bytes(content)
+
+    m = models.Material(
+        course_id=course_id,
+        title=title,
+        material_type="file",
+        file_name=original_name,
+        file_path=str(stored_path),
+        file_size=len(content),
+        file_mime=mime,
+    )
+    db.add(m)
+    db.commit()
+    db.refresh(m)
+    return {"id": m.id, "title": m.title, "file_name": m.file_name}
+
+
+@router.get("/{course_id}/materials/{material_id}/file")
+def serve_material_file(
+    course_id: int,
+    material_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """Serve an uploaded material file, checking course access."""
+    m = db.query(models.Material).filter(
+        models.Material.id == material_id,
+        models.Material.course_id == course_id,
+    ).first()
+    if not m:
+        raise HTTPException(404, "Material not found")
+    if m.material_type != "file" or not m.file_path:
+        raise HTTPException(400, "This material has no attached file")
+
+    path = Path(m.file_path)
+    if not path.exists():
+        raise HTTPException(404, "File not found on server")
+
+    # Access control
+    if current_user.role == "student":
+        enrolled = db.query(models.Enrollment).filter(
+            models.Enrollment.course_id == course_id,
+            models.Enrollment.student_id == current_user.id,
+        ).first()
+        if not enrolled:
+            raise HTTPException(403, "You are not enrolled in this course")
+    elif current_user.role == "teacher":
+        security.require_course_access(course_id, current_user, db)
+    # admin: always allowed
+
+    mime = m.file_mime or "application/octet-stream"
+    viewable = (
+        mime.startswith(("image/", "video/", "audio/", "text/"))
+        or mime == "application/pdf"
+    )
+    disposition = "inline" if viewable else "attachment"
+    safe_name = (m.file_name or "download").replace('"', "'")
+
+    return FileResponse(
+        path=str(path),
+        media_type=mime,
+        headers={"Content-Disposition": f'{disposition}; filename="{safe_name}"'},
+    )
 
 
 @router.delete("/{course_id}/materials/{material_id}")
@@ -266,6 +386,12 @@ def delete_material(
     ).first()
     if not m:
         raise HTTPException(404, "Material not found")
+    # Remove uploaded file from disk if present
+    if m.file_path:
+        try:
+            Path(m.file_path).unlink(missing_ok=True)
+        except Exception:
+            pass
     db.delete(m)
     db.commit()
     return {"ok": True}

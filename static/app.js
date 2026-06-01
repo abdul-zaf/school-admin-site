@@ -31,6 +31,9 @@ const i18n = {
     materials:'Materials', course_materials:'Course Materials',
     add_material:'+ Add Material', title_label:'Title', content:'Content',
     url_label:'URL (optional)', no_materials:'No materials yet.',
+    upload_file:'Upload File', link_text:'Link / Text',
+    file_upload_hint:'Any file type (PDF, video, image, document…) — max 200 MB',
+    download:'Download', view_file:'View',
     // Assignments
     assignments:'Assignments', new_assignment:'+ New Assignment',
     instructions:'Instructions', due_date:'Due', max_score:'Max Score',
@@ -164,6 +167,9 @@ const i18n = {
     materials:'مواد', course_materials:'کورس مواد',
     add_material:'+ مواد شامل کریں', title_label:'عنوان', content:'مواد',
     url_label:'لنک (اختیاری)', no_materials:'ابھی کوئی مواد نہیں۔',
+    upload_file:'فائل اپ لوڈ کریں', link_text:'لنک / متن',
+    file_upload_hint:'کوئی بھی فائل (پی ڈی ایف، ویڈیو، تصویر...) — زیادہ سے زیادہ 200 ایم بی',
+    download:'ڈاؤن لوڈ', view_file:'دیکھیں',
     // Assignments
     assignments:'اسائنمنٹس', new_assignment:'+ نیا اسائنمنٹ',
     instructions:'ہدایات', due_date:'آخری تاریخ', max_score:'زیادہ سے زیادہ',
@@ -853,15 +859,46 @@ async function renderCourseDetail(courseId, el) {
           <div class="card-header"><h3>${t('course_materials')}</h3>
             ${canManage ? `<button class="btn btn-sm btn-primary" onclick="openAddMaterialModal(${courseId})">${t('add_material')}</button>` : ''}</div>
           <div class="card-body">
-            ${materials.length ? materials.map(m=>`
-              <div class="list-item">
-                <div><strong>${m.title}</strong>
-                  ${m.content ? `<p>${m.content}</p>` : ''}
-                  ${m.url ? `<a class="link" href="${m.url}" target="_blank">${m.url}</a>` : ''}
-                  <small>${fmtDate(m.created_at)}</small>
-                </div>
-                ${canManage ? `<button class="btn btn-sm btn-danger" onclick="deleteMaterial(${courseId},${m.id})">${t('delete')}</button>` : ''}
-              </div>`).join('') : `<p class="text-muted">${t('no_materials')}</p>`}
+            ${materials.length ? materials.map(m => {
+              const mtype = m.material_type || (m.url ? 'link' : 'text');
+              const icon = mtype === 'file' ? fileMimeIcon(m.file_mime) : (mtype === 'link' ? '🔗' : '📝');
+              const badge = `<span class="mat-type-badge mat-type-${mtype}">${mtype}</span>`;
+              const isViewable = m.file_mime && (
+                m.file_mime.startsWith('image/') || m.file_mime.startsWith('video/') ||
+                m.file_mime.startsWith('audio/') || m.file_mime === 'application/pdf' ||
+                m.file_mime.startsWith('text/')
+              );
+              let body = '';
+              if (mtype === 'file') {
+                const sz = formatFileSize(m.file_size);
+                const btnLabel = isViewable ? `👁 ${t('view_file')}` : `⬇ ${t('download')}`;
+                body = `
+                  <div class="mat-file-info">
+                    <span class="mat-filename">${m.file_name || ''}</span>
+                    ${sz ? `<span class="mat-filesize">${sz}</span>` : ''}
+                  </div>
+                  <div class="mat-actions-inline">
+                    <a class="btn btn-sm btn-primary" href="#"
+                       onclick="return viewMaterialFile(event,${courseId},${m.id},${JSON.stringify(m.file_name||'download')})"
+                    >${btnLabel}</a>
+                  </div>`;
+              } else if (mtype === 'link') {
+                body = (m.content ? `<p class="mat-content">${m.content}</p>` : '') +
+                       `<a class="link mat-link" href="${m.url}" target="_blank" rel="noopener">${m.url}</a>`;
+              } else {
+                body = m.content ? `<p class="mat-content">${m.content}</p>` : '';
+              }
+              return `
+                <div class="material-item">
+                  <div class="material-icon">${icon}</div>
+                  <div class="material-body">
+                    <div class="material-title"><strong>${m.title}</strong>${badge}</div>
+                    ${body}
+                    <small class="text-muted">${fmtDate(m.created_at)}</small>
+                  </div>
+                  ${canManage ? `<button class="btn btn-sm btn-danger" onclick="deleteMaterial(${courseId},${m.id})">${t('delete')}</button>` : ''}
+                </div>`;
+            }).join('') : `<p class="text-muted">${t('no_materials')}</p>`}
           </div>
         </div>
       </div>
@@ -1075,28 +1112,127 @@ function sessionCard(s, canManage) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// Material helpers
+// ═══════════════════════════════════════════════════════════
+function fileMimeIcon(mime) {
+  if (!mime) return '📄';
+  if (mime.startsWith('image/')) return '🖼️';
+  if (mime.startsWith('video/')) return '🎬';
+  if (mime.startsWith('audio/')) return '🎵';
+  if (mime === 'application/pdf') return '📕';
+  if (mime.includes('word') || mime.includes('msword') || mime.includes('document')) return '📝';
+  if (mime.includes('excel') || mime.includes('spreadsheet') || mime.includes('sheet')) return '📊';
+  if (mime.includes('powerpoint') || mime.includes('presentation')) return '📊';
+  if (mime.includes('zip') || mime.includes('compressed') || mime.includes('archive') || mime.includes('tar')) return '🗜️';
+  if (mime.startsWith('text/')) return '📃';
+  return '📄';
+}
+
+function formatFileSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+}
+
+function switchMatMode(mode, btn) {
+  document.querySelectorAll('.mat-mode-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('mat-link-sect').classList.toggle('hidden', mode === 'file');
+  document.getElementById('mat-file-sect').classList.toggle('hidden', mode === 'link');
+  document.getElementById('modal-form').dataset.mode = mode;
+}
+
+async function viewMaterialFile(event, courseId, materialId, fileName) {
+  event.preventDefault();
+  try {
+    const resp = await fetch(`/api/courses/${courseId}/materials/${materialId}/file`, {
+      headers: { Authorization: 'Bearer ' + state.token },
+    });
+    if (!resp.ok) { const e = await resp.json(); throw new Error(e.detail || 'Failed to load file'); }
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const viewable = blob.type.startsWith('image/') || blob.type.startsWith('video/') ||
+                     blob.type.startsWith('audio/') || blob.type === 'application/pdf' ||
+                     blob.type.startsWith('text/');
+    if (viewable) {
+      window.open(url, '_blank');
+    } else {
+      const a = document.createElement('a');
+      a.href = url; a.download = fileName;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 15000);
+  } catch(err) { toast(err.message, 'error'); }
+  return false;
+}
+
+// ═══════════════════════════════════════════════════════════
 // Materials
 // ═══════════════════════════════════════════════════════════
 function openAddMaterialModal(courseId) {
   openModal(t('add_material'), `
-    <form id="modal-form">
-      <div class="form-group"><label>${t('title_label')} *</label>
-        <input name="title" class="form-control" required placeholder="e.g. Chapter 3 Notes"></div>
-      <div class="form-group"><label>${t('content')}</label>
-        <textarea name="content" class="form-control" rows="5"></textarea></div>
-      <div class="form-group"><label>${t('url_label')}</label>
-        <input name="url" type="url" class="form-control" placeholder="https://…"></div>
+    <div class="mat-mode-tabs">
+      <button type="button" class="mat-mode-tab active" onclick="switchMatMode('link',this)">🔗 ${t('link_text')}</button>
+      <button type="button" class="mat-mode-tab" onclick="switchMatMode('file',this)">📁 ${t('upload_file')}</button>
+    </div>
+    <form id="modal-form" data-mode="link">
+      <!-- Link / Text section -->
+      <div id="mat-link-sect">
+        <div class="form-group"><label>${t('title_label')} *</label>
+          <input name="title" class="form-control" placeholder="e.g. Chapter 3 Notes"></div>
+        <div class="form-group"><label>${t('content')}</label>
+          <textarea name="content" class="form-control" rows="4" placeholder="Optional description or notes…"></textarea></div>
+        <div class="form-group"><label>${t('url_label')}</label>
+          <input name="url" type="url" class="form-control" placeholder="https://…"></div>
+      </div>
+      <!-- File upload section -->
+      <div id="mat-file-sect" class="hidden">
+        <div class="form-group"><label>${t('title_label')} *</label>
+          <input name="file_title" class="form-control" placeholder="e.g. Lecture Slides Week 3"></div>
+        <div class="form-group"><label>File *</label>
+          <input name="file" type="file" class="form-control" accept="*/*"
+            onchange="const t=document.querySelector('[name=file_title]');if(!t.value)t.value=this.files[0]?.name||''">
+          <small class="text-muted">${t('file_upload_hint')}</small>
+        </div>
+      </div>
       <div class="form-actions">
         <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
         <button type="submit" class="btn btn-primary">${t('add')}</button>
       </div>
     </form>`,
     async (fd) => {
-      try {
-        await api('POST',`/courses/${courseId}/materials`,
-          { title:fd.get('title'), content:fd.get('content')||null, url:fd.get('url')||null });
-        closeModal(); toast(t('add')+'!'); navigate('course',{id:courseId});
-      } catch(err) { toast(err.message,'error'); }
+      const form = document.getElementById('modal-form');
+      const mode = form.dataset.mode;
+      if (mode !== 'file') {
+        // Link / Text
+        const title = (fd.get('title') || '').trim();
+        if (!title) { toast(t('title_label') + ' is required', 'error'); return; }
+        try {
+          await api('POST', `/courses/${courseId}/materials`,
+            { title, content: fd.get('content') || null, url: fd.get('url') || null });
+          closeModal(); toast(t('add') + '!'); navigate('course', { id: courseId });
+        } catch(err) { toast(err.message, 'error'); }
+      } else {
+        // File upload — must use multipart/form-data, not JSON
+        const fileTitle = (fd.get('file_title') || '').trim();
+        const file = fd.get('file');
+        if (!fileTitle) { toast(t('title_label') + ' is required', 'error'); return; }
+        if (!file || !file.size) { toast('Please select a file', 'error'); return; }
+        const uploadFd = new FormData();
+        uploadFd.append('title', fileTitle);
+        uploadFd.append('file', file);
+        try {
+          const resp = await fetch(`/api/courses/${courseId}/materials/upload`, {
+            method: 'POST',
+            headers: { Authorization: 'Bearer ' + state.token },
+            body: uploadFd,
+          });
+          if (!resp.ok) { const e = await resp.json(); throw new Error(e.detail || 'Upload failed'); }
+          closeModal(); toast('File uploaded!'); navigate('course', { id: courseId });
+        } catch(err) { toast(err.message, 'error'); }
+      }
     });
 }
 

@@ -67,6 +67,12 @@ class Material(Base):
     title = Column(String(200), nullable=False)
     content = Column(Text)
     url = Column(String(500))
+    # v3: file upload support
+    material_type = Column(String(20), default="text")   # "text" | "link" | "file"
+    file_name     = Column(String(300))                  # original filename
+    file_path     = Column(String(500))                  # server-side stored path
+    file_size     = Column(Integer)                      # bytes
+    file_mime     = Column(String(100))                  # MIME type
     created_at = Column(DateTime, default=datetime.utcnow)
 
     course = relationship("Course", back_populates="materials")

@@ -33,11 +33,17 @@ def get_db():
 def apply_migrations():
     """Lightweight schema migrations so existing DBs gain new columns without data loss."""
     with engine.connect() as conn:
-        # v2: quiz publish flag
         if _is_sqlite:
             for ddl in [
+                # v2: quiz publish flag
                 "ALTER TABLE quizzes ADD COLUMN is_published BOOLEAN NOT NULL DEFAULT 0",
                 "ALTER TABLE quizzes ADD COLUMN max_attempts INTEGER",
+                # v3: material file upload
+                "ALTER TABLE materials ADD COLUMN material_type TEXT NOT NULL DEFAULT 'text'",
+                "ALTER TABLE materials ADD COLUMN file_name TEXT",
+                "ALTER TABLE materials ADD COLUMN file_path TEXT",
+                "ALTER TABLE materials ADD COLUMN file_size INTEGER",
+                "ALTER TABLE materials ADD COLUMN file_mime TEXT",
             ]:
                 try:
                     conn.execute(text(ddl))
@@ -45,12 +51,16 @@ def apply_migrations():
                 except Exception:
                     pass  # column already exists — safe to ignore
         else:
-            conn.execute(text(
-                "ALTER TABLE quizzes "
-                "ADD COLUMN IF NOT EXISTS is_published BOOLEAN NOT NULL DEFAULT FALSE"
-            ))
-            conn.execute(text(
-                "ALTER TABLE quizzes "
-                "ADD COLUMN IF NOT EXISTS max_attempts INTEGER"
-            ))
+            for ddl in [
+                # v2
+                "ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS is_published BOOLEAN NOT NULL DEFAULT FALSE",
+                "ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS max_attempts INTEGER",
+                # v3
+                "ALTER TABLE materials ADD COLUMN IF NOT EXISTS material_type VARCHAR(20) NOT NULL DEFAULT 'text'",
+                "ALTER TABLE materials ADD COLUMN IF NOT EXISTS file_name VARCHAR(300)",
+                "ALTER TABLE materials ADD COLUMN IF NOT EXISTS file_path VARCHAR(500)",
+                "ALTER TABLE materials ADD COLUMN IF NOT EXISTS file_size INTEGER",
+                "ALTER TABLE materials ADD COLUMN IF NOT EXISTS file_mime VARCHAR(100)",
+            ]:
+                conn.execute(text(ddl))
             conn.commit()
