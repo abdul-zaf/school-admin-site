@@ -29,3 +29,9 @@ Thumbs.db
 coverage.xml
 htmlcov/
 .pytest_cache/
+
+# Email password reset
+SMTP_HOST     = smtp.gmail.com
+SMTP_PORT     = 587
+SMTP_USER     = abdullahzafar948@gmail.com
+SMTP_PASSWORD = Gmailerawman   ← Gmail App Password (not your normal password)

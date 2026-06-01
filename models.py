@@ -157,10 +157,11 @@ class Quiz(Base):
     course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
     title = Column(String(200), nullable=False)
     description = Column(Text)
-    time_limit = Column(Integer)        # minutes; None = unlimited
-    due_date = Column(DateTime)
-    shuffle = Column(Boolean, default=False)
+    time_limit   = Column(Integer)              # minutes; None = unlimited
+    due_date     = Column(DateTime)
+    shuffle      = Column(Boolean, default=False)
     is_published = Column(Boolean, default=False, nullable=False)
+    max_attempts = Column(Integer, nullable=True)  # None = unlimited retakes
     created_at = Column(DateTime, default=datetime.utcnow)
 
     course = relationship("Course", back_populates="quizzes")

@@ -18,6 +18,7 @@ class QuizCreate(BaseModel):
     time_limit: Optional[int] = None
     due_date: Optional[datetime] = None
     shuffle: bool = False
+    max_attempts: Optional[int] = None   # None = unlimited
 
 
 class QuizUpdate(BaseModel):
@@ -26,6 +27,7 @@ class QuizUpdate(BaseModel):
     time_limit: Optional[int] = None
     due_date: Optional[datetime] = None
     shuffle: Optional[bool] = None
+    max_attempts: Optional[int] = None   # 0 = clear limit (unlimited)
 
 
 class PublishToggle(BaseModel):
@@ -66,6 +68,7 @@ def serialise_quiz(q: models.Quiz, hide_correct: bool = True, my_attempt=None):
         "due_date": str(q.due_date) if q.due_date else None,
         "shuffle": q.shuffle,
         "is_published": q.is_published,
+        "max_attempts": q.max_attempts,
         "created_at": str(q.created_at),
         "question_count": len(q.questions),
         "total_points": sum(qq.points for qq in q.questions),
@@ -124,10 +127,13 @@ def list_quizzes(
             "description": q.description,
             "time_limit": q.time_limit,
             "due_date": str(q.due_date) if q.due_date else None,
-            "is_published": q.is_published,
+            "is_published":  q.is_published,
+            "max_attempts":  q.max_attempts,
             "question_count": len(q.questions),
-            "total_points": sum(qq.points for qq in q.questions),
+            "total_points":  sum(qq.points for qq in q.questions),
             "attempt_count": len(q.attempts) if current_user.role in ("admin", "teacher") else None,
+            "attempts_used": sum(1 for a in q.attempts if a.student_id == current_user.id)
+                             if current_user.role == "student" else None,
             "my_attempt": my_attempt,
         })
     return result
@@ -148,6 +154,7 @@ def create_quiz(
         time_limit=data.time_limit,
         due_date=data.due_date,
         shuffle=data.shuffle,
+        max_attempts=data.max_attempts,
         is_published=False,  # always starts as draft
     )
     db.add(q)
@@ -220,6 +227,8 @@ def update_quiz(
         q.due_date = data.due_date
     if data.shuffle is not None:
         q.shuffle = data.shuffle
+    if data.max_attempts is not None:
+        q.max_attempts = None if data.max_attempts == 0 else data.max_attempts
 
     db.commit()
     db.refresh(q)
@@ -336,6 +345,18 @@ def start_quiz(
         raise HTTPException(400, "Already submitted")
     if existing:
         return {"attempt_id": existing.id, "started_at": str(existing.started_at)}
+
+    # Enforce retake limit
+    if q.max_attempts is not None:
+        used = db.query(models.QuizAttempt).filter(
+            models.QuizAttempt.quiz_id    == quiz_id,
+            models.QuizAttempt.student_id == current_user.id,
+        ).count()
+        if used >= q.max_attempts:
+            raise HTTPException(
+                403,
+                f"You have used all {q.max_attempts} allowed attempt(s) for this quiz.",
+            )
 
     attempt = models.QuizAttempt(quiz_id=quiz_id, student_id=current_user.id)
     db.add(attempt)

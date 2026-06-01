@@ -99,6 +99,25 @@ const i18n = {
     endorse:'Endorse', no_boards:'No discussion boards yet.', post:'Post',
     surveys:'Surveys', new_survey:'+ New Survey', take_survey:'Take Survey',
     view_results:'View Results', submit_survey:'Submit Survey',
+    // Dark mode
+    theme:'Theme', theme_desc:'Switch between light and dark mode',
+    light_mode:'☀️ Light', dark_mode:'🌙 Dark',
+    // Leaderboard
+    leaderboard:'Leaderboard', nav_leaderboard:'Leaderboard',
+    your_rank:'Your Rank', rank:'Rank', top_students:'Top Students',
+    no_leaderboard_data:'No grades recorded yet.',
+    course_leaderboard:'Course Leaderboard', school_leaderboard:'School Leaderboard',
+    // Certificates
+    download_certificate:'⬇ Download Certificate',
+    cert_not_eligible:'Certificate not available yet',
+    cert_requirements:'Submit all assignments & complete all quizzes (avg ≥ 50%) to earn your certificate.',
+    cert_ready:'🎓 Your certificate is ready to download!',
+    // Retake limits
+    max_attempts:'Max Attempts', unlimited:'Unlimited',
+    attempts_remaining:'attempts left', no_attempts_left:'No attempts remaining',
+    // Google SSO
+    sign_in_google:'Sign in with Google',
+    sso_error:'Google sign-in failed. Please try again or use email/password.',
     // Quiz publish / edit
     quiz_published:'Published', quiz_draft:'Draft',
     publish_quiz:'Publish to Students', unpublish_quiz:'Unpublish',
@@ -205,6 +224,25 @@ const i18n = {
     portfolio:'پورٹ فولیو', my_portfolio:'میرا پورٹ فولیو',
     modules:'ماڈیولز', discussions:'بحث', surveys:'سروے',
     question_banks:'سوال بینک',
+    // Dark mode (Urdu)
+    theme:'تھیم', theme_desc:'لائٹ یا ڈارک موڈ منتخب کریں',
+    light_mode:'☀️ روشن', dark_mode:'🌙 تاریک',
+    // Leaderboard (Urdu)
+    leaderboard:'لیڈر بورڈ', nav_leaderboard:'لیڈر بورڈ',
+    your_rank:'آپ کی پوزیشن', rank:'پوزیشن', top_students:'اعلیٰ طلبا',
+    no_leaderboard_data:'ابھی کوئی گریڈ نہیں۔',
+    course_leaderboard:'کورس لیڈر بورڈ', school_leaderboard:'اسکول لیڈر بورڈ',
+    // Certificates (Urdu)
+    download_certificate:'⬇ سرٹیفکیٹ ڈاؤن لوڈ کریں',
+    cert_not_eligible:'سرٹیفکیٹ ابھی دستیاب نہیں',
+    cert_requirements:'تمام اسائنمنٹس اور کوئز مکمل کریں (اوسط ≥ ۵۰٪)۔',
+    cert_ready:'🎓 آپ کا سرٹیفکیٹ ڈاؤن لوڈ کے لیے تیار ہے!',
+    // Retake (Urdu)
+    max_attempts:'زیادہ سے زیادہ کوششیں', unlimited:'لامحدود',
+    attempts_remaining:'کوششیں باقی', no_attempts_left:'کوئی کوشش باقی نہیں',
+    // Google SSO (Urdu)
+    sign_in_google:'گوگل سے سائن ان کریں',
+    sso_error:'گوگل سائن ان ناکام ہوا۔ دوبارہ کوشش کریں۔',
     // Quiz publish / edit (Urdu)
     quiz_published:'شائع شدہ', quiz_draft:'مسودہ',
     publish_quiz:'طلبا کو دکھائیں', unpublish_quiz:'چھپائیں',
@@ -240,7 +278,7 @@ function t(key) {
 // State
 // ═══════════════════════════════════════════════════════════
 const state = {
-  token: null, user: null, lang: 'en',
+  token: null, user: null, lang: 'en', theme: 'light',
   currentPage: null, currentParams: {},
   quizTimer: null, notifInterval: null,
 };
@@ -291,8 +329,11 @@ function restoreSession() {
   const token = localStorage.getItem('lms_token');
   const user  = localStorage.getItem('lms_user');
   const lang  = localStorage.getItem('lms_lang') || 'en';
+  const theme = localStorage.getItem('lms_theme') || 'light';
+  applyTheme(theme); // always apply saved theme, even before login
   if (token && user) {
-    state.token = token; state.user = JSON.parse(user); state.lang = lang;
+    state.token = token; state.user = JSON.parse(user);
+    state.lang = lang;
     applyLang(lang);
     return true;
   }
@@ -313,6 +354,21 @@ function setLanguage(lang) {
   applyLang(lang);
   updateSidebarNav();
   navigate(state.currentPage || 'dashboard', state.currentParams);
+}
+
+// ── Theme (dark / light mode) ────────────────────────────────────────────────
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  state.theme = theme;
+}
+
+function setTheme(theme) {
+  applyTheme(theme);
+  localStorage.setItem('lms_theme', theme);
+  // Re-render settings so the active button updates
+  if (state.currentPage === 'settings') {
+    navigate('settings', state.currentParams);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -344,9 +400,9 @@ function loading(el) {
 // Navigation
 // ═══════════════════════════════════════════════════════════
 const NAV_KEYS = {
-  admin:   ['dashboard','courses','users','announcements','gradebook','analytics','calendar','badges','graph','settings'],
-  teacher: ['dashboard','courses','announcements','gradebook','analytics','calendar','messages','question_banks','graph','settings'],
-  student: ['dashboard','courses','announcements','gradebook','calendar','messages','portfolio','badges','sr','graph','settings'],
+  admin:   ['dashboard','courses','users','announcements','gradebook','analytics','leaderboard','calendar','badges','graph','settings'],
+  teacher: ['dashboard','courses','announcements','gradebook','analytics','leaderboard','calendar','messages','question_banks','graph','settings'],
+  student: ['dashboard','courses','announcements','gradebook','leaderboard','calendar','messages','portfolio','badges','sr','graph','settings'],
   parent:  ['dashboard','settings'],
 };
 const NAV_I18N = {
@@ -355,13 +411,13 @@ const NAV_I18N = {
   gradebook:'nav_gradebook', analytics:'nav_analytics', calendar:'nav_calendar',
   badges:'nav_badges', messages:'nav_messages', question_banks:'nav_question_banks',
   portfolio:'nav_portfolio', sr:'nav_sr', graph:'nav_graph',
+  leaderboard:'nav_leaderboard',
 };
-// Emoji icons for each nav page
 const NAV_ICONS = {
   dashboard:'🏠', courses:'📚', users:'👥', announcements:'📢',
   gradebook:'📊', analytics:'📈', calendar:'📅', badges:'🏅',
   messages:'✉️', question_banks:'🗃️', portfolio:'🗂️',
-  sr:'🃏', graph:'🕸️', settings:'⚙️',
+  sr:'🃏', graph:'🕸️', settings:'⚙️', leaderboard:'🏆',
 };
 
 // ── Subject → accent colour (used on course cards) ─────────────────────────
@@ -465,9 +521,10 @@ function navigate(page, params = {}) {
   else if (page === 'quiz-take')     renderQuizTake(params.id, el);
   else if (page === 'discussion-board') renderDiscussionBoard(params.id, el);
   // ── Learning Intelligence & Social ───────────────────────────────────────
-  else if (page === 'sr')    { if (typeof renderSRReview    !== 'undefined') renderSRReview(el); }
-  else if (page === 'graph') { if (typeof renderKnowledgeGraph !== 'undefined') renderKnowledgeGraph(el); }
-  else if (pages[page])      pages[page](el);
+  else if (page === 'sr')          { if (typeof renderSRReview       !== 'undefined') renderSRReview(el); }
+  else if (page === 'graph')       { if (typeof renderKnowledgeGraph  !== 'undefined') renderKnowledgeGraph(el); }
+  else if (page === 'leaderboard') renderLeaderboard(el);
+  else if (pages[page])            pages[page](el);
 }
 
 /** Escape a string for safe insertion into HTML attribute values or text nodes. */
@@ -527,6 +584,17 @@ function renderSettings(el) {
           <button class="lang-btn${state.lang==='ur'?' active':''}" onclick="setLanguage('ur')">
             🇵🇰&nbsp; اردو
           </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card settings-section">
+      <div class="card-header"><h3>🌓 ${t('theme')}</h3></div>
+      <div class="card-body">
+        <p class="text-muted">${t('theme_desc')}</p>
+        <div class="lang-buttons">
+          <button class="lang-btn${state.theme==='light'?' active':''}" onclick="setTheme('light')">${t('light_mode')}</button>
+          <button class="lang-btn${state.theme==='dark'?' active':''}" onclick="setTheme('dark')">${t('dark_mode')}</button>
         </div>
       </div>
     </div>
@@ -760,7 +828,12 @@ async function renderCourseDetail(courseId, el) {
             ${course.grade_level? `<span class="badge badge-info">${course.grade_level}</span>` : ''}
           </div>
         </div>
-        <small class="text-muted">${t('teacher')}: ${course.teacher_name||'?'}</small>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+          <small class="text-muted">${t('teacher')}: ${course.teacher_name||'?'}</small>
+          ${role === 'student' ? `<button class="btn btn-sm btn-success" onclick="downloadCertificate(${courseId})">
+            ${t('download_certificate')}
+          </button>` : ''}
+        </div>
       </div>
       ${course.description ? `<div class="card"><div class="card-body"><p>${course.description}</p></div></div>` : ''}
 
@@ -949,11 +1022,19 @@ function quizCard(q, canManage, courseId) {
           ${q.time_limit ? `<small>⏱ ${q.time_limit} ${t('minutes')}</small>` : ''}
           ${q.due_date ? `<small>📅 ${t('due_date')}: ${fmtDate(q.due_date)}</small>` : ''}
           ${canManage && q.attempt_count!=null ? `<small>👥 ${q.attempt_count} ${t('attempt_count')}</small>` : ''}
+          ${canManage && q.max_attempts ? `<small>🔁 ${t('max_attempts')}: ${q.max_attempts}</small>` : ''}
+          ${!canManage && q.max_attempts ? (() => {
+            const left = q.max_attempts - (q.attempts_used || 0);
+            return left > 0
+              ? `<small style="color:var(--warning)">🔁 ${left} ${t('attempts_remaining')}</small>`
+              : `<small style="color:var(--danger)">🚫 ${t('no_attempts_left')}</small>`;
+          })() : ''}
         </div>
       </div>
       <div class="quiz-card-actions">
         ${!canManage ? `<span class="badge ${attemptBadgeCls}">${scoreLabel}</span>` : ''}
         ${!canManage && !attempted && !inProgress && q.question_count > 0
+          && !(q.max_attempts && (q.attempts_used || 0) >= q.max_attempts)
           ? `<button class="btn btn-sm btn-primary" onclick="startQuiz(${q.id})">▶ ${t('start_quiz')}</button>` : ''}
         ${!canManage && inProgress
           ? `<button class="btn btn-sm btn-warning" onclick="navigate('quiz-take',{id:${q.id}})">▶ ${t('resume_quiz')}</button>` : ''}
@@ -1383,6 +1464,8 @@ async function openEditQuizModal(quizId) {
         <div class="form-group"><label>${t('due_date')}</label>
           <input name="due_date" type="datetime-local" class="form-control" value="${dueFmt}"></div>
       </div>
+      <div class="form-group"><label>${t('max_attempts')} <small class="text-muted">(0 = ${t('unlimited')})</small></label>
+        <input name="max_attempts" type="number" class="form-control" value="${quiz.max_attempts||0}" min="0"></div>
       <div class="form-actions">
         <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
         <button type="submit" class="btn btn-primary">${t('save')}</button>
@@ -1391,11 +1474,13 @@ async function openEditQuizModal(quizId) {
     async (fd) => {
       try {
         const tl = parseInt(fd.get('time_limit')) || 0;
+        const ma = parseInt(fd.get('max_attempts')) || 0;
         await api('PUT', `/quizzes/${quizId}`, {
           title: fd.get('title'),
           description: fd.get('description') || null,
           time_limit: tl > 0 ? tl : null,
           due_date: fd.get('due_date') || null,
+          max_attempts: ma,   // 0 = clear limit (backend treats as unlimited)
         });
         closeModal();
         toast(t('quiz_edit_saved'));
@@ -2958,6 +3043,160 @@ function openNewSurveyModal(courseId) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// Leaderboard
+// ═══════════════════════════════════════════════════════════
+async function renderLeaderboard(el) {
+  loading(el);
+  const role = state.user.role;
+  try {
+    const courses = await api('GET', '/courses/');
+    const relevant = role === 'student'
+      ? courses.filter(c => c.enrolled)
+      : role === 'teacher'
+        ? courses.filter(c => c.teacher_id === state.user.id)
+        : courses;
+
+    const firstId = state.currentParams.course_id || (relevant[0] && relevant[0].id);
+    if (!firstId) {
+      el.innerHTML = `<div class="page-header"><h2>🏆 ${t('leaderboard')}</h2></div>
+        <div class="card"><div class="card-body"><p class="text-muted">${t('no_leaderboard_data')}</p></div></div>`;
+      return;
+    }
+
+    const data = await api('GET', `/leaderboard/course/${firstId}`);
+    const schoolData = (role === 'admin' || role === 'teacher')
+      ? await api('GET', '/leaderboard/school').catch(() => null)
+      : null;
+
+    const entries = data.entries || [];
+    const top3    = entries.slice(0, 3);
+    const rest    = entries.slice(3);
+    const medals  = ['🥇','🥈','🥉'];
+
+    el.innerHTML = `
+      <div class="page-header">
+        <h2>🏆 ${t('leaderboard')}</h2>
+        <select class="form-control" style="max-width:260px"
+          onchange="navigate('leaderboard',{course_id:parseInt(this.value)})">
+          ${relevant.map(c=>`<option value="${c.id}" ${c.id==firstId?'selected':''}>${c.title}</option>`).join('')}
+        </select>
+      </div>
+
+      <!-- Podium -->
+      ${top3.length ? `
+      <div class="podium">
+        ${[top3[1], top3[0], top3[2]].filter(Boolean).map((e,i) => {
+          const podiumRank = e === top3[0] ? 1 : e === top3[1] ? 2 : 3;
+          return `
+          <div class="podium-slot podium-${podiumRank} ${e.is_me ? 'podium-me' : ''}">
+            <div class="podium-medal">${medals[podiumRank-1]}</div>
+            <div class="podium-name">${e.name}</div>
+            <div class="podium-score">${e.avg_pct}%</div>
+            <div class="podium-block p${podiumRank}"></div>
+          </div>`;
+        }).join('')}
+      </div>` : ''}
+
+      <!-- Full table -->
+      <div class="card">
+        <div class="card-header ch-gold"><h3>📊 ${data.course_title}</h3></div>
+        <div class="card-body" style="padding:0">
+          <table class="table">
+            <thead><tr>
+              <th style="width:60px">${t('rank')}</th>
+              <th>${t('full_name')}</th>
+              <th style="width:100px;text-align:right">${t('avg_score')}</th>
+            </tr></thead>
+            <tbody>
+              ${entries.map(e => `
+                <tr class="${e.is_me ? 'lb-my-row' : ''}">
+                  <td><strong>${medals[e.rank-1] || '#'+e.rank}</strong></td>
+                  <td>${e.name}${e.is_me ? ` <span class="badge badge-info">${t('you')}</span>` : ''}</td>
+                  <td style="text-align:right;font-weight:700">${e.avg_pct}%</td>
+                </tr>`).join('')}
+              ${entries.length === 0 ? `<tr><td colspan="3" class="text-muted" style="text-align:center;padding:20px">${t('no_leaderboard_data')}</td></tr>` : ''}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      ${schoolData ? `
+      <div class="card" style="margin-top:20px">
+        <div class="card-header ch-purple"><h3>🏫 ${t('school_leaderboard')}</h3></div>
+        <div class="card-body" style="padding:0">
+          <table class="table">
+            <thead><tr><th>${t('rank')}</th><th>${t('full_name')}</th><th style="text-align:right">${t('avg_score')}</th></tr></thead>
+            <tbody>
+              ${(schoolData.entries||[]).map(e=>`
+                <tr><td>${medals[e.rank-1]||'#'+e.rank}</td><td>${e.name}</td><td style="text-align:right;font-weight:700">${e.avg_pct}%</td></tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>` : ''}`;
+  } catch(err) { el.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Certificates
+// ═══════════════════════════════════════════════════════════
+async function downloadCertificate(courseId) {
+  try {
+    const check = await api('GET', `/certificates/course/${courseId}/check`);
+    if (!check.eligible) {
+      toast(check.reason, 'error'); return;
+    }
+    // Trigger file download via a hidden link
+    const a = document.createElement('a');
+    a.href = `/api/certificates/course/${courseId}`;
+    a.setAttribute('Authorization', `Bearer ${state.token}`);
+    // Use fetch to attach auth header then create blob URL
+    const res = await fetch(`/api/certificates/course/${courseId}`, {
+      headers: { Authorization: `Bearer ${state.token}` },
+    });
+    if (!res.ok) { const e = await res.json(); toast(e.detail || 'Error', 'error'); return; }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href     = url;
+    link.download  = `certificate.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast('🎓 Certificate downloaded!');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Google SSO — detect ?sso_token= on page load
+// ═══════════════════════════════════════════════════════════
+function checkSSOToken() {
+  const params  = new URLSearchParams(window.location.search);
+  const token   = params.get('sso_token');
+  const ssoErr  = params.get('sso_error');
+
+  if (ssoErr) {
+    window.history.replaceState({}, '', '/');
+    document.getElementById('login-page').classList.remove('hidden');
+    const errEl = document.getElementById('login-error');
+    errEl.textContent = t('sso_error');
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  if (!token) return;
+
+  const userId = params.get('user_id');
+  const name   = params.get('name');
+  const role   = params.get('role');
+  window.history.replaceState({}, '', '/');
+
+  state.token = token;
+  state.user  = { id: parseInt(userId), name, role };
+  localStorage.setItem('lms_token', token);
+  localStorage.setItem('lms_user',  JSON.stringify(state.user));
+  showApp();
+}
+
+// ═══════════════════════════════════════════════════════════
 // Password Reset
 // ═══════════════════════════════════════════════════════════
 
@@ -3078,11 +3317,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target === document.getElementById('modal-overlay')) closeModal();
   });
 
-  if (restoreSession()) {
+  // Google SSO — must run before restoreSession so the ?sso_token= param is consumed first
+  if (new URLSearchParams(window.location.search).get('sso_token')) {
+    checkSSOToken();
+  } else if (restoreSession()) {
     showApp();
   } else {
     document.getElementById('login-page').classList.remove('hidden');
-    // Check for ?reset=TOKEN in the URL — show password-reset form if present
     checkResetToken();
   }
 });

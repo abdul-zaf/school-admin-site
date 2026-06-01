@@ -35,18 +35,22 @@ def apply_migrations():
     with engine.connect() as conn:
         # v2: quiz publish flag
         if _is_sqlite:
-            # SQLite doesn't support IF NOT EXISTS on ALTER TABLE
-            try:
-                conn.execute(text(
-                    "ALTER TABLE quizzes ADD COLUMN is_published BOOLEAN NOT NULL DEFAULT 0"
-                ))
-                conn.commit()
-            except Exception:
-                pass  # column already exists — safe to ignore
+            for ddl in [
+                "ALTER TABLE quizzes ADD COLUMN is_published BOOLEAN NOT NULL DEFAULT 0",
+                "ALTER TABLE quizzes ADD COLUMN max_attempts INTEGER",
+            ]:
+                try:
+                    conn.execute(text(ddl))
+                    conn.commit()
+                except Exception:
+                    pass  # column already exists — safe to ignore
         else:
-            # PostgreSQL supports IF NOT EXISTS — no exception handling needed
             conn.execute(text(
                 "ALTER TABLE quizzes "
                 "ADD COLUMN IF NOT EXISTS is_published BOOLEAN NOT NULL DEFAULT FALSE"
+            ))
+            conn.execute(text(
+                "ALTER TABLE quizzes "
+                "ADD COLUMN IF NOT EXISTS max_attempts INTEGER"
             ))
             conn.commit()

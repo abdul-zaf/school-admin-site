@@ -1204,8 +1204,121 @@ select.form-control { cursor: pointer; }
 [dir="rtl"] .outstanding-item { border-left: none; border-right: 4px solid var(--gold); }
 
 /* ══════════════════════════════════════════════════════════
+   DARK MODE
+   ══════════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  --bg:           #0d0c1e;
+  --card:         #16152e;
+  --border:       #2a2750;
+  --text:         #e2e0ff;
+  --muted:        #8b87c0;
+  --indigo-light: #1e1b4b;
+  --shadow:       0 1px 3px rgba(0,0,0,.4);
+  --shadow-md:    0 4px 16px rgba(0,0,0,.5);
+  --shadow-lg:    0 10px 32px rgba(0,0,0,.6);
+}
+[data-theme="dark"] body         { background: var(--bg); color: var(--text); }
+[data-theme="dark"] .card        { background: var(--card); border-color: var(--border); }
+[data-theme="dark"] .card-header { background: var(--card); border-bottom-color: var(--border); }
+[data-theme="dark"] .form-control,
+[data-theme="dark"] select.form-control { background: #0d0c1e; color: var(--text); border-color: var(--border); }
+[data-theme="dark"] .table th,
+[data-theme="dark"] .table td   { border-color: var(--border); color: var(--text); }
+[data-theme="dark"] .table tbody tr:hover { background: rgba(255,255,255,.04); }
+[data-theme="dark"] .modal       { background: var(--card); border-color: var(--border); }
+[data-theme="dark"] .modal-header { border-bottom-color: var(--border); }
+[data-theme="dark"] .modal-footer { background: var(--card); border-top-color: var(--border); }
+[data-theme="dark"] .tabs        { background: var(--card); border-color: var(--border); }
+[data-theme="dark"] .tab         { color: var(--muted); }
+[data-theme="dark"] .tab.active  { background: var(--indigo); color: #fff; }
+[data-theme="dark"] .list-item,
+[data-theme="dark"] .submission-item,
+[data-theme="dark"] .quiz-card,
+[data-theme="dark"] .session-card,
+[data-theme="dark"] .announcement-item { background: var(--card); border-color: var(--border); }
+[data-theme="dark"] .btn         { border-color: var(--border); color: var(--text); }
+[data-theme="dark"] .badge-secondary { background: #2a2750; color: var(--muted); }
+[data-theme="dark"] .outstanding-item { background: #1a1520; }
+[data-theme="dark"] .urgent-quiz-item { background: #1a1118; }
+[data-theme="dark"] .grade-result     { background: #0f2318; border-color: #134d27; }
+[data-theme="dark"] .text-muted       { color: var(--muted) !important; }
+[data-theme="dark"] code              { background: #1e1b4b; color: #a5b4fc; }
+[data-theme="dark"] .pq-modal .pq-result-section { background: var(--card); }
+
+/* ══════════════════════════════════════════════════════════
+   LEADERBOARD
+   ══════════════════════════════════════════════════════════ */
+.podium {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px 0 0;
+  margin-bottom: 20px;
+}
+.podium-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  max-width: 160px;
+}
+.podium-slot.podium-me .podium-name { color: var(--indigo); font-weight: 800; }
+.podium-medal  { font-size: 32px; }
+.podium-name   { font-size: 13px; font-weight: 600; text-align: center; color: var(--text); }
+.podium-score  { font-size: 15px; font-weight: 700; color: var(--indigo); }
+.podium-block  {
+  width: 100%; border-radius: 8px 8px 0 0;
+  background: var(--indigo);
+}
+.podium-block.p1 { height: 90px; background: linear-gradient(135deg,#f59e0b,#d97706); }
+.podium-block.p2 { height: 65px; background: linear-gradient(135deg,#9ca3af,#6b7280); }
+.podium-block.p3 { height: 48px; background: linear-gradient(135deg,#b45309,#92400e); }
+
+/* Highlight the current user's row in the leaderboard table */
+.lb-my-row { background: var(--indigo-light) !important; }
+[data-theme="dark"] .lb-my-row { background: #1e1b4b !important; }
+
+/* ══════════════════════════════════════════════════════════
    FORGOT / RESET PASSWORD — login card sub-sections
    ══════════════════════════════════════════════════════════ */
+
+/* Google sign-in button */
+.btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: #374151;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  padding: 11px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  transition: box-shadow .15s, background .15s;
+  cursor: pointer;
+  margin-top: 6px;
+}
+.btn-google:hover { box-shadow: 0 2px 8px rgba(0,0,0,.12); background: #f9fafb; text-decoration: none; }
+[data-theme="dark"] .btn-google { background: #1e1b3a; border-color: var(--border); color: var(--text); }
+
+/* Divider between password form and Google button */
+.sso-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.sso-divider::before, .sso-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
 
 /* "Forgot password?" link under the sign-in form */
 .forgot-link-wrap {

@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+import os
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
@@ -6,6 +7,7 @@ from datetime import datetime
 from database import get_db
 import models
 import security
+from services.email import send_grade_notification
 
 router = APIRouter()
 
@@ -185,19 +187,18 @@ def submit_assignment(
 def grade_submission(
     submission_id: int,
     data: GradeSubmission,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(security.require_role("admin", "teacher")),
 ):
     s = db.query(models.Submission).filter(models.Submission.id == submission_id).first()
     if not s:
         raise HTTPException(404, "Submission not found")
-    # Only the assignment's course teacher (or admin) may grade
     security.require_course_access(s.assignment.course_id, current_user, db)
     old_score = s.score
     s.score = data.score
     s.feedback = data.feedback
     s.graded_at = datetime.utcnow()
-    # Record grade change in audit trail
     gc = models.GradeChange(
         submission_id=submission_id,
         changed_by=current_user.id,
@@ -207,6 +208,19 @@ def grade_submission(
     )
     db.add(gc)
     db.commit()
+    # Email the student (non-blocking)
+    app_url = os.getenv("RENDER_EXTERNAL_URL") or os.getenv("APP_URL") or ""
+    background_tasks.add_task(
+        send_grade_notification,
+        s.student.email,
+        s.student.name,
+        s.assignment.title,
+        s.assignment.course.title,
+        data.score,
+        s.assignment.max_score,
+        data.feedback,
+        app_url,
+    )
     return {"ok": True}
 
 
