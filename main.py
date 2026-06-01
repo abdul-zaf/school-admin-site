@@ -16,6 +16,8 @@ from routers import (
     # ── New: Learning Intelligence & Social ──────────────────────────────────
     spaced_repetition, teach_back, confusion, help_board, knowledge_graph,
     study_groups,
+    # ── Auth extras ──────────────────────────────────────────────────────────
+    password_reset,
 )
 
 Base.metadata.create_all(bind=engine)
@@ -64,6 +66,7 @@ app.add_middleware(_SecurityHeadersMiddleware)
 
 # ── Routers ────────────────────────────────────────────────────────────────────
 app.include_router(auth.router,           prefix="/api/auth",           tags=["auth"])
+app.include_router(password_reset.router, prefix="/api/auth",           tags=["auth"])
 app.include_router(users.router,          prefix="/api/users",          tags=["users"])
 app.include_router(courses.router,        prefix="/api/courses",        tags=["courses"])
 app.include_router(assignments.router,    prefix="/api/assignments",    tags=["assignments"])

@@ -224,6 +224,20 @@ class QuizAnswer(Base):
     selected_option = relationship("QuizOption")
 
 
+# ── Password Reset ───────────────────────────────────────────────────────────
+
+class PasswordResetToken(Base):
+    __tablename__ = "password_reset_tokens"
+    id         = Column(Integer, primary_key=True)
+    user_id    = Column(Integer, ForeignKey("users.id"), nullable=False)
+    token      = Column(String(100), unique=True, nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=False)
+    used       = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
+
+
 # ── NEW MODELS ────────────────────────────────────────────────────────────────
 
 class GradeCategory(Base):

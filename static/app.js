@@ -2958,6 +2958,107 @@ function openNewSurveyModal(courseId) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// Password Reset
+// ═══════════════════════════════════════════════════════════
+
+// All login-card sub-sections. Only one is visible at a time.
+const _LOGIN_SECTIONS = [
+  'login-form-wrap', 'forgot-wrap', 'forgot-success',
+  'reset-form-wrap', 'reset-success', 'reset-invalid',
+];
+
+function showLoginSection(id) {
+  _LOGIN_SECTIONS.forEach(s => {
+    const el = document.getElementById(s);
+    if (el) el.classList.toggle('hidden', s !== id);
+  });
+}
+
+// Kept for backwards compat with the HTML onclick
+function showForgotPassword() { showLoginSection('forgot-wrap'); }
+
+async function submitForgotPassword() {
+  const email  = document.getElementById('forgot-email').value.trim();
+  const errEl  = document.getElementById('forgot-error');
+  const btn    = document.getElementById('forgot-btn');
+  errEl.classList.add('hidden');
+  if (!email) { errEl.textContent = 'Please enter your email address.'; errEl.classList.remove('hidden'); return; }
+  btn.disabled = true;
+  btn.textContent = '…';
+  try {
+    await fetch('/api/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    // Always show success — never reveal whether the email exists
+    showLoginSection('forgot-success');
+  } catch(_) {
+    showLoginSection('forgot-success');   // still show success
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send Reset Link';
+  }
+}
+
+async function submitResetPassword() {
+  const token  = document.getElementById('reset-token-val').value;
+  const pw     = document.getElementById('reset-pw').value;
+  const pw2    = document.getElementById('reset-pw2').value;
+  const errEl  = document.getElementById('reset-error');
+  errEl.classList.add('hidden');
+
+  if (pw !== pw2) {
+    errEl.textContent = 'Passwords do not match.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  try {
+    const res = await fetch('/api/auth/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, new_password: pw }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      errEl.textContent = err.detail || 'Something went wrong. Please try again.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    window.history.replaceState({}, '', '/');   // remove ?reset=... from URL
+    showLoginSection('reset-success');
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove('hidden');
+  }
+}
+
+async function checkResetToken() {
+  const params = new URLSearchParams(window.location.search);
+  const token  = params.get('reset');
+  if (!token) return;
+
+  // Hide everything while we verify
+  _LOGIN_SECTIONS.forEach(s => {
+    const el = document.getElementById(s);
+    if (el) el.classList.add('hidden');
+  });
+
+  try {
+    const res  = await fetch(`/api/auth/verify-reset-token/${encodeURIComponent(token)}`);
+    const data = await res.json();
+    if (data.valid) {
+      document.getElementById('reset-token-val').value = token;
+      showLoginSection('reset-form-wrap');
+    } else {
+      showLoginSection('reset-invalid');
+    }
+  } catch(_) {
+    showLoginSection('reset-invalid');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
 // Init
 // ═══════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
@@ -2981,5 +3082,7 @@ document.addEventListener('DOMContentLoaded', () => {
     showApp();
   } else {
     document.getElementById('login-page').classList.remove('hidden');
+    // Check for ?reset=TOKEN in the URL — show password-reset form if present
+    checkResetToken();
   }
 });

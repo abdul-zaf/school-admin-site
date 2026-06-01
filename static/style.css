@@ -1204,6 +1204,64 @@ select.form-control { cursor: pointer; }
 [dir="rtl"] .outstanding-item { border-left: none; border-right: 4px solid var(--gold); }
 
 /* ══════════════════════════════════════════════════════════
+   FORGOT / RESET PASSWORD — login card sub-sections
+   ══════════════════════════════════════════════════════════ */
+
+/* "Forgot password?" link under the sign-in form */
+.forgot-link-wrap {
+  text-align: center;
+  margin: 10px 0 0;
+}
+
+/* Looks like a link, rendered as a button (accessible) */
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--indigo);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  font-family: inherit;
+}
+.btn-link:hover { color: var(--indigo-dark); }
+
+/* Section heading inside the reset flow */
+.reset-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 8px;
+  text-align: center;
+}
+
+/* Descriptive paragraph under the heading */
+.reset-section-desc {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+/* Large emoji icon used on success / error screens */
+.reset-state-icon {
+  font-size: 52px;
+  text-align: center;
+  margin-bottom: 12px;
+  animation: trophy-bounce .5s ease-out;
+}
+
+/* Smooth slide-in for sub-sections */
+.login-sub-section {
+  animation: fadeSlideIn .25s ease-out;
+}
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+/* ══════════════════════════════════════════════════════════
    POST-QUIZ RESULTS MODAL
    ══════════════════════════════════════════════════════════ */
 .pq-modal { display: flex; flex-direction: column; gap: 0; }

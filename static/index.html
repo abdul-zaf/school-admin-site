@@ -34,26 +34,119 @@
         <p>School Learning Management System</p>
       </div>
 
-      <form id="login-form" class="login-form">
+      <!-- ── Sign-in form ──────────────────────────────────────── -->
+      <div id="login-form-wrap">
+        <form id="login-form" class="login-form">
+          <div class="form-group">
+            <label>📧 Email Address</label>
+            <input type="email" id="login-email" class="form-control"
+              placeholder="you@school.edu" required autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label>🔒 Password</label>
+            <input type="password" id="login-password" class="form-control"
+              placeholder="••••••••" required autocomplete="current-password">
+          </div>
+          <div id="login-error" class="alert alert-error hidden"></div>
+          <button type="submit" class="btn btn-primary btn-full btn-login">
+            Sign In &rarr;
+          </button>
+        </form>
+        <p class="login-hint">
+          Default admin: <code>admin@school.edu</code> / <code>Admin123</code>
+        </p>
+        <p class="forgot-link-wrap">
+          <button class="btn-link" onclick="showLoginSection('forgot-wrap')">
+            🔑 Forgot password?
+          </button>
+        </p>
+      </div>
+
+      <!-- ── Forgot-password form ──────────────────────────────── -->
+      <div id="forgot-wrap" class="hidden login-sub-section">
+        <h3 class="reset-section-title">Reset your password</h3>
+        <p class="reset-section-desc">
+          Enter your school email address and we'll send you a reset link.
+        </p>
         <div class="form-group">
           <label>📧 Email Address</label>
-          <input type="email" id="login-email" class="form-control"
-            placeholder="you@school.edu" required autocomplete="email">
+          <input type="email" id="forgot-email" class="form-control"
+            placeholder="you@school.edu" autocomplete="email">
+        </div>
+        <div id="forgot-error" class="alert alert-error hidden"></div>
+        <button class="btn btn-primary btn-full" id="forgot-btn"
+          onclick="submitForgotPassword()">
+          Send Reset Link
+        </button>
+        <p class="forgot-link-wrap">
+          <button class="btn-link" onclick="showLoginSection('login-form-wrap')">
+            &larr; Back to login
+          </button>
+        </p>
+      </div>
+
+      <!-- ── Email sent confirmation ──────────────────────────── -->
+      <div id="forgot-success" class="hidden login-sub-section">
+        <div class="reset-state-icon">📬</div>
+        <h3 class="reset-section-title">Check your inbox!</h3>
+        <p class="reset-section-desc">
+          If that email address is registered, a reset link is on its way.<br>
+          Check your spam/junk folder if it doesn't arrive within a minute.
+        </p>
+        <button class="btn btn-primary btn-full"
+          onclick="showLoginSection('login-form-wrap')">
+          Back to login
+        </button>
+      </div>
+
+      <!-- ── New-password form (shown when ?reset=TOKEN in URL) ── -->
+      <div id="reset-form-wrap" class="hidden login-sub-section">
+        <h3 class="reset-section-title">🔒 Set a new password</h3>
+        <input type="hidden" id="reset-token-val">
+        <div class="form-group">
+          <label>New Password</label>
+          <input type="password" id="reset-pw" class="form-control"
+            placeholder="••••••••" autocomplete="new-password">
         </div>
         <div class="form-group">
-          <label>🔒 Password</label>
-          <input type="password" id="login-password" class="form-control"
-            placeholder="••••••••" required autocomplete="current-password">
+          <label>Confirm Password</label>
+          <input type="password" id="reset-pw2" class="form-control"
+            placeholder="••••••••" autocomplete="new-password">
         </div>
-        <div id="login-error" class="alert alert-error hidden"></div>
-        <button type="submit" class="btn btn-primary btn-full btn-login">
-          Sign In &rarr;
+        <p class="text-muted" style="font-size:12px;margin-bottom:12px">
+          Min 8 characters &middot; at least one letter and one number
+        </p>
+        <div id="reset-error" class="alert alert-error hidden"></div>
+        <button class="btn btn-primary btn-full" onclick="submitResetPassword()">
+          Reset Password
         </button>
-      </form>
+      </div>
 
-      <p class="login-hint">
-        Default admin: <code>admin@school.edu</code> / <code>Admin123</code>
-      </p>
+      <!-- ── Reset success ─────────────────────────────────────── -->
+      <div id="reset-success" class="hidden login-sub-section">
+        <div class="reset-state-icon">✅</div>
+        <h3 class="reset-section-title">Password changed!</h3>
+        <p class="reset-section-desc">
+          Your password has been updated. You can now log in with your new password.
+        </p>
+        <button class="btn btn-primary btn-full"
+          onclick="showLoginSection('login-form-wrap')">
+          Go to login
+        </button>
+      </div>
+
+      <!-- ── Reset link invalid / expired ─────────────────────── -->
+      <div id="reset-invalid" class="hidden login-sub-section">
+        <div class="reset-state-icon">⚠️</div>
+        <h3 class="reset-section-title">Link expired</h3>
+        <p class="reset-section-desc">
+          This reset link is invalid or has expired — links are only valid for 1 hour.
+        </p>
+        <button class="btn btn-primary btn-full"
+          onclick="showLoginSection('forgot-wrap')">
+          Request a new link
+        </button>
+      </div>
 
       <div class="login-footer-badges">
         <span class="login-badge">🎓 Students</span>
