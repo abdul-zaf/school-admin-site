@@ -1174,6 +1174,32 @@ class CodeSubmission(Base):
     student    = relationship("User")
 
 
+# ── 20. AI Tutoring ────────────────────────────────────────────────────────────
+
+class TutorSession(Base):
+    __tablename__ = "tutor_sessions"
+    id         = Column(Integer, primary_key=True)
+    student_id = Column(Integer, ForeignKey("users.id"),    nullable=False)
+    course_id  = Column(Integer, ForeignKey("courses.id"),  nullable=True)
+    title      = Column(String(300), nullable=False, default="New Session")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    student  = relationship("User")
+    course   = relationship("Course")
+    messages = relationship("TutorMessage", back_populates="session", cascade="all, delete")
+
+
+class TutorMessage(Base):
+    __tablename__ = "tutor_messages"
+    id         = Column(Integer, primary_key=True)
+    session_id = Column(Integer, ForeignKey("tutor_sessions.id"), nullable=False)
+    role       = Column(String(20), nullable=False)   # "user" | "assistant"
+    content    = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    session = relationship("TutorSession", back_populates="messages")
+
+
 # ── 22. Content Recommendations ───────────────────────────────────────────────
 
 class Recommendation(Base):
