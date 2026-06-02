@@ -98,6 +98,34 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     return user
 
 
+def get_user_from_token(token: str, db) -> "models.User | None":
+    """Validate a raw JWT string and return the user, or None on failure.
+    Used by endpoints that accept ?dl_token= for browser-native file access."""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        if user_id is None:
+            return None
+        return db.query(models.User).filter(models.User.id == int(user_id)).first()
+    except JWTError:
+        return None
+
+
+# Optional variant — returns None instead of raising 401 (used by the file
+# serve endpoint which falls back to ?dl_token= when the header is missing).
+from fastapi.security import OAuth2PasswordBearer as _OAuth2
+_oauth2_optional = _OAuth2(tokenUrl="/api/auth/login", auto_error=False)
+
+def get_current_user_optional(
+    token: str = Depends(_oauth2_optional),
+    db: Session = Depends(get_db),
+):
+    """Like get_current_user but returns None instead of 401 when no header."""
+    if not token:
+        return None
+    return get_user_from_token(token, db)
+
+
 def require_role(*roles):
     def checker(current_user: models.User = Depends(get_current_user)):
         if current_user.role not in roles:

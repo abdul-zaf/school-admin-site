@@ -330,9 +330,21 @@ def serve_material_file(
     course_id: int,
     material_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(security.get_current_user),
+    # dl_token lets the browser open the URL directly (no custom headers needed).
+    # Falls back to the standard Authorization header when dl_token is absent.
+    dl_token: Optional[str] = None,
+    current_user: models.User = Depends(security.get_current_user_optional),
 ):
-    """Serve an uploaded material file, checking course access."""
+    """Serve an uploaded material file with range-request support (streaming)."""
+    # Resolve identity: prefer Authorization header; fall back to ?dl_token=
+    user = current_user
+    if user is None:
+        if not dl_token:
+            raise HTTPException(401, "Authentication required")
+        user = security.get_user_from_token(dl_token, db)
+        if user is None:
+            raise HTTPException(401, "Invalid or expired token")
+
     m = db.query(models.Material).filter(
         models.Material.id == material_id,
         models.Material.course_id == course_id,
@@ -347,15 +359,15 @@ def serve_material_file(
         raise HTTPException(404, "File not found on server")
 
     # Access control
-    if current_user.role == "student":
+    if user.role == "student":
         enrolled = db.query(models.Enrollment).filter(
             models.Enrollment.course_id == course_id,
-            models.Enrollment.student_id == current_user.id,
+            models.Enrollment.student_id == user.id,
         ).first()
         if not enrolled:
             raise HTTPException(403, "You are not enrolled in this course")
-    elif current_user.role == "teacher":
-        security.require_course_access(course_id, current_user, db)
+    elif user.role == "teacher":
+        security.require_course_access(course_id, user, db)
     # admin: always allowed
 
     mime = m.file_mime or "application/octet-stream"
@@ -366,6 +378,7 @@ def serve_material_file(
     disposition = "inline" if viewable else "attachment"
     safe_name = (m.file_name or "download").replace('"', "'")
 
+    # FileResponse supports HTTP Range requests automatically — videos stream
     return FileResponse(
         path=str(path),
         media_type=mime,

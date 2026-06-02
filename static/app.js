@@ -879,7 +879,7 @@ async function renderCourseDetail(courseId, el) {
                   </div>
                   <div class="mat-actions-inline">
                     <a class="btn btn-sm btn-primary" href="#"
-                       onclick="return viewMaterialFile(event,${courseId},${m.id},${JSON.stringify(m.file_name||'download')})"
+                       onclick="return viewMaterialFile(event,${courseId},${m.id},${JSON.stringify(m.file_name||'download')},${JSON.stringify(m.file_mime||'')})"
                     >${btnLabel}</a>
                   </div>`;
               } else if (mtype === 'link') {
@@ -1144,27 +1144,48 @@ function switchMatMode(mode, btn) {
   document.getElementById('modal-form').dataset.mode = mode;
 }
 
-async function viewMaterialFile(event, courseId, materialId, fileName) {
+function viewMaterialFile(event, courseId, materialId, fileName, mime) {
   event.preventDefault();
-  try {
-    const resp = await fetch(`/api/courses/${courseId}/materials/${materialId}/file`, {
-      headers: { Authorization: 'Bearer ' + state.token },
-    });
-    if (!resp.ok) { const e = await resp.json(); throw new Error(e.detail || 'Failed to load file'); }
-    const blob = await resp.blob();
-    const url = URL.createObjectURL(blob);
-    const viewable = blob.type.startsWith('image/') || blob.type.startsWith('video/') ||
-                     blob.type.startsWith('audio/') || blob.type === 'application/pdf' ||
-                     blob.type.startsWith('text/');
-    if (viewable) {
-      window.open(url, '_blank');
-    } else {
-      const a = document.createElement('a');
-      a.href = url; a.download = fileName;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    }
-    setTimeout(() => URL.revokeObjectURL(url), 15000);
-  } catch(err) { toast(err.message, 'error'); }
+  // Append the JWT as a query param so the browser can open/stream the URL
+  // directly without needing a custom Authorization header.
+  // This is essential for videos: the browser must stream via Range requests,
+  // not download the whole file as a blob first.
+  const fileUrl = `/api/courses/${courseId}/materials/${materialId}/file?dl_token=${encodeURIComponent(state.token)}`;
+
+  const isVideo = mime && mime.startsWith('video/');
+  const isAudio = mime && mime.startsWith('audio/');
+  const isImage = mime && mime.startsWith('image/');
+  const isPdf   = mime === 'application/pdf';
+
+  if (isVideo || isAudio) {
+    // Embed a native player in a modal so it streams without leaving the page
+    const tag  = isVideo ? 'video' : 'audio';
+    const icon = isVideo ? '🎬' : '🎵';
+    openModal(`${icon} ${fileName || 'Media'}`,
+      `<div style="text-align:center;padding:8px 0">
+        <${tag} controls autoplay
+          style="max-width:100%;max-height:60vh;border-radius:8px;background:#000"
+          src="${fileUrl}">
+          Your browser does not support this media type.
+        </${tag}>
+        <br><br>
+        <a class="btn btn-sm btn-primary" href="${fileUrl}" download="${fileName||'download'}">
+          ⬇ Download
+        </a>
+      </div>`
+    );
+  } else if (isPdf || isImage) {
+    // PDFs and images open natively in a new browser tab
+    window.open(fileUrl, '_blank');
+  } else {
+    // Everything else: force download via a hidden <a>
+    const a = document.createElement('a');
+    a.href = fileUrl;
+    a.download = fileName || 'download';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
   return false;
 }
 
