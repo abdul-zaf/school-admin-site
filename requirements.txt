@@ -7,4 +7,7 @@ bcrypt==4.0.1
 python-multipart
 psycopg2-binary
 reportlab
-anthropic
+# Ollama integration uses stdlib urllib — no extra package required.
+# To use: install Ollama (https://ollama.com) and run:
+#   ollama pull llama3.2   (or whichever OLLAMA_MODEL you set)
+#   ollama serve
