@@ -29,6 +29,7 @@ from datetime import date
 from database import get_db
 import models
 import security
+from services.knowledge_base import index_material, remove_material_index
 
 # ── Upload directory ──────────────────────────────────────────────────────────
 _UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "./uploads/materials"))
@@ -370,6 +371,8 @@ def add_material(
         material_type=mat_type,
     )
     db.add(m)
+    db.flush()   # need m.id before indexing
+    index_material(db, m)  # ← auto-index for AI tutor KB
     db.commit()
     db.refresh(m)
     return {"id": m.id, "title": m.title}
@@ -411,6 +414,8 @@ async def upload_material(
         file_mime=mime,
     )
     db.add(m)
+    db.flush()   # need m.id before indexing
+    index_material(db, m)  # ← auto-index for AI tutor KB (title + filename)
     db.commit()
     db.refresh(m)
     return {"id": m.id, "title": m.title, "file_name": m.file_name}
@@ -496,6 +501,7 @@ def delete_material(
             Path(m.file_path).unlink(missing_ok=True)
         except Exception:
             pass
+    remove_material_index(db, m.id)  # ← remove from AI tutor KB
     db.delete(m)
     db.commit()
     return {"ok": True}

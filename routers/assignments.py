@@ -19,6 +19,7 @@ from database import get_db
 import models
 import security
 from services.email import send_grade_notification
+from services.knowledge_base import index_assignment
 
 router = APIRouter()
 
@@ -99,6 +100,8 @@ def create_assignment(
         max_submissions=data.max_submissions,
     )
     db.add(a)
+    db.flush()
+    index_assignment(db, a)   # ← auto-index description for AI tutor KB
     db.commit()
     db.refresh(a)
     return {"id": a.id, "title": a.title}

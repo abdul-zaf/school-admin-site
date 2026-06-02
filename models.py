@@ -1178,15 +1178,19 @@ class CodeSubmission(Base):
 
 class TutorSession(Base):
     __tablename__ = "tutor_sessions"
-    id         = Column(Integer, primary_key=True)
-    student_id = Column(Integer, ForeignKey("users.id"),    nullable=False)
-    course_id  = Column(Integer, ForeignKey("courses.id"),  nullable=True)
-    title      = Column(String(300), nullable=False, default="New Session")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    id            = Column(Integer, primary_key=True)
+    student_id    = Column(Integer, ForeignKey("users.id"),       nullable=False)
+    course_id     = Column(Integer, ForeignKey("courses.id"),     nullable=True)
+    assignment_id = Column(Integer, ForeignKey("assignments.id"), nullable=True)
+    title         = Column(String(300), nullable=False, default="New Session")
+    # mode: "study" (general learning) | "assignment_help" (hints only, never full answers)
+    mode          = Column(String(20), nullable=False, default="study")
+    created_at    = Column(DateTime, default=datetime.utcnow)
 
-    student  = relationship("User")
-    course   = relationship("Course")
-    messages = relationship("TutorMessage", back_populates="session", cascade="all, delete")
+    student    = relationship("User")
+    course     = relationship("Course")
+    assignment = relationship("Assignment")
+    messages   = relationship("TutorMessage", back_populates="session", cascade="all, delete")
 
 
 class TutorMessage(Base):
@@ -1198,6 +1202,29 @@ class TutorMessage(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     session = relationship("TutorSession", back_populates="messages")
+
+
+# ── 21. Knowledge Base (per-course material chunks for AI tutor context) ──────
+
+class KnowledgeChunk(Base):
+    """
+    One searchable chunk of text extracted from a course material or assignment.
+    Rebuilt automatically whenever a material is added/deleted.
+    Queried at AI-tutor message time to inject relevant context into the prompt.
+    """
+    __tablename__ = "knowledge_chunks"
+    id          = Column(Integer, primary_key=True)
+    course_id   = Column(Integer, ForeignKey("courses.id"),   nullable=False)
+    material_id = Column(Integer, ForeignKey("materials.id"), nullable=True)
+    # chunk_type: "material" | "assignment"
+    chunk_type  = Column(String(20), nullable=False, default="material")
+    chunk_text  = Column(Text, nullable=False)
+    # keyword cache: space-joined lowercase words for fast matching
+    keywords    = Column(Text, nullable=False, default="")
+    created_at  = Column(DateTime, default=datetime.utcnow)
+
+    course   = relationship("Course")
+    material = relationship("Material")
 
 
 # ── 22. Content Recommendations ───────────────────────────────────────────────

@@ -62,6 +62,9 @@ def apply_migrations():
                 "ALTER TABLE courses ADD COLUMN enrollment_cap INTEGER",
                 # v5: user email notification preference
                 "ALTER TABLE users ADD COLUMN email_notifications BOOLEAN NOT NULL DEFAULT 1",
+                # v6: AI tutor session mode + assignment context
+                "ALTER TABLE tutor_sessions ADD COLUMN mode TEXT NOT NULL DEFAULT 'study'",
+                "ALTER TABLE tutor_sessions ADD COLUMN assignment_id INTEGER REFERENCES assignments(id)",
             ]:
                 try:
                     conn.execute(text(ddl))
@@ -91,6 +94,9 @@ def apply_migrations():
                 "ALTER TABLE announcements ADD COLUMN IF NOT EXISTS publish_at TIMESTAMP",
                 "ALTER TABLE courses ADD COLUMN IF NOT EXISTS enrollment_cap INTEGER",
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS email_notifications BOOLEAN NOT NULL DEFAULT TRUE",
+                # v6: AI tutor session mode + assignment context
+                "ALTER TABLE tutor_sessions ADD COLUMN IF NOT EXISTS mode VARCHAR(20) NOT NULL DEFAULT 'study'",
+                "ALTER TABLE tutor_sessions ADD COLUMN IF NOT EXISTS assignment_id INTEGER REFERENCES assignments(id)",
             ]:
                 conn.execute(text(ddl))
             conn.commit()
