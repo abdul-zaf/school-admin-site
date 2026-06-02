@@ -879,7 +879,11 @@ async function renderCourseDetail(courseId, el) {
                   </div>
                   <div class="mat-actions-inline">
                     <a class="btn btn-sm btn-primary" href="#"
-                       onclick="return viewMaterialFile(event,${courseId},${m.id},${JSON.stringify(m.file_name||'download')},${JSON.stringify(m.file_mime||'')})"
+                       onclick="return viewMaterialFile(event,this)"
+                       data-course="${courseId}"
+                       data-mid="${m.id}"
+                       data-fname="${(m.file_name||'download').replace(/"/g,'&quot;')}"
+                       data-mime="${(m.file_mime||'').replace(/"/g,'&quot;')}"
                     >${btnLabel}</a>
                   </div>`;
               } else if (mtype === 'link') {
@@ -1144,8 +1148,15 @@ function switchMatMode(mode, btn) {
   document.getElementById('modal-form').dataset.mode = mode;
 }
 
-function viewMaterialFile(event, courseId, materialId, fileName, mime) {
+function viewMaterialFile(event, el) {
   event.preventDefault();
+  // Values come from data-* attributes to avoid double-quote conflicts
+  // that would break onclick="..." when JSON.stringify embeds its own quotes.
+  const courseId   = el.dataset.course;
+  const materialId = el.dataset.mid;
+  const fileName   = el.dataset.fname;
+  const mime       = el.dataset.mime;
+
   // Append the JWT as a query param so the browser can open/stream the URL
   // directly without needing a custom Authorization header.
   // This is essential for videos: the browser must stream via Range requests,
