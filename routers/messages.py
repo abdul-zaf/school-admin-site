@@ -106,6 +106,8 @@ def send_message(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(security.get_current_user),
 ):
+    if data.recipient_id == current_user.id:
+        raise HTTPException(400, "You cannot send a message to yourself")
     recipient = db.query(models.User).filter(models.User.id == data.recipient_id).first()
     if not recipient:
         raise HTTPException(404, "Recipient not found")

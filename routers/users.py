@@ -129,6 +129,19 @@ def get_me(current_user: models.User = Depends(security.get_current_user)):
     return current_user
 
 
+@router.get("/{user_id}", response_model=UserOut)
+def get_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("admin")),
+):
+    """Get a specific user by ID (admin only)."""
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(404, "User not found")
+    return user
+
+
 @router.put("/me", response_model=UserOut)
 def update_me(
     data: UserUpdate,

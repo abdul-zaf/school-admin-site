@@ -11,7 +11,7 @@ POST   /api/modules/items/{id}/complete Student marks an item complete
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional
 from datetime import datetime
 from database import get_db
@@ -28,12 +28,21 @@ class ModuleCreate(BaseModel):
     is_published: bool = True
 
 
+_VALID_ITEM_TYPES = {"assignment", "quiz", "material", "session", "page"}
+
 class ModuleItemCreate(BaseModel):
-    item_type: str  # assignment, quiz, material, session, page
+    item_type: str  # assignment | quiz | material | session | page
     item_id: Optional[int] = None
     title: str
     order_num: int = 0
     is_required: bool = True
+
+    @field_validator("item_type")
+    @classmethod
+    def validate_item_type(cls, v: str) -> str:
+        if v not in _VALID_ITEM_TYPES:
+            raise ValueError(f"item_type must be one of: {', '.join(sorted(_VALID_ITEM_TYPES))}")
+        return v
 
 
 @router.get("/course/{course_id}")
