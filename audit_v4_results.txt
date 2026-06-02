@@ -1,0 +1,231 @@
+
+=== SETUP ===
+  teacher_id=31, student1_id=32, student2_id=33
+  parent_id=34, course1_id=32, course2_id=33
+  assign_id=15, sub1_id=None
+
+=== PREREQUISITES ===
+  OK  [200] Add prerequisite (teacher)
+  OK  [400] Add duplicate prereq => 400
+  OK  [400] Self-prerequisite => 400
+  OK  [200] List prerequisites (student)
+  OK  [400] Enroll blocked by prereq => 400
+  OK  [200] Delete prerequisite
+
+=== ENROLLMENT CAPS & WAITLIST ===
+  OK  [200] Set enrollment cap
+  OK  [200] Enroll student1 (fills cap)
+  OK  [400] Enroll when full => redirected to waitlist (400)
+  OK  [400] Join waitlist again => 400 (already auto-added)
+  OK  [400] Join waitlist when enrolled => 400
+  OK  [200] Get waitlist (teacher)
+  OK  [200] Waitlist is non-empty (student2 auto-added)
+  OK  [200] Unenroll triggers waitlist promotion
+  OK  [200] Student2 auto-promoted from waitlist
+
+=== ACADEMIC CALENDAR ===
+  OK  [200] Create calendar event (admin)
+  OK  [400] Invalid event_type => 400
+  OK  [400] end_date before start_date => 400
+  OK  [403] Teacher create calendar => 403
+  OK  [200] List calendar events (student)
+  OK  [200] Filter calendar by year/month
+  OK  [200] Update calendar event
+  OK  [200] Delete calendar event
+
+=== DEPARTMENTS ===
+  OK  [200] Create department (admin)
+  OK  [400] Duplicate department name => 400
+  OK  [403] Teacher create dept => 403
+  OK  [200] List departments (student)
+  OK  [200] Get department detail
+  OK  [200] Add teacher to department
+  OK  [400] Add student to dept => 400
+  OK  [400] Add teacher twice => 400
+  OK  [200] Update department
+  OK  [200] Remove dept member
+  OK  [200] Delete department
+
+=== COHORTS ===
+  OK  [200] Create cohort (admin)
+  OK  [200] List cohorts (teacher)
+  OK  [403] Student list cohorts => 403
+  OK  [200] Add student to cohort
+  OK  [400] Add teacher to cohort => 400
+  OK  [400] Add student twice => 400
+  OK  [200] Get cohort detail (teacher)
+  OK  [200] Bulk enroll cohort
+  OK  [200] Update cohort
+  OK  [200] Remove cohort member
+  OK  [200] Delete cohort
+
+=== CONFERENCES ===
+  OK  [200] Create conference slot (teacher)
+  OK  [403] Student create slot => 403
+  OK  [200] Parent list slots
+  OK  [200] Teacher list own slots
+  OK  [200] Parent book slot
+  OK  [400] Double-book slot => 400
+  OK  [200] Parent get own bookings
+  OK  [200] Teacher get bookings
+  OK  [400] Book unlinked student => 403
+  OK  [400] Delete booked slot => 400
+  OK  [200] Cancel booking (parent)
+  OK  [200] Delete unbooked slot (teacher)
+
+=== USER SESSIONS ===
+  OK  [200] List own sessions (admin)
+  OK  [200] List own sessions (student)
+  OK  [200] Revoke all other sessions
+
+=== AUDIT LOG ===
+  OK  [200] Get audit log (admin)
+  OK  [200] Audit log with pagination
+  OK  [403] Teacher get audit log => 403
+  OK  [200] My activity log (student)
+
+=== PLAGIARISM ===
+  OK  [200] Run plagiarism check (teacher)
+  OK  [200] Get plagiarism reports (teacher)
+  OK  [403] Student run plagiarism => 403
+
+=== RATINGS ===
+  OK  [200] Student rate enrolled course
+  OK  [200] Update rating (idempotent)
+  OK  [422] Rating out of range => 422
+  OK  [400] Rate unenrolled course => 400
+  OK  [200] List course ratings
+  OK  [200] Delete own rating (student)
+
+=== STREAKS ===
+  OK  [200] Get own streak (student)
+  OK  [403] Teacher get streak => 403
+  OK  [200] Streak leaderboard (admin)
+
+=== XP SYSTEM ===
+  OK  [200] Get own XP (student)
+  OK  [200] XP leaderboard (any auth)
+  OK  [200] Teacher get student XP
+  OK  [403] Student get own XP via user_id => 403
+  OK  [404] XP for nonexistent user => 404
+
+=== LIBRARY ===
+  OK  [200] Add book (admin)
+  OK  [403] Teacher add book => 403
+  OK  [200] List books (student)
+  OK  [200] Search books
+  OK  [200] Get book detail
+  OK  [200] Borrow book (student)
+  OK  [400] Double-borrow => 400
+  OK  [200] Get my borrows (student)
+  OK  [200] Admin all borrows
+  OK  [200] Renew borrow
+  OK  [200] Return book
+  OK  [400] Double-return => 400
+  OK  [200] Update book
+  OK  [200] Delete book (admin)
+
+=== PAYMENTS ===
+  OK  [200] Create invoice (admin)
+  OK  [400] Invoice for teacher => 400
+  OK  [200] Teacher list invoices
+  OK  [200] Student list own invoices
+  OK  [200] Student get own invoice
+  OK  [403] Student2 get student1 invoice => 403
+  OK  [200] Record payment
+  OK  [200] Invoice status is paid
+  OK  [200] Update invoice
+  OK  [400] Delete paid invoice => 400
+  OK  [200] Student my invoices
+  OK  [200] Payment summary (admin)
+  OK  [403] Teacher payment summary => 403
+  OK  [200] Delete unpaid invoice
+
+=== CLUBS ===
+  OK  [200] Create club (teacher)
+  OK  [200] List clubs (student)
+  OK  [200] Get club detail
+  OK  [200] Student join club
+  OK  [400] Double-join => 400
+  OK  [200] Club member creates post
+  OK  [403] Non-member post => 403
+  OK  [200] List club posts
+  OK  [200] Delete own post
+  OK  [200] Student leave club
+  OK  [200] Update club (teacher)
+  OK  [400] Join closed club => 400
+  OK  [200] Delete club (admin)
+
+=== CODE SANDBOX ===
+  OK  [200] Run valid Python code
+  OK  [200] stdout contains 'hello world'
+  OK  [200] exit_code is 0
+  OK  [200] Python with stdin
+  OK  [200] Syntax error => exit_code != 0
+  OK  [400] Dangerous import blocked => 400
+  OK  [400] Unsupported language => 400
+  OK  [403] Teacher run sandbox => 403
+  OK  [200] Student code history
+
+=== AI TUTOR (Ollama status only — won't test chat without Ollama) ===
+  OK  [200] AI tutor status endpoint
+  OK  [200] Create tutor session
+  OK  [200] List tutor sessions
+  OK  [403] Teacher create tutor session => 403
+  OK  [200] Get tutor session messages
+  OK  [200] Send tutor message (200/503/timeout ok)
+  OK  [200] Delete tutor session
+
+=== TIMETABLE ===
+  OK  [200] Add timetable slot (teacher)
+  OK  [400] Invalid day_of_week => 400
+  OK  [200] Course timetable (student)
+  OK  [200] My timetable (student)
+  OK  [200] My timetable (teacher)
+  OK  [200] Update timetable slot
+  OK  [200] Delete timetable slot
+
+=== ENHANCED ANALYTICS ===
+  OK  [200] At-risk students (admin)
+  OK  [200] At-risk by course (teacher)
+  OK  [403] Student at-risk => 403
+  OK  [200] Teacher performance (admin)
+  OK  [403] Teacher performance by teacher => 403
+  OK  [200] Course effectiveness (teacher)
+  OK  [200] Export gradebook CSV
+  OK  [200] Export attendance CSV
+  OK  [200] Export transcript PDF (admin)
+  OK  [403] Teacher export transcript => 403
+
+=== SESSION MEETING LINKS ===
+  OK  [200] Create class session
+  OK  [200] Set meeting URL (teacher)
+  OK  [200] Get meeting URL (student)
+
+=== ANNOUNCEMENT SCHEDULING ===
+  OK  [200] Create immediate announcement
+  OK  [200] Create scheduled announcement (draft)
+  OK  [200] Draft announcement hidden from student
+  OK  [200] Draft announcement visible to teacher
+
+=== NOTIFICATION EMAIL PREFERENCES ===
+  OK  [200] Toggle email off (student)
+  OK  [200] Toggle email on (student)
+
+=== RECOMMENDATIONS ===
+  OK  [200] Get my recommendations (student)
+  OK  [200] Generate recommendations (teacher)
+  OK  [403] Teacher my recommendations => 403
+  -- (no recommendations to dismiss)
+
+=== LATE SUBMISSION POLICY ===
+  OK  [200] Create assignment with late policy
+  OK  [200] Submit late assignment
+  OK  [200] Resubmit when allowed
+
+=== CLEANUP ===
+  Cleanup done
+
+============================================================
+RESULTS: 170/170 passed   0 FAILED
+All tests passed!

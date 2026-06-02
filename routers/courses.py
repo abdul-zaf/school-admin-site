@@ -46,6 +46,7 @@ class CourseCreate(BaseModel):
     description: Optional[str] = None
     subject: Optional[str] = None
     grade_level: Optional[str] = None
+    enrollment_cap: Optional[int] = None   # None = unlimited
 
 
 class MaterialCreate(BaseModel):
@@ -106,6 +107,7 @@ def create_course(
         subject=data.subject,
         grade_level=data.grade_level,
         teacher_id=current_user.id,
+        enrollment_cap=data.enrollment_cap,
     )
     db.add(course)
     db.commit()
@@ -190,6 +192,7 @@ def update_course(
     course.description = data.description
     course.subject = data.subject
     course.grade_level = data.grade_level
+    course.enrollment_cap = data.enrollment_cap
     db.commit()
     return {"ok": True}
 
