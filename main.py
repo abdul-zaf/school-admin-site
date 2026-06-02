@@ -21,6 +21,26 @@ from routers import (
     # ── New features ─────────────────────────────────────────────────────────
     certificates,
     leaderboard,
+    # ── Batch 2: New features ─────────────────────────────────────────────────
+    prerequisites,
+    waitlist,
+    calendar,
+    departments,
+    cohorts,
+    conferences,
+    user_sessions,
+    audit,
+    plagiarism,
+    ratings,
+    streaks,
+    xp,
+    library,
+    payments,
+    clubs,
+    code_sandbox,
+    ai_tutor,
+    recommendations,
+    timetable,
 )
 
 Base.metadata.create_all(bind=engine)
@@ -97,6 +117,26 @@ app.include_router(confusion.router,         prefix="/api/confusion",      tags=
 app.include_router(help_board.router,        prefix="/api/help",           tags=["help-board"])
 app.include_router(knowledge_graph.router,   prefix="/api/graph",          tags=["knowledge-graph"])
 app.include_router(study_groups.router,      prefix="/api/study-groups",   tags=["study-groups"])
+
+app.include_router(prerequisites.router,  prefix="/api/prerequisites",  tags=["prerequisites"])
+app.include_router(waitlist.router,       prefix="/api/waitlist",       tags=["waitlist"])
+app.include_router(calendar.router,       prefix="/api/calendar",       tags=["calendar"])
+app.include_router(departments.router,    prefix="/api/departments",    tags=["departments"])
+app.include_router(cohorts.router,        prefix="/api/cohorts",        tags=["cohorts"])
+app.include_router(conferences.router,    prefix="/api/conferences",    tags=["conferences"])
+app.include_router(user_sessions.router,  prefix="/api/user-sessions",  tags=["user-sessions"])
+app.include_router(audit.router,          prefix="/api/audit",          tags=["audit"])
+app.include_router(plagiarism.router,     prefix="/api/plagiarism",     tags=["plagiarism"])
+app.include_router(ratings.router,        prefix="/api/ratings",        tags=["ratings"])
+app.include_router(streaks.router,        prefix="/api/streaks",        tags=["streaks"])
+app.include_router(xp.router,             prefix="/api/xp",             tags=["xp"])
+app.include_router(library.router,        prefix="/api/library",        tags=["library"])
+app.include_router(payments.router,       prefix="/api/payments",       tags=["payments"])
+app.include_router(clubs.router,          prefix="/api/clubs",          tags=["clubs"])
+app.include_router(code_sandbox.router,   prefix="/api/sandbox",        tags=["code-sandbox"])
+app.include_router(ai_tutor.router,       prefix="/api/ai-tutor",       tags=["ai-tutor"])
+app.include_router(recommendations.router, prefix="/api/recommendations", tags=["recommendations"])
+app.include_router(timetable.router,      prefix="/api/timetable",      tags=["timetable"])
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 

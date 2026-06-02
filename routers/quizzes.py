@@ -428,6 +428,16 @@ def submit_quiz(
 
     db.commit()
 
+    # Record XP and streak for quiz submission
+    try:
+        from routers.streaks import record_activity
+        from routers.xp import award_xp
+        record_activity(db, current_user.id)
+        award_xp(db, current_user.id, "quiz_submission", f"Completed quiz: {quiz_obj.title if quiz_obj else quiz_id}")
+        db.commit()
+    except Exception:
+        pass
+
     quiz_obj = db.query(models.Quiz).filter(models.Quiz.id == quiz_id).first()
     total_possible = sum(qq.points for qq in quiz_obj.questions)
     return {
@@ -435,6 +445,97 @@ def submit_quiz(
         "total_possible": total_possible,
         "has_short_answer": has_short,
         "submitted": True,
+    }
+
+
+@router.post("/{quiz_id}/auto-grade-short/{attempt_id}")
+def auto_grade_short_answers(
+    quiz_id: int,
+    attempt_id: int,
+    db: DBSession = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("admin", "teacher")),
+):
+    """Use Claude Haiku to grade short_answer questions in an attempt."""
+    import os
+    api_key = os.getenv("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        raise HTTPException(503, "AI grading not configured. Set ANTHROPIC_API_KEY.")
+
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=api_key)
+    except ImportError:
+        raise HTTPException(503, "anthropic package not installed")
+
+    attempt = db.query(models.QuizAttempt).filter(
+        models.QuizAttempt.id == attempt_id,
+        models.QuizAttempt.quiz_id == quiz_id,
+    ).first()
+    if not attempt:
+        raise HTTPException(404, "Attempt not found")
+
+    quiz_obj = db.query(models.Quiz).filter(models.Quiz.id == quiz_id).first()
+    if not quiz_obj:
+        raise HTTPException(404, "Quiz not found")
+    security.require_course_access(quiz_obj.course_id, current_user, db)
+
+    short_answers = [
+        ans for ans in attempt.answers
+        if ans.question and ans.question.question_type == "short_answer"
+    ]
+    if not short_answers:
+        return {"message": "No short answer questions to grade", "score": attempt.score}
+
+    graded_score = 0.0
+    results = []
+    for ans in short_answers:
+        qq = ans.question
+        prompt = (
+            f"You are grading a student's short-answer quiz question.\n\n"
+            f"Question: {qq.question_text}\n"
+            f"Student's answer: {ans.text_answer or '(no answer)'}\n"
+            f"Maximum points: {qq.points}\n\n"
+            f"Grade this answer from 0 to {qq.points} points. "
+            f"Respond with ONLY a JSON object: {{\"score\": <number>, \"feedback\": \"<brief feedback>\"}}"
+        )
+        try:
+            resp = client.messages.create(
+                model="claude-haiku-4-5",
+                max_tokens=200,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            import json
+            text = resp.content[0].text.strip()
+            graded = json.loads(text)
+            pts = min(float(graded.get("score", 0)), qq.points)
+        except Exception:
+            pts = 0.0
+            graded = {"score": 0, "feedback": "Grading failed"}
+        graded_score += pts
+        results.append({
+            "question_id": qq.id,
+            "question_text": qq.question_text,
+            "student_answer": ans.text_answer,
+            "awarded_points": pts,
+            "max_points": qq.points,
+            "feedback": graded.get("feedback", ""),
+        })
+
+    # Add auto-graded short answer score to the existing MC/TF score
+    mc_score = sum(
+        qq.points for ans in attempt.answers
+        if ans.question and ans.question.question_type != "short_answer" and ans.selected_option
+        for opt in [db.query(models.QuizOption).filter(models.QuizOption.id == ans.selected_option_id).first()]
+        if opt and opt.is_correct
+        for qq in [ans.question]
+    )
+    attempt.score = mc_score + graded_score
+    db.commit()
+
+    return {
+        "attempt_id": attempt_id,
+        "total_score": attempt.score,
+        "short_answer_results": results,
     }
 
 

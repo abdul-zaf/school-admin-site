@@ -4,6 +4,7 @@ courses.py — Course catalogue, enrolment, materials, and attendance.
 GET    /api/courses/                     List all courses
 POST   /api/courses/                     Create course (teacher/admin)
 GET    /api/courses/{id}                 Course detail + student list
+GET    /api/courses/{id}/students        Enrolled student list (teacher/admin)
 PUT    /api/courses/{id}                 Update course metadata
 DELETE /api/courses/{id}                 Delete course
 POST   /api/courses/{id}/enroll          Student self-enrols
@@ -156,6 +157,23 @@ def get_course(
     }
 
 
+@router.get("/{course_id}/students")
+def list_course_students(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("admin", "teacher")),
+):
+    course = db.query(models.Course).filter(models.Course.id == course_id).first()
+    if not course:
+        raise HTTPException(404, "Course not found")
+    if current_user.role == "teacher" and course.teacher_id != current_user.id:
+        raise HTTPException(403, "Not your course")
+    return [
+        {"id": e.student.id, "name": e.student.name, "email": e.student.email}
+        for e in course.enrollments
+    ]
+
+
 @router.put("/{course_id}")
 def update_course(
     course_id: int,
@@ -200,7 +218,8 @@ def enroll(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(security.require_role("student")),
 ):
-    if not db.query(models.Course).filter(models.Course.id == course_id).first():
+    course = db.query(models.Course).filter(models.Course.id == course_id).first()
+    if not course:
         raise HTTPException(404, "Course not found")
     if (
         db.query(models.Enrollment)
@@ -211,6 +230,59 @@ def enroll(
         .first()
     ):
         raise HTTPException(400, "Already enrolled")
+
+    # Check prerequisites
+    prereqs = db.query(models.CoursePrerequisite).filter(
+        models.CoursePrerequisite.course_id == course_id
+    ).all()
+    for prereq in prereqs:
+        # Student must have a graded submission (score >= 60%) in the prerequisite course
+        assignments = db.query(models.Assignment).filter(
+            models.Assignment.course_id == prereq.prerequisite_course_id
+        ).all()
+        if assignments:
+            passed = False
+            for a in assignments:
+                sub = db.query(models.Submission).filter(
+                    models.Submission.assignment_id == a.id,
+                    models.Submission.student_id == current_user.id,
+                    models.Submission.score != None,
+                ).first()
+                if sub and a.max_score and (sub.score / a.max_score * 100) >= 60:
+                    passed = True
+                    break
+            if not passed:
+                prereq_course = db.query(models.Course).filter(
+                    models.Course.id == prereq.prerequisite_course_id
+                ).first()
+                prereq_title = prereq_course.title if prereq_course else str(prereq.prerequisite_course_id)
+                raise HTTPException(
+                    400,
+                    f"Prerequisite not met: you must pass '{prereq_title}' (score >= 60%) before enrolling",
+                )
+
+    # Check enrollment cap
+    if course.enrollment_cap is not None:
+        current_count = db.query(models.Enrollment).filter(
+            models.Enrollment.course_id == course_id
+        ).count()
+        if current_count >= course.enrollment_cap:
+            # Auto-add to waitlist
+            already_waiting = db.query(models.EnrollmentWaitlist).filter(
+                models.EnrollmentWaitlist.course_id == course_id,
+                models.EnrollmentWaitlist.student_id == current_user.id,
+            ).first()
+            if not already_waiting:
+                db.add(models.EnrollmentWaitlist(
+                    course_id=course_id,
+                    student_id=current_user.id,
+                ))
+                db.commit()
+            raise HTTPException(
+                400,
+                f"Course is at capacity ({course.enrollment_cap} students). You have been added to the waitlist.",
+            )
+
     db.add(models.Enrollment(student_id=current_user.id, course_id=course_id))
     db.commit()
     return {"ok": True}
@@ -233,6 +305,22 @@ def unenroll(
     if not e:
         raise HTTPException(404, "Not enrolled")
     db.delete(e)
+    db.flush()
+
+    # Auto-promote the first waitlisted student
+    first_waitlisted = (
+        db.query(models.EnrollmentWaitlist)
+        .filter(models.EnrollmentWaitlist.course_id == course_id)
+        .order_by(models.EnrollmentWaitlist.joined_at)
+        .first()
+    )
+    if first_waitlisted:
+        db.add(models.Enrollment(
+            student_id=first_waitlisted.student_id,
+            course_id=course_id,
+        ))
+        db.delete(first_waitlisted)
+
     db.commit()
     return {"ok": True}
 

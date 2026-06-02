@@ -28,6 +28,10 @@ class AssignmentCreate(BaseModel):
     description: Optional[str] = None
     due_date: Optional[datetime] = None
     max_score: float = 100.0
+    late_penalty_per_day: float = 0.0
+    max_late_days: Optional[int] = None
+    allow_resubmission: bool = False
+    max_submissions: int = 1
 
 
 class SubmissionCreate(BaseModel):
@@ -89,6 +93,10 @@ def create_assignment(
         description=data.description,
         due_date=data.due_date,
         max_score=data.max_score,
+        late_penalty_per_day=data.late_penalty_per_day,
+        max_late_days=data.max_late_days,
+        allow_resubmission=data.allow_resubmission,
+        max_submissions=data.max_submissions,
     )
     db.add(a)
     db.commit()
@@ -174,23 +182,60 @@ def submit_assignment(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(security.require_role("student")),
 ):
-    if not db.query(models.Assignment).filter(models.Assignment.id == assignment_id).first():
+    assignment = db.query(models.Assignment).filter(models.Assignment.id == assignment_id).first()
+    if not assignment:
         raise HTTPException(404, "Assignment not found")
-    existing = db.query(models.Submission).filter(
+
+    # Check late submission policy
+    now = datetime.utcnow()
+    if assignment.due_date and now > assignment.due_date:
+        days_late = (now - assignment.due_date).days
+        if assignment.max_late_days is not None and days_late > assignment.max_late_days:
+            raise HTTPException(400, f"Submission deadline passed. Maximum {assignment.max_late_days} late day(s) allowed.")
+
+    # Count existing submissions for resubmission check
+    existing_subs = db.query(models.Submission).filter(
         models.Submission.assignment_id == assignment_id,
         models.Submission.student_id == current_user.id,
-    ).first()
-    if existing:
+    ).all()
+
+    if existing_subs:
+        existing = existing_subs[0]
+        if not assignment.allow_resubmission:
+            raise HTTPException(400, "Resubmission is not allowed for this assignment")
+        if assignment.max_submissions > 1 and len(existing_subs) >= assignment.max_submissions:
+            raise HTTPException(400, f"Maximum submissions ({assignment.max_submissions}) reached")
         existing.content = data.content
-        existing.submitted_at = datetime.utcnow()
+        existing.submitted_at = now
         db.commit()
+        # Record streak & XP
+        try:
+            from routers.streaks import record_activity
+            from routers.xp import award_xp
+            record_activity(db, current_user.id)
+            award_xp(db, current_user.id, "submit_assignment", f"Resubmitted: {assignment.title}")
+            db.commit()
+        except Exception:
+            pass
         return {"id": existing.id, "resubmitted": True}
+
     s = models.Submission(
         assignment_id=assignment_id, student_id=current_user.id, content=data.content
     )
     db.add(s)
     db.commit()
     db.refresh(s)
+
+    # Record streak & XP
+    try:
+        from routers.streaks import record_activity
+        from routers.xp import award_xp
+        record_activity(db, current_user.id)
+        award_xp(db, current_user.id, "submit_assignment", f"Submitted: {assignment.title}")
+        db.commit()
+    except Exception:
+        pass
+
     return {"id": s.id, "submitted": True}
 
 
@@ -207,32 +252,47 @@ def grade_submission(
         raise HTTPException(404, "Submission not found")
     security.require_course_access(s.assignment.course_id, current_user, db)
     old_score = s.score
-    s.score = data.score
-    s.feedback = data.feedback
+
+    # Apply late penalty if applicable
+    final_score = data.score
+    late_note = ""
+    assignment = s.assignment
+    if assignment.due_date and s.submitted_at and s.submitted_at > assignment.due_date:
+        if assignment.late_penalty_per_day and assignment.late_penalty_per_day > 0:
+            days_late = max(0, (s.submitted_at - assignment.due_date).days)
+            penalty_pct = min(days_late * assignment.late_penalty_per_day, 100.0)
+            penalty = data.score * (penalty_pct / 100.0)
+            final_score = max(0.0, data.score - penalty)
+            late_note = f" (Late penalty applied: -{penalty_pct:.0f}% = -{penalty:.1f} pts)"
+
+    s.score = final_score
+    s.feedback = (data.feedback or "") + late_note
     s.graded_at = datetime.utcnow()
     gc = models.GradeChange(
         submission_id=submission_id,
         changed_by=current_user.id,
         old_score=old_score,
-        new_score=data.score,
-        reason=data.feedback or "",
+        new_score=final_score,
+        reason=(data.feedback or "") + late_note,
     )
     db.add(gc)
     db.commit()
     # Email the student (non-blocking)
-    app_url = os.getenv("RENDER_EXTERNAL_URL") or os.getenv("APP_URL") or ""
-    background_tasks.add_task(
-        send_grade_notification,
-        s.student.email,
-        s.student.name,
-        s.assignment.title,
-        s.assignment.course.title,
-        data.score,
-        s.assignment.max_score,
-        data.feedback,
-        app_url,
-    )
-    return {"ok": True}
+    student = s.student
+    if getattr(student, "email_notifications", True):
+        app_url = os.getenv("RENDER_EXTERNAL_URL") or os.getenv("APP_URL") or ""
+        background_tasks.add_task(
+            send_grade_notification,
+            student.email,
+            student.name,
+            assignment.title,
+            assignment.course.title,
+            final_score,
+            assignment.max_score,
+            s.feedback,
+            app_url,
+        )
+    return {"ok": True, "final_score": final_score}
 
 
 @router.get("/submissions/{submission_id}/grade-history")

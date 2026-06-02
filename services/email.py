@@ -121,3 +121,24 @@ def send_grade_notification(
         f"{('Feedback: ' + feedback) if feedback else ''}\n"
     )
     send_email(to_email, to_name, f"Grade posted - {assignment_title}", html, plain)
+
+
+def notify_new_announcement(to_email: str, to_name: str, course_title: str, announcement_title: str) -> None:
+    html = _wrap(f"""
+        <h2 style="color:#1e1b4b;margin-top:0">New Announcement</h2>
+        <p style="color:#374151">Hi <strong>{to_name}</strong>,</p>
+        <p style="color:#374151">A new announcement <strong>{announcement_title}</strong>
+        has been posted in <em>{course_title}</em>.</p>
+    """)
+    send_email(to_email, to_name, f"[LMS] New announcement: {announcement_title}", html)
+
+
+def notify_password_reset(to_email: str, to_name: str, reset_link: str) -> None:
+    html = _wrap(f"""
+        <h2 style="color:#1e1b4b;margin-top:0">Password Reset Request</h2>
+        <p style="color:#374151">Hi <strong>{to_name}</strong>,</p>
+        <p style="color:#374151">Click <a href="{reset_link}" style="color:#4f46e5">here</a>
+        to reset your password. This link expires in 1 hour.</p>
+        <p style="color:#374151">If you did not request this, please ignore this email.</p>
+    """)
+    send_email(to_email, to_name, "[LMS] Password Reset Request", html)

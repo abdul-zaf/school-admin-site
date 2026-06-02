@@ -13,6 +13,7 @@ class User(Base):
     password_hash = Column(String(200), nullable=False)
     role = Column(SAEnum("admin", "teacher", "student", "parent"), nullable=False, default="student")
     created_at = Column(DateTime, default=datetime.utcnow)
+    email_notifications = Column(Boolean, default=True)
 
     courses_teaching = relationship("Course", back_populates="teacher")
     enrollments = relationship("Enrollment", back_populates="student")
@@ -34,6 +35,7 @@ class Course(Base):
     grade_level = Column(String(50))
     teacher_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    enrollment_cap = Column(Integer, nullable=True)  # None = unlimited
 
     teacher = relationship("User", back_populates="courses_teaching")
     enrollments = relationship("Enrollment", back_populates="course", cascade="all, delete")
@@ -90,6 +92,11 @@ class Assignment(Base):
     grade_category_id = Column(Integer, ForeignKey("grade_categories.id"), nullable=True)
     is_extra_credit = Column(Boolean, default=False)
     rubric_id = Column(Integer, ForeignKey("rubrics.id"), nullable=True)
+    # Late submission & resubmission policy (v5)
+    late_penalty_per_day = Column(Float, default=0.0)
+    max_late_days = Column(Integer, nullable=True)
+    allow_resubmission = Column(Boolean, default=False)
+    max_submissions = Column(Integer, default=1)
 
     course = relationship("Course", back_populates="assignments")
     submissions = relationship("Submission", back_populates="assignment", cascade="all, delete")
@@ -122,6 +129,7 @@ class Announcement(Base):
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     course_id = Column(Integer, ForeignKey("courses.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    publish_at = Column(DateTime, nullable=True)  # if set & future: draft
 
     author = relationship("User", back_populates="announcements")
     course = relationship("Course", back_populates="announcements")
@@ -796,3 +804,430 @@ class StudyGroupMember(Base):
 
     group   = relationship("StudyGroup", back_populates="members")
     student = relationship("User")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# BATCH 2 FEATURES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── 1. Course Prerequisites ────────────────────────────────────────────────────
+
+class CoursePrerequisite(Base):
+    __tablename__ = "course_prerequisites"
+    id                     = Column(Integer, primary_key=True)
+    course_id              = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    prerequisite_course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
+
+    course       = relationship("Course", foreign_keys=[course_id])
+    prerequisite = relationship("Course", foreign_keys=[prerequisite_course_id])
+
+
+# ── 2. Enrollment Waitlist ─────────────────────────────────────────────────────
+
+class EnrollmentWaitlist(Base):
+    __tablename__ = "enrollment_waitlists"
+    id         = Column(Integer, primary_key=True)
+    course_id  = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    student_id = Column(Integer, ForeignKey("users.id"),   nullable=False)
+    joined_at  = Column(DateTime, default=datetime.utcnow)
+
+    course  = relationship("Course")
+    student = relationship("User")
+
+
+# ── 3. Academic Calendar ───────────────────────────────────────────────────────
+
+class AcademicCalendarEvent(Base):
+    __tablename__ = "academic_calendar_events"
+    id          = Column(Integer, primary_key=True)
+    title       = Column(String(200), nullable=False)
+    description = Column(Text)
+    event_type  = Column(String(50), nullable=False, default="other")
+    start_date  = Column(Date, nullable=False)
+    end_date    = Column(Date, nullable=False)
+    created_by  = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at  = Column(DateTime, default=datetime.utcnow)
+
+    creator = relationship("User")
+
+
+# ── 4. Departments & Faculty ───────────────────────────────────────────────────
+
+class Department(Base):
+    __tablename__ = "departments"
+    id          = Column(Integer, primary_key=True)
+    name        = Column(String(200), nullable=False, unique=True)
+    description = Column(Text)
+    hod_id      = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at  = Column(DateTime, default=datetime.utcnow)
+
+    hod     = relationship("User", foreign_keys=[hod_id])
+    members = relationship("DepartmentMember", back_populates="department", cascade="all, delete")
+
+
+class DepartmentMember(Base):
+    __tablename__ = "department_members"
+    id            = Column(Integer, primary_key=True)
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=False)
+    teacher_id    = Column(Integer, ForeignKey("users.id"),       nullable=False)
+    role          = Column(String(20), default="member")
+    joined_at     = Column(DateTime, default=datetime.utcnow)
+
+    department = relationship("Department", back_populates="members")
+    teacher    = relationship("User")
+
+
+# ── 5. Cohort Management ───────────────────────────────────────────────────────
+
+class Cohort(Base):
+    __tablename__ = "cohorts"
+    id          = Column(Integer, primary_key=True)
+    name        = Column(String(200), nullable=False)
+    year        = Column(Integer, nullable=False)
+    description = Column(Text)
+    created_by  = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at  = Column(DateTime, default=datetime.utcnow)
+
+    creator = relationship("User")
+    members = relationship("CohortMember", back_populates="cohort", cascade="all, delete")
+
+
+class CohortMember(Base):
+    __tablename__ = "cohort_members"
+    id         = Column(Integer, primary_key=True)
+    cohort_id  = Column(Integer, ForeignKey("cohorts.id"), nullable=False)
+    student_id = Column(Integer, ForeignKey("users.id"),   nullable=False)
+    added_at   = Column(DateTime, default=datetime.utcnow)
+
+    cohort  = relationship("Cohort", back_populates="members")
+    student = relationship("User")
+
+
+# ── 7. Parent-Teacher Conferences ─────────────────────────────────────────────
+
+class ConferenceSlot(Base):
+    __tablename__ = "conference_slots"
+    id         = Column(Integer, primary_key=True)
+    teacher_id = Column(Integer, ForeignKey("users.id"),    nullable=False)
+    date       = Column(Date,    nullable=False)
+    start_time = Column(String(10), nullable=False)
+    end_time   = Column(String(10), nullable=False)
+    is_booked  = Column(Boolean, default=False)
+    course_id  = Column(Integer, ForeignKey("courses.id"),  nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    teacher  = relationship("User")
+    course   = relationship("Course")
+    bookings = relationship("ConferenceBooking", back_populates="slot", cascade="all, delete")
+
+
+class ConferenceBooking(Base):
+    __tablename__ = "conference_bookings"
+    id         = Column(Integer, primary_key=True)
+    slot_id    = Column(Integer, ForeignKey("conference_slots.id"), nullable=False)
+    parent_id  = Column(Integer, ForeignKey("users.id"),           nullable=False)
+    student_id = Column(Integer, ForeignKey("users.id"),           nullable=False)
+    notes      = Column(Text)
+    booked_at  = Column(DateTime, default=datetime.utcnow)
+
+    slot    = relationship("ConferenceSlot", back_populates="bookings")
+    parent  = relationship("User", foreign_keys=[parent_id])
+    student = relationship("User", foreign_keys=[student_id])
+
+
+# ── 9. User Sessions ───────────────────────────────────────────────────────────
+
+class UserSession(Base):
+    __tablename__ = "user_sessions"
+    id          = Column(Integer, primary_key=True)
+    user_id     = Column(Integer, ForeignKey("users.id"), nullable=False)
+    token_hash  = Column(String(200), unique=True, nullable=False)
+    created_at  = Column(DateTime, default=datetime.utcnow)
+    last_used   = Column(DateTime, default=datetime.utcnow)
+    user_agent  = Column(String(500), nullable=True)
+    ip_address  = Column(String(50),  nullable=True)
+    is_revoked  = Column(Boolean, default=False)
+
+    user = relationship("User")
+
+
+# ── 11. Late Submission Fields (columns added via migration) ───────────────────
+# Assignment.late_penalty_per_day, Assignment.max_late_days,
+# Assignment.allow_resubmission, Assignment.max_submissions
+# are added via apply_migrations() — no ORM-level column needed if already migrated.
+
+# ── 12. Plagiarism Detection ───────────────────────────────────────────────────
+
+class PlagiarismReport(Base):
+    __tablename__ = "plagiarism_reports"
+    id               = Column(Integer, primary_key=True)
+    assignment_id    = Column(Integer, ForeignKey("assignments.id"), nullable=False)
+    submission_a_id  = Column(Integer, ForeignKey("submissions.id"), nullable=False)
+    submission_b_id  = Column(Integer, ForeignKey("submissions.id"), nullable=False)
+    similarity_score = Column(Float,   nullable=False)
+    checked_at       = Column(DateTime, default=datetime.utcnow)
+
+    assignment   = relationship("Assignment")
+    submission_a = relationship("Submission", foreign_keys=[submission_a_id])
+    submission_b = relationship("Submission", foreign_keys=[submission_b_id])
+
+
+# ── 13. Course Ratings & Reviews ───────────────────────────────────────────────
+
+from sqlalchemy import UniqueConstraint
+
+class CourseRating(Base):
+    __tablename__ = "course_ratings"
+    __table_args__ = (UniqueConstraint("course_id", "student_id", name="uq_course_rating"),)
+    id         = Column(Integer, primary_key=True)
+    course_id  = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    student_id = Column(Integer, ForeignKey("users.id"),   nullable=False)
+    rating     = Column(Integer, nullable=False)
+    review     = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    course  = relationship("Course")
+    student = relationship("User")
+
+
+# ── 14. Streak Tracking ────────────────────────────────────────────────────────
+
+class DailyActivity(Base):
+    __tablename__ = "daily_activities"
+    __table_args__ = (UniqueConstraint("user_id", "activity_date", name="uq_daily_activity"),)
+    id            = Column(Integer, primary_key=True)
+    user_id       = Column(Integer, ForeignKey("users.id"), nullable=False)
+    activity_date = Column(Date, nullable=False)
+    created_at    = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
+
+
+class StudentStreak(Base):
+    __tablename__ = "student_streaks"
+    id                 = Column(Integer, primary_key=True)
+    user_id            = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
+    current_streak     = Column(Integer, default=0)
+    longest_streak     = Column(Integer, default=0)
+    last_activity_date = Column(Date,    nullable=True)
+    updated_at         = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User")
+
+
+# ── 15. XP System ─────────────────────────────────────────────────────────────
+
+class UserXP(Base):
+    __tablename__ = "user_xp"
+    id         = Column(Integer, primary_key=True)
+    user_id    = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
+    total_xp   = Column(Integer, default=0)
+    level      = Column(Integer, default=1)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User")
+
+
+class XPEvent(Base):
+    __tablename__ = "xp_events"
+    id          = Column(Integer, primary_key=True)
+    user_id     = Column(Integer, ForeignKey("users.id"), nullable=False)
+    event_type  = Column(String(100), nullable=False)
+    xp_awarded  = Column(Integer, nullable=False)
+    description = Column(String(500), nullable=False)
+    created_at  = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
+
+
+# ── 16. Library Management ─────────────────────────────────────────────────────
+
+class LibraryBook(Base):
+    __tablename__ = "library_books"
+    id               = Column(Integer, primary_key=True)
+    title            = Column(String(300), nullable=False)
+    author           = Column(String(200), nullable=False)
+    isbn             = Column(String(20), unique=True, nullable=True)
+    description      = Column(Text)
+    category         = Column(String(100), nullable=False)
+    total_copies     = Column(Integer, default=1)
+    available_copies = Column(Integer, default=1)
+    cover_url        = Column(String(500))
+    added_by         = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at       = Column(DateTime, default=datetime.utcnow)
+
+    adder   = relationship("User")
+    borrows = relationship("LibraryBorrow", back_populates="book", cascade="all, delete")
+
+
+class LibraryBorrow(Base):
+    __tablename__ = "library_borrows"
+    id             = Column(Integer, primary_key=True)
+    book_id        = Column(Integer, ForeignKey("library_books.id"), nullable=False)
+    borrower_id    = Column(Integer, ForeignKey("users.id"),          nullable=False)
+    borrowed_at    = Column(DateTime, default=datetime.utcnow)
+    due_date       = Column(DateTime, nullable=False)
+    returned_at    = Column(DateTime, nullable=True)
+    renewed_count  = Column(Integer, default=0)
+
+    book     = relationship("LibraryBook", back_populates="borrows")
+    borrower = relationship("User")
+
+
+# ── 17. Payment & Billing ──────────────────────────────────────────────────────
+
+class Invoice(Base):
+    __tablename__ = "invoices"
+    id          = Column(Integer, primary_key=True)
+    student_id  = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title       = Column(String(300), nullable=False)
+    description = Column(Text)
+    amount      = Column(Float, nullable=False)
+    due_date    = Column(DateTime, nullable=True)
+    status      = Column(String(20), default="unpaid")
+    created_by  = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at  = Column(DateTime, default=datetime.utcnow)
+
+    student  = relationship("User", foreign_keys=[student_id])
+    creator  = relationship("User", foreign_keys=[created_by])
+    payments = relationship("Payment", back_populates="invoice", cascade="all, delete")
+
+
+class Payment(Base):
+    __tablename__ = "payments"
+    id             = Column(Integer, primary_key=True)
+    invoice_id     = Column(Integer, ForeignKey("invoices.id"), nullable=False)
+    paid_by        = Column(Integer, ForeignKey("users.id"),    nullable=False)
+    amount_paid    = Column(Float, nullable=False)
+    payment_method = Column(String(50), nullable=False)
+    reference      = Column(String(200), nullable=True)
+    paid_at        = Column(DateTime, default=datetime.utcnow)
+    recorded_by    = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+    invoice   = relationship("Invoice", back_populates="payments")
+    payer     = relationship("User", foreign_keys=[paid_by])
+    recorder  = relationship("User", foreign_keys=[recorded_by])
+
+
+# ── 18. Student Clubs ──────────────────────────────────────────────────────────
+
+class StudentClub(Base):
+    __tablename__ = "student_clubs"
+    id                 = Column(Integer, primary_key=True)
+    name               = Column(String(200), nullable=False)
+    description        = Column(Text)
+    category           = Column(String(100), nullable=True)
+    teacher_advisor_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    is_open            = Column(Boolean, default=True)
+    created_by         = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at         = Column(DateTime, default=datetime.utcnow)
+
+    advisor  = relationship("User", foreign_keys=[teacher_advisor_id])
+    creator  = relationship("User", foreign_keys=[created_by])
+    members  = relationship("ClubMember", back_populates="club", cascade="all, delete")
+    posts    = relationship("ClubPost",   back_populates="club", cascade="all, delete")
+
+
+class ClubMember(Base):
+    __tablename__ = "club_members"
+    id        = Column(Integer, primary_key=True)
+    club_id   = Column(Integer, ForeignKey("student_clubs.id"), nullable=False)
+    user_id   = Column(Integer, ForeignKey("users.id"),         nullable=False)
+    role      = Column(String(20), default="member")
+    joined_at = Column(DateTime, default=datetime.utcnow)
+
+    club = relationship("StudentClub", back_populates="members")
+    user = relationship("User")
+
+
+class ClubPost(Base):
+    __tablename__ = "club_posts"
+    id         = Column(Integer, primary_key=True)
+    club_id    = Column(Integer, ForeignKey("student_clubs.id"), nullable=False)
+    author_id  = Column(Integer, ForeignKey("users.id"),         nullable=False)
+    title      = Column(String(300), nullable=False)
+    content    = Column(Text,        nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    club   = relationship("StudentClub", back_populates="posts")
+    author = relationship("User")
+
+
+# ── 19. Code Sandbox ───────────────────────────────────────────────────────────
+
+class CodeSubmission(Base):
+    __tablename__ = "code_submissions"
+    id                = Column(Integer, primary_key=True)
+    assignment_id     = Column(Integer, ForeignKey("assignments.id"), nullable=True)
+    student_id        = Column(Integer, ForeignKey("users.id"),       nullable=False)
+    language          = Column(String(50), nullable=False)
+    code              = Column(Text,       nullable=False)
+    stdin             = Column(Text,       nullable=True)
+    stdout            = Column(Text,       nullable=False, default="")
+    stderr            = Column(Text,       nullable=False, default="")
+    exit_code         = Column(Integer,    nullable=False, default=0)
+    execution_time_ms = Column(Integer,    nullable=False, default=0)
+    created_at        = Column(DateTime, default=datetime.utcnow)
+
+    assignment = relationship("Assignment")
+    student    = relationship("User")
+
+
+# ── 20. AI Tutoring ────────────────────────────────────────────────────────────
+
+class TutorSession(Base):
+    __tablename__ = "tutor_sessions"
+    id         = Column(Integer, primary_key=True)
+    student_id = Column(Integer, ForeignKey("users.id"),    nullable=False)
+    course_id  = Column(Integer, ForeignKey("courses.id"),  nullable=True)
+    title      = Column(String(300), nullable=False, default="New Session")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    student  = relationship("User")
+    course   = relationship("Course")
+    messages = relationship("TutorMessage", back_populates="session", cascade="all, delete")
+
+
+class TutorMessage(Base):
+    __tablename__ = "tutor_messages"
+    id         = Column(Integer, primary_key=True)
+    session_id = Column(Integer, ForeignKey("tutor_sessions.id"), nullable=False)
+    role       = Column(String(20), nullable=False)   # "user" | "assistant"
+    content    = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    session = relationship("TutorSession", back_populates="messages")
+
+
+# ── 22. Content Recommendations ───────────────────────────────────────────────
+
+class Recommendation(Base):
+    __tablename__ = "recommendations"
+    id           = Column(Integer, primary_key=True)
+    student_id   = Column(Integer, ForeignKey("users.id"),    nullable=False)
+    course_id    = Column(Integer, ForeignKey("courses.id"),  nullable=False)
+    material_id  = Column(Integer, ForeignKey("materials.id"), nullable=True)
+    reason       = Column(Text, nullable=False)
+    score_trigger = Column(Float, nullable=False)
+    created_at   = Column(DateTime, default=datetime.utcnow)
+    is_dismissed = Column(Boolean, default=False)
+
+    student  = relationship("User")
+    course   = relationship("Course")
+    material = relationship("Material")
+
+
+# ── 25. Timetable ─────────────────────────────────────────────────────────────
+
+class TimetableSlot(Base):
+    __tablename__ = "timetable_slots"
+    id           = Column(Integer, primary_key=True)
+    course_id    = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    day_of_week  = Column(Integer, nullable=False)   # 0=Mon … 6=Sun
+    start_time   = Column(String(10), nullable=False)
+    end_time     = Column(String(10), nullable=False)
+    room         = Column(String(100), nullable=True)
+    recurring    = Column(Boolean, default=True)
+
+    course = relationship("Course")

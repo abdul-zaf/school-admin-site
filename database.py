@@ -51,6 +51,17 @@ def apply_migrations():
                 "ALTER TABLE assignments ADD COLUMN grade_category_id INTEGER REFERENCES grade_categories(id)",
                 "ALTER TABLE assignments ADD COLUMN is_extra_credit BOOLEAN NOT NULL DEFAULT 0",
                 "ALTER TABLE assignments ADD COLUMN rubric_id INTEGER REFERENCES rubrics(id)",
+                # v5: late submission + resubmission policy
+                "ALTER TABLE assignments ADD COLUMN late_penalty_per_day REAL NOT NULL DEFAULT 0",
+                "ALTER TABLE assignments ADD COLUMN max_late_days INTEGER",
+                "ALTER TABLE assignments ADD COLUMN allow_resubmission BOOLEAN NOT NULL DEFAULT 0",
+                "ALTER TABLE assignments ADD COLUMN max_submissions INTEGER NOT NULL DEFAULT 1",
+                # v5: announcement scheduling
+                "ALTER TABLE announcements ADD COLUMN publish_at DATETIME",
+                # v5: enrollment cap
+                "ALTER TABLE courses ADD COLUMN enrollment_cap INTEGER",
+                # v5: user email notification preference
+                "ALTER TABLE users ADD COLUMN email_notifications BOOLEAN NOT NULL DEFAULT 1",
             ]:
                 try:
                     conn.execute(text(ddl))
@@ -72,6 +83,14 @@ def apply_migrations():
                 "ALTER TABLE assignments ADD COLUMN IF NOT EXISTS grade_category_id INTEGER REFERENCES grade_categories(id)",
                 "ALTER TABLE assignments ADD COLUMN IF NOT EXISTS is_extra_credit BOOLEAN NOT NULL DEFAULT FALSE",
                 "ALTER TABLE assignments ADD COLUMN IF NOT EXISTS rubric_id INTEGER REFERENCES rubrics(id)",
+                # v5
+                "ALTER TABLE assignments ADD COLUMN IF NOT EXISTS late_penalty_per_day FLOAT NOT NULL DEFAULT 0",
+                "ALTER TABLE assignments ADD COLUMN IF NOT EXISTS max_late_days INTEGER",
+                "ALTER TABLE assignments ADD COLUMN IF NOT EXISTS allow_resubmission BOOLEAN NOT NULL DEFAULT FALSE",
+                "ALTER TABLE assignments ADD COLUMN IF NOT EXISTS max_submissions INTEGER NOT NULL DEFAULT 1",
+                "ALTER TABLE announcements ADD COLUMN IF NOT EXISTS publish_at TIMESTAMP",
+                "ALTER TABLE courses ADD COLUMN IF NOT EXISTS enrollment_cap INTEGER",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS email_notifications BOOLEAN NOT NULL DEFAULT TRUE",
             ]:
                 conn.execute(text(ddl))
             conn.commit()

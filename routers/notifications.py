@@ -1,12 +1,14 @@
 """
 notifications.py — In-app notification bell.
 
-GET /api/notifications/              List recent notifications
-GET /api/notifications/unread-count  Unread count (polled by frontend)
-PUT /api/notifications/{id}/read     Mark a notification as read
+GET   /api/notifications/              List recent notifications
+GET   /api/notifications/unread-count  Unread count (polled by frontend)
+PUT   /api/notifications/{id}/read     Mark a notification as read
+PATCH /api/notifications/email-preferences Toggle email_notifications for user
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 from database import get_db
@@ -14,6 +16,10 @@ import models
 import security
 
 router = APIRouter()
+
+
+class EmailPreferences(BaseModel):
+    email_notifications: bool
 
 
 def notify(db: Session, user_id: int, type: str, title: str, body: str = "", link: str = ""):
@@ -103,3 +109,14 @@ def mark_all_read(
     ).update({"is_read": True})
     db.commit()
     return {"ok": True}
+
+
+@router.patch("/email-preferences")
+def set_email_preferences(
+    data: EmailPreferences,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    current_user.email_notifications = data.email_notifications
+    db.commit()
+    return {"email_notifications": current_user.email_notifications}

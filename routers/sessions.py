@@ -1,9 +1,11 @@
 """
 sessions.py — Virtual and in-person class sessions.
 
-GET    /api/sessions/course/{id}  List sessions for a course
-POST   /api/sessions/course/{id}  Schedule a session (own teacher/admin)
-DELETE /api/sessions/{id}         Cancel / delete a session
+GET    /api/sessions/course/{id}          List sessions for a course
+POST   /api/sessions/course/{id}          Schedule a session (own teacher/admin)
+DELETE /api/sessions/{id}                 Cancel / delete a session
+POST   /api/sessions/{session_id}/meeting Set meeting URL (teacher/admin)
+GET    /api/sessions/{session_id}/meeting Get meeting info
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session as DBSession
@@ -25,6 +27,11 @@ class SessionCreate(BaseModel):
     duration_minutes: int = 60
     location: Optional[str] = None
     notes: Optional[str] = None
+
+
+class MeetingSet(BaseModel):
+    meeting_url: str
+    provider: str = "other"   # zoom | google_meet | teams | other
 
 
 @router.get("/course/{course_id}")
@@ -95,3 +102,44 @@ def delete_session(
     db.delete(s)
     db.commit()
     return {"ok": True}
+
+
+@router.post("/{session_id}/meeting")
+def set_meeting(
+    session_id: int,
+    data: MeetingSet,
+    db: DBSession = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("admin", "teacher")),
+):
+    s = db.query(models.ClassSession).filter(models.ClassSession.id == session_id).first()
+    if not s:
+        raise HTTPException(404, "Session not found")
+    security.require_course_access(s.course_id, current_user, db)
+    valid_providers = {"zoom", "google_meet", "teams", "other"}
+    if data.provider not in valid_providers:
+        raise HTTPException(400, f"provider must be one of {valid_providers}")
+    # Store as "provider:url" in the location field
+    s.location = f"{data.provider}:{data.meeting_url}"
+    s.session_type = "virtual"
+    db.commit()
+    return {"ok": True, "location": s.location}
+
+
+@router.get("/{session_id}/meeting")
+def get_meeting(
+    session_id: int,
+    db: DBSession = Depends(get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    s = db.query(models.ClassSession).filter(models.ClassSession.id == session_id).first()
+    if not s:
+        raise HTTPException(404, "Session not found")
+    if not s.location:
+        return {"meeting_url": None, "provider": None}
+    # Parse "provider:url" format
+    valid_providers = {"zoom", "google_meet", "teams", "other"}
+    parts = s.location.split(":", 1)
+    if len(parts) == 2 and parts[0] in valid_providers:
+        return {"provider": parts[0], "meeting_url": parts[1]}
+    # Legacy location (plain URL or physical address)
+    return {"provider": "other", "meeting_url": s.location}
