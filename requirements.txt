@@ -7,7 +7,9 @@ bcrypt==4.0.1
 python-multipart
 psycopg2-binary
 reportlab
+pypdf                  # PDF text extraction for AI tutor uploads
 # Ollama integration uses stdlib urllib — no extra package required.
 # To use: install Ollama (https://ollama.com) and run:
-#   ollama pull llama3.2   (or whichever OLLAMA_MODEL you set)
+#   ollama pull llama3.2          (text/code)
+#   ollama pull llava             (vision — images in chat)
 #   ollama serve

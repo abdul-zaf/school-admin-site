@@ -13,7 +13,7 @@ import json
 import os
 import urllib.error
 import urllib.request
-from typing import Optional
+from typing import Optional, List
 
 OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
 OLLAMA_MODEL: str    = os.getenv("OLLAMA_MODEL",    "llama3.2")
@@ -39,6 +39,7 @@ def chat(
     model: Optional[str] = None,
     temperature: float = 0.7,
     max_tokens: int = 1024,
+    images: Optional[List[str]] = None,
 ) -> str:
     """
     Send a chat request to Ollama and return the assistant's text reply.
@@ -50,6 +51,9 @@ def chat(
     model      : override OLLAMA_MODEL for this call
     temperature: sampling temperature (0.0 = deterministic)
     max_tokens : maximum tokens in the reply (passed as num_predict option)
+    images     : optional list of base64-encoded image strings attached to the
+                 latest user message. Requires a vision-capable model such as
+                 llava or llama3.2-vision (set OLLAMA_MODEL accordingly).
 
     Returns
     -------
@@ -62,6 +66,13 @@ def chat(
     m = list(messages)
     if system:
         m = [{"role": "system", "content": system}] + m
+
+    # Attach images to the last user message when provided
+    if images:
+        for i in range(len(m) - 1, -1, -1):
+            if m[i]["role"] == "user":
+                m[i] = {**m[i], "images": images}
+                break
 
     payload = {
         "model": model or OLLAMA_MODEL,

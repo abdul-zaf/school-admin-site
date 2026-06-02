@@ -1204,6 +1204,25 @@ class TutorMessage(Base):
     session = relationship("TutorSession", back_populates="messages")
 
 
+class TutorUpload(Base):
+    """A file uploaded by a student inside an AI tutor session."""
+    __tablename__ = "tutor_uploads"
+    id             = Column(Integer, primary_key=True)
+    session_id     = Column(Integer, ForeignKey("tutor_sessions.id"), nullable=False)
+    student_id     = Column(Integer, ForeignKey("users.id"),          nullable=False)
+    original_name  = Column(String(300), nullable=False)
+    file_path      = Column(String(500), nullable=False)
+    file_mime      = Column(String(100))
+    file_size      = Column(Integer)
+    file_kind      = Column(String(20))   # "text" | "pdf" | "docx" | "image" | "unsupported"
+    extracted_text = Column(Text)         # populated for text/pdf/docx; None for images
+    is_image       = Column(Boolean, default=False)
+    uploaded_at    = Column(DateTime, default=datetime.utcnow)
+
+    session = relationship("TutorSession")
+    student = relationship("User")
+
+
 # ── 21. Knowledge Base (per-course material chunks for AI tutor context) ──────
 
 class KnowledgeChunk(Base):

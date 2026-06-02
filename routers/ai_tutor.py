@@ -39,10 +39,14 @@ GET    /api/ai-tutor/knowledge                         Student's own KB summary
 GET    /api/ai-tutor/knowledge/{course_id}             Course KB detail (teacher/admin)
 POST   /api/ai-tutor/knowledge/rebuild/{course_id}     Force-rebuild KB (teacher/admin)
 """
-from fastapi import APIRouter, Depends, HTTPException
+import os
+import uuid
+import mimetypes
+from pathlib import Path
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, field_validator
-from typing import Optional
+from typing import Optional, List
 from database import get_db
 import models
 import security
@@ -56,6 +60,11 @@ from services.knowledge_base import (
     rebuild_course_knowledge,
     get_knowledge_summary,
 )
+from services.file_extractor import extract as extract_file, format_for_prompt, classify
+
+_UPLOAD_DIR = Path(os.getenv("TUTOR_UPLOAD_DIR", "./uploads/tutor"))
+_MAX_UPLOAD_MB = int(os.getenv("TUTOR_MAX_UPLOAD_MB", "20"))
+_MAX_UPLOADS_PER_MSG = 3   # images + files combined per message
 
 router = APIRouter()
 
@@ -80,6 +89,7 @@ class SessionCreate(BaseModel):
 
 class MessageCreate(BaseModel):
     content: str
+    upload_ids: Optional[List[int]] = None   # IDs from POST …/upload
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -346,34 +356,104 @@ def send_message(
     if not session:
         raise HTTPException(404, "Session not found")
 
-    # ── 4. Build system prompt with KB context ───────────────────────────────
+    # ── 4. Resolve attached uploads ──────────────────────────────────────────
+    text_attachments: List[str] = []   # formatted text blocks
+    image_b64s:       List[str] = []   # base64 images for vision models
+    upload_labels:    List[str] = []   # short names for the stored message
+
+    if data.upload_ids:
+        if len(data.upload_ids) > _MAX_UPLOADS_PER_MSG:
+            raise HTTPException(
+                400,
+                f"Maximum {_MAX_UPLOADS_PER_MSG} files per message.",
+            )
+        for uid in data.upload_ids:
+            upload = db.query(models.TutorUpload).filter(
+                models.TutorUpload.id == uid,
+                models.TutorUpload.session_id == session_id,
+                models.TutorUpload.student_id == current_user.id,
+            ).first()
+            if not upload:
+                raise HTTPException(404, f"Upload {uid} not found in this session")
+            upload_labels.append(upload.original_name)
+            if upload.is_image:
+                # Load the image bytes and base64-encode for Ollama vision
+                try:
+                    with open(upload.file_path, "rb") as f:
+                        import base64 as _b64
+                        image_b64s.append(_b64.b64encode(f.read()).decode())
+                except Exception:
+                    text_attachments.append(
+                        f"[Image file: {upload.original_name} — could not be read]"
+                    )
+            elif upload.extracted_text:
+                text_attachments.append(
+                    format_for_prompt(upload.original_name, upload.extracted_text)
+                )
+            else:
+                text_attachments.append(
+                    f"[Attached: {upload.original_name} — no text could be extracted]"
+                )
+
+    # ── 5. Build system prompt with KB context ───────────────────────────────
     system_prompt = _build_system_prompt(db, session, current_user, data.content)
 
-    # ── 5. Conversation history ──────────────────────────────────────────────
+    # ── 6. Conversation history ──────────────────────────────────────────────
     history = (
         db.query(models.TutorMessage)
         .filter(models.TutorMessage.session_id == session_id)
         .order_by(models.TutorMessage.created_at)
         .all()
     )
-    messages = [{"role": m.role, "content": m.content} for m in history]
-    messages.append({"role": "user", "content": data.content})
+    messages_for_ai = [{"role": m.role, "content": m.content} for m in history]
 
-    # ── 6. Persist user message ──────────────────────────────────────────────
+    # Compose the user turn: file attachments first, then the message
+    user_content_parts = []
+    if text_attachments:
+        user_content_parts.append(
+            "The student has attached the following file(s):\n\n"
+            + "\n\n".join(text_attachments)
+        )
+    if image_b64s and not text_attachments:
+        user_content_parts.append("The student has attached image(s) for you to analyse.")
+    user_content_parts.append(data.content)
+    user_turn_content = "\n\n".join(user_content_parts)
+
+    messages_for_ai.append({"role": "user", "content": user_turn_content})
+
+    # ── 7. Persist user message (store original content + attachment labels) ─
+    stored_content = data.content
+    if upload_labels:
+        stored_content = (
+            f"[Attached: {', '.join(upload_labels)}]\n\n" + data.content
+        )
     user_msg = models.TutorMessage(
-        session_id=session_id, role="user", content=data.content
+        session_id=session_id, role="user", content=stored_content
     )
     db.add(user_msg)
     db.flush()
 
-    # ── 7. Call Ollama ───────────────────────────────────────────────────────
+    # ── 8. Call Ollama (with optional vision images) ─────────────────────────
     try:
-        reply = ollama_chat(messages, system=system_prompt)
+        reply = ollama_chat(
+            messages_for_ai,
+            system=system_prompt,
+            images=image_b64s or None,
+        )
     except RuntimeError as exc:
         db.rollback()
-        raise HTTPException(502, f"AI service error: {exc}")
+        err = str(exc)
+        # Friendly message when the model doesn't support vision
+        if image_b64s and ("vision" in err.lower() or "image" in err.lower() or "multimodal" in err.lower()):
+            raise HTTPException(
+                422,
+                f"This model ({OLLAMA_MODEL}) does not support image analysis. "
+                "Switch to a vision-capable model such as 'llava' or 'llama3.2-vision' "
+                "by setting the OLLAMA_MODEL environment variable.",
+            )
+        raise HTTPException(502, f"AI service error: {err}")
 
-    # ── 8. Persist assistant reply ───────────────────────────────────────────
+    # ── 9. Persist assistant reply ───────────────────────────────────────────
     asst_msg = models.TutorMessage(
         session_id=session_id, role="assistant", content=reply
     )
@@ -385,6 +465,7 @@ def send_message(
         "role": "assistant",
         "content": reply,
         "mode": session.mode,
+        "attachments_used": upload_labels,
         "created_at": str(asst_msg.created_at),
     }
 
@@ -411,6 +492,155 @@ def get_messages(
         {"id": m.id, "role": m.role, "content": m.content, "created_at": str(m.created_at)}
         for m in msgs
     ]
+
+
+# ── File upload endpoints ─────────────────────────────────────────────────────
+
+@router.post("/sessions/{session_id}/upload")
+async def upload_file(
+    session_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("student")),
+):
+    """
+    Upload a file into a tutor session so it can be referenced in messages.
+
+    Supported types
+    ---------------
+    Text / code   .txt .py .js .ts .java .c .cpp .html .md .csv .json .xml …
+    PDF           .pdf  — text extracted page by page
+    Word          .docx — text extracted (requires python-docx)
+    Images        .jpg .jpeg .png .gif .webp — sent as vision input to Ollama
+                  (requires a vision-capable model like llava or llama3.2-vision)
+
+    Returns
+    -------
+    {upload_id, filename, file_kind, is_image, text_preview?, size}
+
+    Use the returned upload_id in the upload_ids list of POST …/messages.
+    """
+    session = db.query(models.TutorSession).filter(
+        models.TutorSession.id == session_id,
+        models.TutorSession.student_id == current_user.id,
+    ).first()
+    if not session:
+        raise HTTPException(404, "Session not found")
+
+    content = await file.read()
+    size_mb = len(content) / (1024 * 1024)
+    if size_mb > _MAX_UPLOAD_MB:
+        raise HTTPException(413, f"File too large — maximum {_MAX_UPLOAD_MB} MB per upload.")
+
+    original_name = file.filename or "upload"
+    mime = file.content_type or mimetypes.guess_type(original_name)[0] or "application/octet-stream"
+    ext  = Path(original_name).suffix.lower()
+    if not ext and file.content_type:
+        ext = mimetypes.guess_extension(file.content_type) or ""
+
+    kind = classify(original_name, mime)
+    if kind == "unsupported":
+        raise HTTPException(
+            415,
+            f"File type '{ext or mime}' is not supported. "
+            "Accepted: text/code files, PDF, DOCX, and images (JPG/PNG/GIF/WEBP).",
+        )
+
+    # Save to disk
+    _UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    stored_name = f"{uuid.uuid4()}{ext}"
+    stored_path = _UPLOAD_DIR / stored_name
+    stored_path.write_bytes(content)
+
+    # Extract text / confirm image
+    extracted_text, _img_b64 = extract_file(str(stored_path), original_name, mime)
+    is_image = (kind == "image")
+
+    upload = models.TutorUpload(
+        session_id=session_id,
+        student_id=current_user.id,
+        original_name=original_name,
+        file_path=str(stored_path),
+        file_mime=mime,
+        file_size=len(content),
+        file_kind=kind,
+        extracted_text=extracted_text,
+        is_image=is_image,
+    )
+    db.add(upload)
+    db.commit()
+    db.refresh(upload)
+
+    return {
+        "upload_id":    upload.id,
+        "filename":     original_name,
+        "file_kind":    kind,
+        "is_image":     is_image,
+        "size_bytes":   len(content),
+        "text_preview": (extracted_text or "")[:200] if not is_image else None,
+        "note": (
+            "Image uploaded. Use a vision model (e.g. llava) to analyse it."
+            if is_image else
+            f"Text extracted ({len(extracted_text or '')} characters). Ready to use."
+        ),
+    }
+
+
+@router.get("/sessions/{session_id}/uploads")
+def list_uploads(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("student")),
+):
+    """List all files uploaded in this session."""
+    session = db.query(models.TutorSession).filter(
+        models.TutorSession.id == session_id,
+        models.TutorSession.student_id == current_user.id,
+    ).first()
+    if not session:
+        raise HTTPException(404, "Session not found")
+    uploads = (
+        db.query(models.TutorUpload)
+        .filter(models.TutorUpload.session_id == session_id)
+        .order_by(models.TutorUpload.uploaded_at)
+        .all()
+    )
+    return [
+        {
+            "upload_id":    u.id,
+            "filename":     u.original_name,
+            "file_kind":    u.file_kind,
+            "is_image":     u.is_image,
+            "size_bytes":   u.file_size,
+            "text_preview": (u.extracted_text or "")[:150] if not u.is_image else None,
+            "uploaded_at":  str(u.uploaded_at),
+        }
+        for u in uploads
+    ]
+
+
+@router.delete("/sessions/{session_id}/uploads/{upload_id}")
+def delete_upload(
+    session_id: int,
+    upload_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("student")),
+):
+    """Delete an uploaded file from the session."""
+    upload = db.query(models.TutorUpload).filter(
+        models.TutorUpload.id == upload_id,
+        models.TutorUpload.session_id == session_id,
+        models.TutorUpload.student_id == current_user.id,
+    ).first()
+    if not upload:
+        raise HTTPException(404, "Upload not found")
+    try:
+        Path(upload.file_path).unlink(missing_ok=True)
+    except Exception:
+        pass
+    db.delete(upload)
+    db.commit()
+    return {"ok": True}
 
 
 # ── Knowledge base endpoints ──────────────────────────────────────────────────
