@@ -38,8 +38,6 @@ from routers import (
     payments,
     clubs,
     code_sandbox,
-    ai_tutor,
-    recommendations,
     timetable,
 )
 
@@ -134,8 +132,6 @@ app.include_router(library.router,        prefix="/api/library",        tags=["l
 app.include_router(payments.router,       prefix="/api/payments",       tags=["payments"])
 app.include_router(clubs.router,          prefix="/api/clubs",          tags=["clubs"])
 app.include_router(code_sandbox.router,   prefix="/api/sandbox",        tags=["code-sandbox"])
-app.include_router(ai_tutor.router,       prefix="/api/ai-tutor",       tags=["ai-tutor"])
-app.include_router(recommendations.router, prefix="/api/recommendations", tags=["recommendations"])
 app.include_router(timetable.router,      prefix="/api/timetable",      tags=["timetable"])
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
