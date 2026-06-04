@@ -20,7 +20,6 @@ from routers import (
     password_reset,
     # ── New features ─────────────────────────────────────────────────────────
     certificates,
-    leaderboard,
     # ── Batch 2: New features ─────────────────────────────────────────────────
     prerequisites,
     waitlist,
@@ -91,7 +90,6 @@ app.add_middleware(_SecurityHeadersMiddleware)
 app.include_router(auth.router,           prefix="/api/auth",           tags=["auth"])
 app.include_router(password_reset.router, prefix="/api/auth",           tags=["auth"])
 app.include_router(certificates.router,   prefix="/api/certificates",   tags=["certificates"])
-app.include_router(leaderboard.router,    prefix="/api/leaderboard",    tags=["leaderboard"])
 app.include_router(users.router,          prefix="/api/users",          tags=["users"])
 app.include_router(courses.router,        prefix="/api/courses",        tags=["courses"])
 app.include_router(assignments.router,    prefix="/api/assignments",    tags=["assignments"])

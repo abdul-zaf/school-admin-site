@@ -106,10 +106,8 @@ const i18n = {
     theme:'Theme', theme_desc:'Switch between light and dark mode',
     light_mode:'☀️ Light', dark_mode:'🌙 Dark',
     // Leaderboard
-    leaderboard:'Leaderboard', nav_leaderboard:'Leaderboard',
+
     your_rank:'Your Rank', rank:'Rank', top_students:'Top Students',
-    no_leaderboard_data:'No grades recorded yet.',
-    course_leaderboard:'Course Leaderboard', school_leaderboard:'School Leaderboard',
     // Certificates
     download_certificate:'⬇ Download Certificate',
     cert_not_eligible:'Certificate not available yet',
@@ -241,10 +239,8 @@ const i18n = {
     theme:'تھیم', theme_desc:'لائٹ یا ڈارک موڈ منتخب کریں',
     light_mode:'☀️ روشن', dark_mode:'🌙 تاریک',
     // Leaderboard (Urdu)
-    leaderboard:'لیڈر بورڈ', nav_leaderboard:'لیڈر بورڈ',
+
     your_rank:'آپ کی پوزیشن', rank:'پوزیشن', top_students:'اعلیٰ طلبا',
-    no_leaderboard_data:'ابھی کوئی گریڈ نہیں۔',
-    course_leaderboard:'کورس لیڈر بورڈ', school_leaderboard:'اسکول لیڈر بورڈ',
     // Certificates (Urdu)
     download_certificate:'⬇ سرٹیفکیٹ ڈاؤن لوڈ کریں',
     cert_not_eligible:'سرٹیفکیٹ ابھی دستیاب نہیں',
@@ -414,9 +410,9 @@ function loading(el) {
 // Navigation
 // ═══════════════════════════════════════════════════════════
 const NAV_KEYS = {
-  admin:   ['dashboard','courses','users','announcements','gradebook','analytics','leaderboard','calendar','badges','graph','settings'],
-  teacher: ['dashboard','courses','announcements','gradebook','analytics','leaderboard','calendar','messages','question_banks','graph','settings'],
-  student: ['dashboard','courses','announcements','gradebook','leaderboard','calendar','messages','ai_tutor','portfolio','badges','sr','graph','settings'],
+  admin:   ['dashboard','courses','users','announcements','gradebook','analytics','calendar','badges','graph','settings'],
+  teacher: ['dashboard','courses','announcements','gradebook','analytics','calendar','messages','question_banks','graph','settings'],
+  student: ['dashboard','courses','announcements','gradebook','calendar','messages','ai_tutor','portfolio','badges','sr','graph','settings'],
   parent:  ['dashboard','settings'],
 };
 const NAV_I18N = {
@@ -425,13 +421,13 @@ const NAV_I18N = {
   gradebook:'nav_gradebook', analytics:'nav_analytics', calendar:'nav_calendar',
   badges:'nav_badges', messages:'nav_messages', question_banks:'nav_question_banks',
   portfolio:'nav_portfolio', sr:'nav_sr', graph:'nav_graph',
-  leaderboard:'nav_leaderboard', ai_tutor:'nav_ai_tutor',
+  ai_tutor:'nav_ai_tutor',
 };
 const NAV_ICONS = {
   dashboard:'🏠', courses:'📚', users:'👥', announcements:'📢',
   gradebook:'📊', analytics:'📈', calendar:'📅', badges:'🏅',
   messages:'✉️', question_banks:'🗃️', portfolio:'🗂️',
-  sr:'🃏', graph:'🕸️', settings:'⚙️', leaderboard:'🏆', ai_tutor:'🤖',
+  sr:'🃏', graph:'🕸️', settings:'⚙️', ai_tutor:'🤖',
 };
 
 // ── Subject → accent colour (used on course cards) ─────────────────────────
@@ -702,7 +698,6 @@ function navigate(page, params = {}) {
   // ── Learning Intelligence & Social ───────────────────────────────────────
   else if (page === 'sr')          { if (typeof renderSRReview       !== 'undefined') renderSRReview(el); }
   else if (page === 'graph')       { if (typeof renderKnowledgeGraph  !== 'undefined') renderKnowledgeGraph(el); }
-  else if (page === 'leaderboard') renderLeaderboard(el);
   else if (pages[page])            pages[page](el);
 }
 
@@ -1351,7 +1346,7 @@ function viewMaterialFile(event, el) {
     const icon = isVideo ? '🎬' : '🎵';
     openModal(`${icon} ${fileName || 'Media'}`,
       `<div style="text-align:center;padding:8px 0">
-        <${tag} controls autoplay
+        <${tag} controls
           style="max-width:100%;max-height:60vh;border-radius:8px;background:#000"
           src="${fileUrl}">
           Your browser does not support this media type.
@@ -3489,100 +3484,6 @@ function openNewSurveyModal(courseId) {
         closeModal(); toast(t('create')+'!'); renderSurveysTab(courseId, document.getElementById('tab-surveys'), true);
       } catch(err) { toast(err.message, 'error'); }
     });
-}
-
-// ═══════════════════════════════════════════════════════════
-// Leaderboard
-// ═══════════════════════════════════════════════════════════
-async function renderLeaderboard(el) {
-  loading(el);
-  const role = state.user.role;
-  try {
-    const courses = await api('GET', '/courses/');
-    const relevant = role === 'student'
-      ? courses.filter(c => c.enrolled)
-      : role === 'teacher'
-        ? courses.filter(c => c.teacher_id === state.user.id)
-        : courses;
-
-    const firstId = state.currentParams.course_id || (relevant[0] && relevant[0].id);
-    if (!firstId) {
-      el.innerHTML = `<div class="page-header"><h2>🏆 ${t('leaderboard')}</h2></div>
-        <div class="card"><div class="card-body"><p class="text-muted">${t('no_leaderboard_data')}</p></div></div>`;
-      return;
-    }
-
-    const data = await api('GET', `/leaderboard/course/${firstId}`);
-    const schoolData = (role === 'admin' || role === 'teacher')
-      ? await api('GET', '/leaderboard/school').catch(() => null)
-      : null;
-
-    const entries = data.entries || [];
-    const top3    = entries.slice(0, 3);
-    const rest    = entries.slice(3);
-    const medals  = ['🥇','🥈','🥉'];
-
-    el.innerHTML = `
-      <div class="page-header">
-        <h2>🏆 ${t('leaderboard')}</h2>
-        <select class="form-control" style="max-width:260px"
-          onchange="navigate('leaderboard',{course_id:parseInt(this.value)})">
-          ${relevant.map(c=>`<option value="${c.id}" ${c.id==firstId?'selected':''}>${htmlEsc(c.title)}</option>`).join('')}
-        </select>
-      </div>
-
-      <!-- Podium -->
-      ${top3.length ? `
-      <div class="podium">
-        ${[top3[1], top3[0], top3[2]].filter(Boolean).map((e,i) => {
-          const podiumRank = e === top3[0] ? 1 : e === top3[1] ? 2 : 3;
-          return `
-          <div class="podium-slot podium-${podiumRank} ${e.is_me ? 'podium-me' : ''}">
-            <div class="podium-medal">${medals[podiumRank-1]}</div>
-            <div class="podium-name">${htmlEsc(e.name)}</div>
-            <div class="podium-score">${e.avg_pct}%</div>
-            <div class="podium-block p${podiumRank}"></div>
-          </div>`;
-        }).join('')}
-      </div>` : ''}
-
-      <!-- Full table -->
-      <div class="card">
-        <div class="card-header ch-gold"><h3>📊 ${htmlEsc(data.course_title)}</h3></div>
-        <div class="card-body" style="padding:0">
-          <table class="table">
-            <thead><tr>
-              <th style="width:60px">${t('rank')}</th>
-              <th>${t('full_name')}</th>
-              <th style="width:100px;text-align:right">${t('avg_score')}</th>
-            </tr></thead>
-            <tbody>
-              ${entries.map(e => `
-                <tr class="${e.is_me ? 'lb-my-row' : ''}">
-                  <td><strong>${medals[e.rank-1] || '#'+e.rank}</strong></td>
-                  <td>${htmlEsc(e.name)}${e.is_me ? ` <span class="badge badge-info">${t('you')}</span>` : ''}</td>
-                  <td style="text-align:right;font-weight:700">${e.avg_pct}%</td>
-                </tr>`).join('')}
-              ${entries.length === 0 ? `<tr><td colspan="3" class="text-muted" style="text-align:center;padding:20px">${t('no_leaderboard_data')}</td></tr>` : ''}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      ${schoolData ? `
-      <div class="card" style="margin-top:20px">
-        <div class="card-header ch-purple"><h3>🏫 ${t('school_leaderboard')}</h3></div>
-        <div class="card-body" style="padding:0">
-          <table class="table">
-            <thead><tr><th>${t('rank')}</th><th>${t('full_name')}</th><th style="text-align:right">${t('avg_score')}</th></tr></thead>
-            <tbody>
-              ${(schoolData.entries||[]).map(e=>`
-                <tr><td>${medals[e.rank-1]||'#'+e.rank}</td><td>${htmlEsc(e.name)}</td><td style="text-align:right;font-weight:700">${e.avg_pct}%</td></tr>`).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>` : ''}`;
-  } catch(err) { el.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
 }
 
 // ═══════════════════════════════════════════════════════════
