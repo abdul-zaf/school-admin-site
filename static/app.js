@@ -453,105 +453,172 @@ function updateSidebarNav() {
   const r = state.user.role;
   document.getElementById('sidebar-nav').innerHTML = NAV_KEYS[r].map(p => {
     const isActive = state.currentPage === p || (p === 'courses' && state.currentPage === 'course');
-    if (p === 'courses') {
-      return `
-        <div class="nav-flyout-wrapper" id="nav-courses-wrapper">
-          <a class="nav-item${isActive?' active':''}" data-page="courses" onclick="navigate('courses')">
-            <span class="nav-icon">📚</span>
-            <span class="nav-label">${t('nav_courses')}</span>
-            <span class="nav-chevron">›</span>
-          </a>
-          <div class="nav-flyout" id="courses-flyout">
-            <div class="nav-flyout-header">${t('all_courses')}</div>
-            <div class="nav-flyout-list" id="courses-flyout-list">
-              <div class="nav-flyout-loading">Loading…</div>
-            </div>
-            <div class="nav-flyout-footer">
-              <span class="nav-flyout-all" onclick="navigate('courses');document.getElementById('courses-flyout').classList.remove('visible')">${t('all_courses')} →</span>
-            </div>
-          </div>
-        </div>`;
-    }
-    return `<a class="nav-item${isActive?' active':''}" data-page="${p}" onclick="navigate('${p}')">
+    const hasFlyout = p in NAV_FLYOUT_PAGES && NAV_FLYOUT_PAGES[p].roles.includes(r);
+    return `<a class="nav-item${isActive?' active':''}" data-page="${p}"
+        ${hasFlyout ? `data-flyout="${p}"` : ''}
+        onclick="navigate('${p}')">
       <span class="nav-icon">${NAV_ICONS[p]||'•'}</span>
       <span class="nav-label">${t(NAV_I18N[p])}</span>
+      ${hasFlyout ? '<span class="nav-chevron">›</span>' : ''}
     </a>`;
   }).join('');
-  initCoursesFlyout();
+  initNavFlyout();
 }
 
-// ── Courses hover flyout ───────────────────────────────────────────────────────
-let _coursesFlyoutCache = null;
-let _coursesFlyoutFetchedAt = 0;
-const FLYOUT_CACHE_MS = 60_000; // refresh if older than 60 s
+// ── Shared nav hover flyout system ────────────────────────────────────────────
 
-function initCoursesFlyout() {
-  const wrapper = document.getElementById('nav-courses-wrapper');
-  const flyout  = document.getElementById('courses-flyout');
-  if (!wrapper || !flyout) return;
+// Which pages get a flyout and which roles can see it
+const NAV_FLYOUT_PAGES = {
+  courses:       { roles: ['admin','teacher','student'], endpoint: '/courses/' },
+  announcements: { roles: ['admin','teacher','student'], endpoint: '/announcements/' },
+  messages:      { roles: ['admin','teacher','student'], endpoint: '/messages/' },
+  users:         { roles: ['admin'],                     endpoint: '/users/' },
+};
+
+const _flyoutCache   = {};
+const _flyoutFetched = {};
+const FLYOUT_CACHE_MS = 60_000;
+
+function initNavFlyout() {
+  const flyout = document.getElementById('nav-flyout');
+  if (!flyout) return;
 
   let hideTimer = null;
+  const cancelHide = () => clearTimeout(hideTimer);
+  const startHide  = () => { hideTimer = setTimeout(hideNavFlyout, 160); };
 
-  const showFlyout = () => {
-    clearTimeout(hideTimer);
-    // Position: align top of flyout with top of the wrapper, clamped to viewport
-    const rect = wrapper.getBoundingClientRect();
-    const maxTop = window.innerHeight - flyout.offsetHeight - 12;
-    flyout.style.top = Math.max(8, Math.min(rect.top, maxTop)) + 'px';
-    flyout.classList.add('visible');
-    populateCoursesFlyout();
-  };
+  // Flyout itself keeps it open while the mouse is over it
+  flyout.removeEventListener('mouseenter', cancelHide);
+  flyout.removeEventListener('mouseleave', startHide);
+  flyout.addEventListener('mouseenter', cancelHide);
+  flyout.addEventListener('mouseleave', startHide);
 
-  const hideFlyout = () => {
-    hideTimer = setTimeout(() => flyout.classList.remove('visible'), 150);
-  };
-
-  wrapper.addEventListener('mouseenter', showFlyout);
-  wrapper.addEventListener('mouseleave', hideFlyout);
-  flyout.addEventListener('mouseenter', () => clearTimeout(hideTimer));
-  flyout.addEventListener('mouseleave', hideFlyout);
+  // Attach to every flyout-capable nav item (fresh listeners each render)
+  document.querySelectorAll('[data-flyout]').forEach(item => {
+    item.addEventListener('mouseenter', () => {
+      cancelHide();
+      const rect = item.getBoundingClientRect();
+      flyout.style.top = Math.max(8, Math.min(rect.top, window.innerHeight - 360)) + 'px';
+      flyout.classList.add('visible');
+      loadNavFlyout(item.dataset.flyout);
+    });
+    item.addEventListener('mouseleave', startHide);
+  });
 }
 
-function invalidateCoursesFlyoutCache() {
-  _coursesFlyoutCache = null;
-  _coursesFlyoutFetchedAt = 0;
+function hideNavFlyout() {
+  const f = document.getElementById('nav-flyout');
+  if (f) f.classList.remove('visible');
 }
 
-async function populateCoursesFlyout() {
+function invalidateFlyoutCache(page) {
+  delete _flyoutCache[page];
+  delete _flyoutFetched[page];
+}
+
+// Backward-compat alias used by deleteCourse / createCourse
+function invalidateCoursesFlyoutCache() { invalidateFlyoutCache('courses'); }
+
+async function loadNavFlyout(page) {
+  const flyout = document.getElementById('nav-flyout');
+  if (!flyout || !(page in NAV_FLYOUT_PAGES)) return;
+
+  // Show skeleton while loading
+  const title = _flyoutTitle(page);
+  flyout.innerHTML = `<div class="nav-flyout-header">${title}</div>
+    <div class="nav-flyout-list"><div class="nav-flyout-loading">Loading…</div></div>`;
+
   const now = Date.now();
-  if (_coursesFlyoutCache && now - _coursesFlyoutFetchedAt < FLYOUT_CACHE_MS) {
-    renderCoursesFlyout(_coursesFlyoutCache);
+  if (_flyoutCache[page] && now - (_flyoutFetched[page] || 0) < FLYOUT_CACHE_MS) {
+    flyout.innerHTML = _renderFlyout(page, _flyoutCache[page]);
     return;
   }
   try {
-    const courses = await api('GET', '/courses/');
-    _coursesFlyoutCache = courses;
-    _coursesFlyoutFetchedAt = Date.now();
-    renderCoursesFlyout(courses);
+    const data = await api('GET', NAV_FLYOUT_PAGES[page].endpoint);
+    _flyoutCache[page] = data;
+    _flyoutFetched[page] = now;
+    flyout.innerHTML = _renderFlyout(page, data);
   } catch (e) {
-    const list = document.getElementById('courses-flyout-list');
-    if (list) list.innerHTML = '<div class="nav-flyout-error">Could not load courses</div>';
+    flyout.innerHTML = `<div class="nav-flyout-header">${title}</div>
+      <div class="nav-flyout-list"><div class="nav-flyout-error">Could not load</div></div>`;
   }
 }
 
-function renderCoursesFlyout(courses) {
-  const list = document.getElementById('courses-flyout-list');
-  if (!list) return;
-  if (!courses || !courses.length) {
-    list.innerHTML = `<div class="nav-flyout-empty">${t('no_courses')}</div>`;
-    return;
+function _flyoutTitle(page) {
+  return ({
+    courses: t('all_courses'),
+    announcements: t('school_announcements') || 'Announcements',
+    messages: t('messages'),
+    users: t('users'),
+  })[page] || page;
+}
+
+function _renderFlyout(page, data) {
+  const title  = _flyoutTitle(page);
+  const header = `<div class="nav-flyout-header">${title}</div>`;
+  const footer  = `<div class="nav-flyout-footer">
+    <span class="nav-flyout-all" onclick="navigate('${page}');hideNavFlyout()">${title} →</span>
+  </div>`;
+
+  let items = '';
+
+  if (page === 'courses') {
+    if (!data?.length) return header + `<div class="nav-flyout-list"><div class="nav-flyout-empty">${t('no_courses')}</div></div>` + footer;
+    const visible = data.slice(0, 10);
+    const extra   = data.length - visible.length;
+    items = visible.map(c => `
+      <div class="nav-flyout-item" onclick="navigate('course',{id:${c.id}});hideNavFlyout()">
+        <span class="nav-flyout-dot" style="background:${subjectAccent(c.subject||'',c.title||'')}"></span>
+        <div class="nav-flyout-item-text">
+          <div class="nav-flyout-item-title">${htmlEsc(c.title)}</div>
+          ${c.subject ? `<div class="nav-flyout-item-sub">${htmlEsc(c.subject)}</div>` : ''}
+        </div>
+      </div>`).join('')
+      + (extra > 0 ? `<div class="nav-flyout-more">+${extra} more</div>` : '');
   }
-  const visible = courses.slice(0, 12);
-  const extra   = courses.length - visible.length;
-  list.innerHTML = visible.map(c => `
-    <div class="nav-flyout-item" onclick="navigate('course',{id:${c.id}});document.getElementById('courses-flyout').classList.remove('visible')">
-      <span class="nav-flyout-dot" style="background:${subjectAccent(c.subject||'',c.title||'')}"></span>
-      <div class="nav-flyout-item-text">
-        <div class="nav-flyout-item-title">${htmlEsc(c.title)}</div>
-        ${c.subject ? `<div class="nav-flyout-item-sub">${htmlEsc(c.subject)}</div>` : ''}
-      </div>
-    </div>`).join('')
-    + (extra > 0 ? `<div class="nav-flyout-more">+${extra} more</div>` : '');
+
+  else if (page === 'announcements') {
+    if (!data?.length) return header + `<div class="nav-flyout-list"><div class="nav-flyout-empty">No announcements</div></div>` + footer;
+    items = data.slice(0, 5).map(a => `
+      <div class="nav-flyout-item" onclick="navigate('announcements');hideNavFlyout()">
+        <span class="nav-flyout-dot" style="background:#f59e0b"></span>
+        <div class="nav-flyout-item-text">
+          <div class="nav-flyout-item-title">${htmlEsc(a.title)}</div>
+          <div class="nav-flyout-item-sub">${htmlEsc(a.author_name||'')} · ${fmtDate(a.created_at)}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  else if (page === 'messages') {
+    if (!data?.length) return header + `<div class="nav-flyout-list"><div class="nav-flyout-empty">No messages</div></div>` + footer;
+    items = data.slice(0, 6).map(m => {
+      const other  = m.sender_name === state.user?.name ? m.recipient_name : m.sender_name;
+      const unread = !m.is_read && m.recipient_id === state.user?.id;
+      return `
+        <div class="nav-flyout-item${unread?' nav-flyout-item-unread':''}" onclick="navigate('messages');hideNavFlyout()">
+          <span class="nav-flyout-avatar">${htmlEsc((other||'?')[0].toUpperCase())}</span>
+          <div class="nav-flyout-item-text">
+            <div class="nav-flyout-item-title">${htmlEsc(m.subject||'(no subject)')}</div>
+            <div class="nav-flyout-item-sub">${htmlEsc(other||'?')}</div>
+          </div>
+          ${unread ? '<span class="nav-flyout-unread-dot"></span>' : ''}
+        </div>`;
+    }).join('');
+  }
+
+  else if (page === 'users') {
+    if (!data?.length) return header + `<div class="nav-flyout-list"><div class="nav-flyout-empty">No users</div></div>` + footer;
+    items = data.slice(0, 8).map(u => `
+      <div class="nav-flyout-item" onclick="navigate('users');hideNavFlyout()">
+        <span class="nav-flyout-avatar">${htmlEsc((u.name||'?')[0].toUpperCase())}</span>
+        <div class="nav-flyout-item-text">
+          <div class="nav-flyout-item-title">${htmlEsc(u.name||'')}</div>
+          <div class="nav-flyout-item-sub">${htmlEsc(u.role||'')}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  return header + `<div class="nav-flyout-list">${items}</div>` + footer;
 }
 
 function showApp() {

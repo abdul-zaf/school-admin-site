@@ -51,7 +51,7 @@ def get_graph(
             "color":       c.color,
             "courses": [
                 {"id": t.course.id, "title": t.course.title}
-                for t in c.course_tags
+                for t in c.course_tags if t.course
             ],
         }
         for c in concepts
