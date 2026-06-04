@@ -13,7 +13,7 @@ const i18n = {
     nav_portfolio:'Portfolio',
     // Auth
     sign_in:'Sign In', sign_out:'Sign out', email:'Email', password:'Password',
-    login_hint:'Default admin: admin@school.edu / admin123',
+    login_hint:'Default admin: admin@school.edu / Admin123',
     // Common
     back:'← Back', save:'Save', cancel:'Cancel', delete:'Delete',
     create:'Create', add:'Add', edit:'Edit', submit:'Submit', loading:'Loading…',
@@ -159,7 +159,7 @@ const i18n = {
     nav_announcements:'اعلانات', nav_settings:'ترتیبات',
     // Auth
     sign_in:'سائن اِن', sign_out:'سائن آوٹ', email:'ای میل', password:'پاس ورڈ',
-    login_hint:'پہلا منتظم: admin@school.edu / admin123',
+    login_hint:'پہلا منتظم: admin@school.edu / Admin123',
     // Common
     back:'→ واپس', save:'محفوظ کریں', cancel:'منسوخ', delete:'حذف کریں',
     create:'بنائیں', add:'شامل کریں', edit:'ترمیم', submit:'جمع کریں', loading:'لوڈ ہو رہا ہے…',
@@ -496,8 +496,8 @@ async function toggleNotifDropdown() {
       dd.innerHTML = notifs.length
         ? notifs.map(n => `
           <div class="notif-item${n.is_read ? '' : ' unread'}" onclick="markNotifRead(${n.id})">
-            <div class="notif-title">${n.title}</div>
-            ${n.body ? `<div class="notif-body">${n.body.substring(0,60)}</div>` : ''}
+            <div class="notif-title">${htmlEsc(n.title)}</div>
+            ${n.body ? `<div class="notif-body">${htmlEsc(n.body).substring(0,60)}</div>` : ''}
             <div class="notif-time">${fmtDateTime(n.created_at)}</div>
           </div>`).join('')
         : `<div class="notif-empty">No notifications</div>`;
@@ -680,7 +680,7 @@ async function renderDashboard(el) {
           <div class="card-body">
             ${mine.length ? mine.map(c=>`
               <div class="course-item" onclick="navigate('course',{id:${c.id}})">
-                <div><strong>${c.title}</strong><small>${c.subject||''} ${c.grade_level?'· '+c.grade_level:''}</small></div>
+                <div><strong>${htmlEsc(c.title)}</strong><small>${htmlEsc(c.subject||'')} ${c.grade_level?'· '+htmlEsc(c.grade_level):''}</small></div>
                 <span class="badge badge-info">${c.student_count} ${t('student_count')}</span>
               </div>`).join('') : `<p class="text-muted">${t('no_courses')}</p>`}
           </div>
@@ -710,7 +710,7 @@ async function renderDashboard(el) {
           <div class="card-body">
             ${enrolled.length ? enrolled.map(c=>`
               <div class="course-item" onclick="navigate('course',{id:${c.id}})">
-                <div><strong>${c.title}</strong><small>${t('teacher')}: ${c.teacher_name||'?'}</small></div>
+                <div><strong>${htmlEsc(c.title)}</strong><small>${t('teacher')}: ${htmlEsc(c.teacher_name||'?')}</small></div>
                 <span class="badge badge-success">${t('enrolled')}</span>
               </div>`).join('') : `<p class="text-muted">${t('no_courses')}</p>`}
           </div>
@@ -749,14 +749,14 @@ function courseCard(c) {
   return `
     <div class="course-card" style="--accent:${accent}" onclick="navigate('course',{id:${c.id}})">
       <div class="course-card-header">
-        <h3>${c.title}</h3>
-        ${c.grade_level ? `<span class="badge badge-info">${c.grade_level}</span>` : ''}
+        <h3>${htmlEsc(c.title)}</h3>
+        ${c.grade_level ? `<span class="badge badge-info">${htmlEsc(c.grade_level)}</span>` : ''}
       </div>
       <div class="course-card-body">
-        ${c.subject ? `<p style="color:${accent};font-weight:600;font-size:12px">${c.subject}</p>` : ''}
-        ${c.description ? `<p>${c.description.substring(0,90)}${c.description.length>90?'…':''}</p>` : ''}
+        ${c.subject ? `<p style="color:${accent};font-weight:600;font-size:12px">${htmlEsc(c.subject)}</p>` : ''}
+        ${c.description ? `<p>${htmlEsc(c.description).substring(0,90)}${c.description.length>90?'…':''}</p>` : ''}
         <div class="course-meta">
-          <small>🧑‍🏫 ${c.teacher_name||'?'}</small>
+          <small>🧑‍🏫 ${htmlEsc(c.teacher_name||'?')}</small>
           <small>👥 ${c.student_count} ${t('student_count')}</small>
         </div>
       </div>
@@ -835,20 +835,20 @@ async function renderCourseDetail(courseId, el) {
       <div class="page-header">
         <div>
           <button class="btn btn-sm" onclick="navigate('courses')" style="margin-bottom:8px">${t('back')}</button>
-          <h2>${course.title}</h2>
+          <h2>${htmlEsc(course.title)}</h2>
           <div class="flex-gap mt-8">
-            ${course.subject    ? `<span class="badge badge-info">${course.subject}</span>`     : ''}
-            ${course.grade_level? `<span class="badge badge-info">${course.grade_level}</span>` : ''}
+            ${course.subject    ? `<span class="badge badge-info">${htmlEsc(course.subject)}</span>`     : ''}
+            ${course.grade_level? `<span class="badge badge-info">${htmlEsc(course.grade_level)}</span>` : ''}
           </div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
-          <small class="text-muted">${t('teacher')}: ${course.teacher_name||'?'}</small>
+          <small class="text-muted">${t('teacher')}: ${htmlEsc(course.teacher_name||'?')}</small>
           ${role === 'student' ? `<button class="btn btn-sm btn-success" onclick="downloadCertificate(${courseId})">
             ${t('download_certificate')}
           </button>` : ''}
         </div>
       </div>
-      ${course.description ? `<div class="card"><div class="card-body"><p>${course.description}</p></div></div>` : ''}
+      ${course.description ? `<div class="card"><div class="card-body"><p>${htmlEsc(course.description)}</p></div></div>` : ''}
 
       <div class="tabs">
         <button class="tab active" onclick="showTab('materials',this)">${t('materials')} (${materials.length})</button>
@@ -887,7 +887,7 @@ async function renderCourseDetail(courseId, el) {
                 const btnLabel = isViewable ? `👁 ${t('view_file')}` : `⬇ ${t('download')}`;
                 body = `
                   <div class="mat-file-info">
-                    <span class="mat-filename">${m.file_name || ''}</span>
+                    <span class="mat-filename">${htmlEsc(m.file_name || '')}</span>
                     ${sz ? `<span class="mat-filesize">${sz}</span>` : ''}
                   </div>
                   <div class="mat-actions-inline">
@@ -900,16 +900,16 @@ async function renderCourseDetail(courseId, el) {
                     >${btnLabel}</a>
                   </div>`;
               } else if (mtype === 'link') {
-                body = (m.content ? `<p class="mat-content">${m.content}</p>` : '') +
-                       `<a class="link mat-link" href="${m.url}" target="_blank" rel="noopener">${m.url}</a>`;
+                body = (m.content ? `<p class="mat-content">${htmlEsc(m.content)}</p>` : '') +
+                       `<a class="link mat-link" href="${htmlEsc(m.url)}" target="_blank" rel="noopener">${htmlEsc(m.url)}</a>`;
               } else {
-                body = m.content ? `<p class="mat-content">${m.content}</p>` : '';
+                body = m.content ? `<p class="mat-content">${htmlEsc(m.content)}</p>` : '';
               }
               return `
                 <div class="material-item">
                   <div class="material-icon">${icon}</div>
                   <div class="material-body">
-                    <div class="material-title"><strong>${m.title}</strong>${badge}</div>
+                    <div class="material-title"><strong>${htmlEsc(m.title)}</strong>${badge}</div>
                     ${body}
                     <small class="text-muted">${fmtDate(m.created_at)}</small>
                   </div>
@@ -929,7 +929,7 @@ async function renderCourseDetail(courseId, el) {
             ${assignments.length ? assignments.map(a=>`
               <div class="list-item clickable" onclick="navigate('assignment',{id:${a.id}})">
                 <div>
-                  <strong>${a.title}</strong>
+                  <strong>${htmlEsc(a.title)}</strong>
                   <div class="assignment-meta">
                     ${a.due_date ? `<small>${t('due_date')}: ${fmtDate(a.due_date)}</small>` : ''}
                     <small>${t('max_score')}: ${a.max_score} ${t('pts')}</small>
@@ -1008,7 +1008,7 @@ async function renderCourseDetail(courseId, el) {
             ${course.students.length ? `
               <table class="table">
                 <thead><tr><th>${t('full_name')}</th><th>${t('email')}</th></tr></thead>
-                <tbody>${course.students.map(s=>`<tr><td>${s.name}</td><td>${s.email}</td></tr>`).join('')}</tbody>
+                <tbody>${course.students.map(s=>`<tr><td>${htmlEsc(s.name)}</td><td>${htmlEsc(s.email)}</td></tr>`).join('')}</tbody>
               </table>` : `<p class="text-muted">${t('students')} — 0</p>`}
           </div>
         </div>
@@ -1056,7 +1056,7 @@ function quizCard(q, canManage, courseId) {
     <div class="quiz-card${isUrgent ? ' quiz-urgent' : ''}">
       <div class="quiz-card-body">
         <div class="quiz-title-row">
-          <strong>${q.title}</strong>
+          <strong>${htmlEsc(q.title)}</strong>
           ${isUrgent ? `<span class="badge badge-danger">⚡ ${t('urgent')}</span>` : ''}
           ${canManage
             ? (q.is_published
@@ -1064,7 +1064,7 @@ function quizCard(q, canManage, courseId) {
               : `<span class="badge badge-warning">✏️ ${t('quiz_draft')}</span>`)
             : ''}
         </div>
-        ${q.description ? `<p class="text-muted" style="margin-top:4px;font-size:13px">${q.description}</p>` : ''}
+        ${q.description ? `<p class="text-muted" style="margin-top:4px;font-size:13px">${htmlEsc(q.description)}</p>` : ''}
         <div class="quiz-meta">
           <small>${q.question_count} ${t('question_text')}(s) &bull; ${q.total_points} ${t('pts')}</small>
           ${q.time_limit ? `<small>⏱ ${q.time_limit} ${t('minutes')}</small>` : ''}
@@ -1109,20 +1109,20 @@ function sessionCard(s, canManage) {
     <div class="session-card">
       <div class="session-icon ${s.session_type}">${icon}</div>
       <div class="session-body">
-        <strong>${s.title}</strong>
+        <strong>${htmlEsc(s.title)}</strong>
         <div class="session-meta">
           <span class="badge badge-${s.session_type}">${t(s.session_type)}</span>
           <small>📅 ${fmtDateTime(s.date)}</small>
           <small>⏱ ${s.duration_minutes} ${t('mins')}</small>
           ${s.location ? (isVirtual
-            ? `<a class="link" href="${s.location}" target="_blank">${t('join')}</a>`
-            : `<small>📍 ${s.location}</small>`) : ''}
+            ? `<a class="link" href="${htmlEsc(s.location)}" target="_blank" rel="noopener">${t('join')}</a>`
+            : `<small>📍 ${htmlEsc(s.location)}</small>`) : ''}
         </div>
-        ${s.notes ? `<p class="text-muted" style="font-size:12px;margin-top:4px">${s.notes}</p>` : ''}
+        ${s.notes ? `<p class="text-muted" style="font-size:12px;margin-top:4px">${htmlEsc(s.notes)}</p>` : ''}
       </div>
       <div class="session-actions">
         ${isVirtual && s.location && !past
-          ? `<a href="${s.location}" target="_blank" class="btn btn-sm btn-primary">${t('join')}</a>` : ''}
+          ? `<a href="${htmlEsc(s.location)}" target="_blank" rel="noopener" class="btn btn-sm btn-primary">${t('join')}</a>` : ''}
         ${canManage ? `<button class="btn btn-sm btn-danger" onclick="deleteSession(${s.id},${s.course_id||0})">${t('delete')}</button>` : ''}
       </div>
     </div>`;
@@ -1327,7 +1327,7 @@ async function renderAssignmentDetail(assignmentId, el) {
       <div class="page-header">
         <div>
           <button class="btn btn-sm" onclick="navigate('course',{id:${a.course_id}})" style="margin-bottom:8px">${t('back')}</button>
-          <h2>${a.title}</h2>
+          <h2>${htmlEsc(a.title)}</h2>
         </div>
         <div style="text-align:right">
           ${a.due_date ? `<small class="text-muted">${t('due_date')}: ${fmtDateTime(a.due_date)}</small><br>` : ''}
@@ -1335,7 +1335,7 @@ async function renderAssignmentDetail(assignmentId, el) {
         </div>
       </div>
       ${a.description ? `<div class="card"><div class="card-header"><h3>${t('instructions')}</h3></div>
-        <div class="card-body"><p style="white-space:pre-wrap">${a.description}</p></div></div>` : ''}
+        <div class="card-body"><p style="white-space:pre-wrap">${htmlEsc(a.description)}</p></div></div>` : ''}
       ${!canGrade ? `
         <div class="card"><div class="card-header">
           <h3>${a.my_submission ? t('your_submission') : t('submit_assignment')}</h3></div>
@@ -1363,7 +1363,7 @@ async function renderAssignmentDetail(assignmentId, el) {
             ${a.submissions.length ? a.submissions.map(s=>`
               <div class="submission-item">
                 <div class="submission-header">
-                  <strong>${s.student_name}</strong>
+                  <strong>${htmlEsc(s.student_name)}</strong>
                   <small class="text-muted">${fmtDateTime(s.submitted_at)}</small>
                   ${s.score!=null ? `<span class="badge badge-success">${s.score}/${a.max_score}</span>`
                                   : `<span class="badge badge-warning">${t('not_graded')}</span>`}
@@ -1374,7 +1374,7 @@ async function renderAssignmentDetail(assignmentId, el) {
                     <div class="form-group"><label>${t('score')} (max ${a.max_score})</label>
                       <input type="number" id="score-${s.id}" class="form-control" value="${s.score??''}" min="0" max="${a.max_score}" step="0.5"></div>
                     <div class="form-group" style="flex:2"><label>${t('feedback')}</label>
-                      <input type="text" id="fb-${s.id}" class="form-control" value="${s.feedback??''}"></div>
+                      <input type="text" id="fb-${s.id}" class="form-control" value="${htmlEsc(s.feedback??'')}"></div>
                   </div>
                   <button class="btn btn-sm btn-primary" onclick="gradeSubmission(${s.id},${assignmentId})">${t('save_grade')}</button>
                 </div>
@@ -1456,8 +1456,8 @@ async function showPostSubmitModal(submittedId) {
             return `
               <div class="outstanding-item">
                 <div class="outstanding-info">
-                  <span class="outstanding-title">${a.title}</span>
-                  <span class="outstanding-course">📚 ${a.course_title}</span>
+                  <span class="outstanding-title">${htmlEsc(a.title)}</span>
+                  <span class="outstanding-course">📚 ${htmlEsc(a.course_title)}</span>
                   ${dueTxt ? `<span class="outstanding-due">${dueTxt}</span>` : ''}
                 </div>
                 <button class="btn btn-sm btn-primary"
@@ -1596,7 +1596,7 @@ async function renderQuizBuilder(quizId, el) {
       <div class="page-header">
         <div>
           <button class="btn btn-sm" onclick="navigate('course',{id:${quiz.course_id}})" style="margin-bottom:8px">${t('back')}</button>
-          <h2>${t('quiz_builder')}: ${quiz.title}</h2>
+          <h2>${t('quiz_builder')}: ${htmlEsc(quiz.title)}</h2>
           <div style="display:flex;gap:8px;margin-top:6px;align-items:center">
             ${pubBadge}
             <small class="text-muted">${quiz.question_count} ${t('question_text')}(s) &bull; ${quiz.total_points} ${t('pts')}${quiz.time_limit ? ` &bull; ${quiz.time_limit} ${t('minutes')}` : ''}</small>
@@ -1684,14 +1684,14 @@ function questionBuilderCard(q, idx, quizId) {
       <div class="question-card-header">
         <div>
           <span class="text-muted" style="font-size:11px;text-transform:uppercase">${t('q_num')} ${idx+1} &bull; ${typeLabel[q.question_type]||q.question_type} &bull; ${q.points} ${t('pts')}</span>
-          <strong style="display:block;margin-top:2px">${q.question_text}</strong>
+          <strong style="display:block;margin-top:2px">${htmlEsc(q.question_text)}</strong>
         </div>
         <button class="btn btn-sm btn-danger" onclick="deleteQuestion(${q.id},${quizId})">${t('delete')}</button>
       </div>
       ${q.options.length ? `<div class="question-options">
         ${q.options.map(o=>`
           <div class="option-row${o.is_correct?' correct':''}">
-            <span>${o.is_correct ? '✓' : '○'}</span> ${o.option_text}
+            <span>${o.is_correct ? '✓' : '○'}</span> ${htmlEsc(o.option_text)}
           </div>`).join('')}
       </div>` : `<p class="text-muted" style="font-size:12px;margin-top:4px">${t('short_manual')}</p>`}
     </div>`;
@@ -1812,7 +1812,7 @@ async function renderQuizTake(quizId, el) {
       <div class="quiz-header">
         <div>
           <button class="btn btn-sm" onclick="navigate('course',{id:${quiz.course_id}})">${t('back')}</button>
-          <strong style="margin-left:12px">${quiz.title}</strong>
+          <strong style="margin-left:12px">${htmlEsc(quiz.title)}</strong>
         </div>
         <div style="display:flex;align-items:center;gap:12px">
           <small class="text-muted">${quiz.question_count} ${t('question_text')}(s) &bull; ${quiz.total_points} ${t('pts')}</small>
@@ -1822,14 +1822,14 @@ async function renderQuizTake(quizId, el) {
       ${quiz.questions.map((q,i) => `
         <div class="quiz-question-block">
           <div class="quiz-q-num">${t('q_num')} ${i+1} ${t('of')} ${quiz.question_count} &bull; ${q.points} ${t('pts')}</div>
-          <div class="quiz-q-text">${q.question_text}</div>
+          <div class="quiz-q-text">${htmlEsc(q.question_text)}</div>
           ${q.question_type === 'short_answer' ? `
             <textarea class="form-control" id="sa-${q.id}" rows="4" placeholder="…"></textarea>` : `
             <div class="quiz-options">
               ${q.options.map(o=>`
                 <div class="quiz-option">
                   <input type="radio" name="q-${q.id}" id="opt-${o.id}" value="${o.id}">
-                  <label for="opt-${o.id}">${o.option_text}</label>
+                  <label for="opt-${o.id}">${htmlEsc(o.option_text)}</label>
                 </div>`).join('')}
             </div>`}
         </div>`).join('')}
@@ -1966,8 +1966,8 @@ async function showPostQuizModal(quizId, result) {
              return `
                <div class="outstanding-item">
                  <div class="outstanding-info">
-                   <span class="outstanding-title">📋 ${q.title}</span>
-                   <span class="outstanding-course">📚 ${q.course_title}</span>
+                   <span class="outstanding-title">📋 ${htmlEsc(q.title)}</span>
+                   <span class="outstanding-course">📚 ${htmlEsc(q.course_title)}</span>
                    ${dueTxt ? `<span class="outstanding-due">${dueTxt}</span>` : ''}
                  </div>
                  <button class="btn btn-sm btn-primary"
@@ -2042,8 +2042,8 @@ async function loadUrgentQuizzes(enrolled) {
       return `
         <div class="urgent-quiz-item">
           <div class="urgent-quiz-info">
-            <span class="urgent-quiz-title">📋 ${q.title}</span>
-            <span class="urgent-quiz-course">📚 ${q.course_title}</span>
+            <span class="urgent-quiz-title">📋 ${htmlEsc(q.title)}</span>
+            <span class="urgent-quiz-course">📚 ${htmlEsc(q.course_title)}</span>
             ${due ? `<span class="urgent-quiz-due${overdue?' text-danger':''}">
               ${t('due_date')}: ${fmtDate(q.due_date)}${overdue?' ⚠️':''}
             </span>` : ''}
@@ -2069,7 +2069,7 @@ function renderQuizResults(quiz, el) {
     <div class="page-header">
       <div>
         <button class="btn btn-sm" onclick="navigate('course',{id:${quiz.course_id}})" style="margin-bottom:8px">${t('back')}</button>
-        <h2>${quiz.title} — ${t('quiz_results')}</h2>
+        <h2>${htmlEsc(quiz.title)} — ${t('quiz_results')}</h2>
       </div>
       ${attempt?.score != null
         ? `<div class="stat-card" style="min-width:120px;text-align:center">
@@ -2085,10 +2085,10 @@ function renderQuizResults(quiz, el) {
       return `
         <div class="quiz-question-block">
           <div class="quiz-q-num">${t('q_num')} ${i+1} &bull; ${q.points} ${t('pts')}</div>
-          <div class="quiz-q-text">${q.question_text}</div>
+          <div class="quiz-q-text">${htmlEsc(q.question_text)}</div>
           ${q.question_type === 'short_answer' ? `
             <div class="alert alert-success" style="margin-top:8px">
-              <strong>${t('your_answer')}:</strong> ${myText || '—'}
+              <strong>${t('your_answer')}:</strong> ${htmlEsc(myText || '—')}
             </div>
             <p class="text-muted" style="font-size:12px">${t('short_manual')}</p>` : `
             <div class="quiz-options" style="pointer-events:none">
@@ -2099,7 +2099,7 @@ function renderQuizResults(quiz, el) {
                 else if (myOptId === o.id)            cls = 'result-wrong';
                 return `<div class="quiz-option ${cls}">
                   <input type="radio" ${myOptId===o.id?'checked':''} disabled>
-                  <label>${o.option_text}
+                  <label>${htmlEsc(o.option_text)}
                     ${o.is_correct ? ' ✓' : ''}
                     ${myOptId===o.id && !o.is_correct ? ' ✗' : ''}
                   </label>
@@ -2194,7 +2194,7 @@ function usersRows(users, filter) {
   const list = filter==='all' ? users : users.filter(u=>u.role===filter);
   return list.map(u=>`
     <tr>
-      <td>${u.name}</td><td>${u.email}</td>
+      <td>${htmlEsc(u.name)}</td><td>${htmlEsc(u.email)}</td>
       <td><span class="badge badge-${u.role}">${u.role}</span></td>
       <td>${u.id!==state.user.id
         ? `<button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})">${t('delete')}</button>`
@@ -2264,7 +2264,7 @@ async function renderGradebook(el) {
         ${data.courses.map(c => `
           <div class="card">
             <div class="card-header">
-              <h3>${c.course_title}</h3>
+              <h3>${htmlEsc(c.course_title)}</h3>
               <div style="display:flex;gap:10px;align-items:center">
                 <span class="grade-cell grade-${c.letter}">${c.letter} (${c.weighted_pct}%)</span>
                 <small class="text-muted">GPA: ${c.gpa}</small>
@@ -2276,7 +2276,7 @@ async function renderGradebook(el) {
                 <tbody>
                   ${Object.values(c.scores).map(s => `
                     <tr>
-                      <td>${s.title}</td>
+                      <td>${htmlEsc(s.title)}</td>
                       <td>${s.score !== null ? s.score : '<span class="text-muted">—</span>'}</td>
                       <td>${s.max_score}</td>
                       <td>${s.score !== null && s.max_score ? Math.round(s.score/s.max_score*100)+'%' : '—'}</td>
@@ -2302,7 +2302,7 @@ async function renderGradebook(el) {
       el.innerHTML = `
         <div class="page-header"><h2>${t('gradebook')}</h2>
           <select class="form-control" style="max-width:280px" onchange="navigate('gradebook',{course_id:parseInt(this.value)})">
-            ${mine.map(c => `<option value="${c.id}" ${c.id==cid?'selected':''}>${c.title}</option>`).join('')}
+            ${mine.map(c => `<option value="${c.id}" ${c.id==cid?'selected':''}>${htmlEsc(c.title)}</option>`).join('')}
           </select>
         </div>
         ${gb ? renderGradebookTable(gb) : '<div class="card"><div class="card-body"><p class="text-muted">Select a course to view gradebook.</p></div></div>'}`;
@@ -2315,21 +2315,21 @@ function renderGradebookTable(gb) {
   const assignments = gb.assignments;
   return `
     <div class="card">
-      <div class="card-header"><h3>${gb.course_title}</h3></div>
+      <div class="card-header"><h3>${htmlEsc(gb.course_title)}</h3></div>
       <div class="card-body" style="padding:0">
         <div class="gradebook-table-wrapper">
           <table class="gradebook-table">
             <thead>
               <tr>
                 <th>Student</th>
-                ${assignments.map(a => `<th title="${a.title}">${a.title.substring(0,12)}${a.title.length>12?'…':''}${a.is_extra_credit?' ⭐':''}</th>`).join('')}
+                ${assignments.map(a => `<th title="${htmlEsc(a.title)}">${htmlEsc(a.title).substring(0,12)}${a.title.length>12?'…':''}${a.is_extra_credit?' ⭐':''}</th>`).join('')}
                 <th>Avg%</th><th>Grade</th>
               </tr>
             </thead>
             <tbody>
               ${gb.students.map(s => `
                 <tr>
-                  <td>${s.student_name}</td>
+                  <td>${htmlEsc(s.student_name)}</td>
                   ${assignments.map(a => {
                     const sc = s.scores[a.id];
                     if (!sc || sc.score === null) return `<td><span class="text-muted">—</span></td>`;
@@ -2394,8 +2394,8 @@ async function renderCalendar(el) {
             <div class="calendar-event ${cls}">
               <div class="calendar-event-date"><span class="cal-day">${day}</span>${mon}</div>
               <div class="calendar-event-info">
-                <div class="calendar-event-title">${typeIcon} ${ev.title}</div>
-                <div class="calendar-event-course">${ev.course}</div>
+                <div class="calendar-event-title">${typeIcon} ${htmlEsc(ev.title)}</div>
+                <div class="calendar-event-course">${htmlEsc(ev.course)}</div>
               </div>
               <span class="calendar-event-type">${ev.type}</span>
             </div>`;
@@ -2428,8 +2428,8 @@ async function renderMessages(el) {
             <div class="message-item${isUnread?' unread':''}" onclick="openMessageModal(${m.id},'${tab}')">
               <div class="message-avatar">${(other||'?')[0].toUpperCase()}</div>
               <div class="message-info">
-                <div class="message-from">${other||'?'}</div>
-                <div class="message-subject">${m.subject}</div>
+                <div class="message-from">${htmlEsc(other||'?')}</div>
+                <div class="message-subject">${htmlEsc(m.subject)}</div>
               </div>
               <div>
                 <div class="message-time">${fmtDate(m.sent_at)}</div>
@@ -2583,7 +2583,7 @@ async function renderAnalytics(el) {
       el.innerHTML = `
         <div class="page-header"><h2>${t('analytics')}</h2>
           <select class="form-control" style="max-width:260px" onchange="navigate('analytics',{course_id:parseInt(this.value)})">
-            ${mine.map(c => `<option value="${c.id}" ${c.id==cid?'selected':''}>${c.title}</option>`).join('')}
+            ${mine.map(c => `<option value="${c.id}" ${c.id==cid?'selected':''}>${htmlEsc(c.title)}</option>`).join('')}
           </select>
         </div>
         ${data ? `
@@ -2684,21 +2684,20 @@ async function renderBadges(el) {
         </div>
         ${!(badges||[]).length
           ? `<div class="card"><div class="card-body"><p class="text-muted">${t('no_badges')}</p></div></div>`
-          : ''}
-        <div class="badges-grid">
-          ${(badges||[]).map(b => `
-            <div class="badge-card">
-              <span class="badge-icon">${b.icon}</span>
-              <div class="badge-name">${htmlEsc(b.name)}</div>
-              ${b.description ? `<div class="badge-desc">${htmlEsc(b.description)}</div>` : ''}
-              <div class="badge-meta">${b.awarded_count} student${b.awarded_count !== 1 ? 's' : ''} earned this</div>
-              <div style="margin-top:10px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
-                <button class="btn btn-sm btn-primary"
-                  onclick="openAwardBadgeModal(${b.id},${JSON.stringify(b.name)})">🎖 ${t('award_badge')}</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteBadge(${b.id})">${t('delete')}</button>
-              </div>
-            </div>`).join('')}
-        </div>`;
+          : `<div class="badges-grid">
+            ${(badges||[]).map(b => `
+              <div class="badge-card">
+                <span class="badge-icon">${b.icon}</span>
+                <div class="badge-name">${htmlEsc(b.name)}</div>
+                ${b.description ? `<div class="badge-desc">${htmlEsc(b.description)}</div>` : ''}
+                <div class="badge-meta">${b.awarded_count} student${b.awarded_count !== 1 ? 's' : ''} earned this</div>
+                <div style="margin-top:10px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
+                  <button class="btn btn-sm btn-primary"
+                    onclick="openAwardBadgeModal(${b.id},${JSON.stringify(b.name)})">🎖 ${t('award_badge')}</button>
+                  <button class="btn btn-sm btn-danger" onclick="deleteBadge(${b.id})">${t('delete')}</button>
+                </div>
+              </div>`).join('')}
+          </div>`}`;
     }
   } catch(err) { el.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
 }
@@ -2793,22 +2792,22 @@ async function renderPortfolio(el) {
         <button class="btn btn-primary" onclick="openAddPortfolioItemModal()">${t('add_item')}</button>
       </div>
       <div class="card">
-        <div class="card-header"><h3>${p.title}</h3>
+        <div class="card-header"><h3>${htmlEsc(p.title)}</h3>
           <button class="btn btn-sm" onclick="openEditPortfolioModal()">${t('edit')}</button>
         </div>
         <div class="card-body">
-          ${p.bio ? `<p style="margin-bottom:12px">${p.bio}</p>` : ''}
+          ${p.bio ? `<p style="margin-bottom:12px">${htmlEsc(p.bio)}</p>` : ''}
           <small class="text-muted">${p.is_public ? '🌐 Public' : '🔒 Private'}</small>
         </div>
       </div>
       <div class="portfolio-items-grid">
         ${(p.items||[]).map(item => `
           <div class="portfolio-item-card">
-            <h4>${item.title}</h4>
-            ${item.description ? `<p>${item.description}</p>` : ''}
-            ${item.content ? `<p style="margin-top:6px;font-size:12px;color:var(--text)">${item.content.substring(0,100)}${item.content.length>100?'…':''}</p>` : ''}
-            ${item.url ? `<a href="${item.url}" target="_blank" class="link" style="display:block;margin-top:6px">${item.url.substring(0,40)}</a>` : ''}
-            ${item.tags ? `<div class="portfolio-tags">${item.tags.split(',').map(tag=>`<span class="portfolio-tag">${tag.trim()}</span>`).join('')}</div>` : ''}
+            <h4>${htmlEsc(item.title)}</h4>
+            ${item.description ? `<p>${htmlEsc(item.description)}</p>` : ''}
+            ${item.content ? `<p style="margin-top:6px;font-size:12px;color:var(--text)">${htmlEsc(item.content).substring(0,100)}${item.content.length>100?'…':''}</p>` : ''}
+            ${item.url ? `<a href="${htmlEsc(item.url)}" target="_blank" rel="noopener" class="link" style="display:block;margin-top:6px">${htmlEsc(item.url).substring(0,40)}</a>` : ''}
+            ${item.tags ? `<div class="portfolio-tags">${item.tags.split(',').map(tag=>`<span class="portfolio-tag">${htmlEsc(tag.trim())}</span>`).join('')}</div>` : ''}
             <div style="margin-top:10px;display:flex;gap:6px">
               <button class="btn btn-sm btn-danger" onclick="deletePortfolioItem(${item.id})">${t('delete')}</button>
             </div>
@@ -2886,14 +2885,14 @@ async function renderQuestionBanks(el) {
       ${(banks||[]).length ? (banks||[]).map(b => `
         <div class="card">
           <div class="card-header">
-            <h3>${b.title}</h3>
+            <h3>${htmlEsc(b.title)}</h3>
             <div style="display:flex;gap:6px">
               <button class="btn btn-sm btn-primary" onclick="viewBank(${b.id})">${t('edit')}</button>
               <button class="btn btn-sm btn-danger" onclick="deleteBank(${b.id})">${t('delete')}</button>
             </div>
           </div>
           <div class="card-body">
-            ${b.description ? `<p class="text-muted">${b.description}</p>` : ''}
+            ${b.description ? `<p class="text-muted">${htmlEsc(b.description)}</p>` : ''}
             <small>${b.question_count} questions</small>
           </div>
         </div>`).join('')
@@ -2929,11 +2928,11 @@ async function viewBank(id) {
       <p class="text-muted" style="margin-bottom:12px">${bank.question_count||bank.questions.length} questions</p>
       ${bank.questions.map(q => `
         <div class="bank-question-item">
-          <div class="q-text">${q.question_text}</div>
+          <div class="q-text">${htmlEsc(q.question_text)}</div>
           <div class="q-meta">
             <span>${q.question_type}</span>
             <span>${q.points} pts</span>
-            ${q.tags ? `<span>🏷 ${q.tags}</span>` : ''}
+            ${q.tags ? `<span>🏷 ${htmlEsc(q.tags)}</span>` : ''}
           </div>
         </div>`).join('')}
       <div class="form-actions">
@@ -2995,7 +2994,7 @@ async function renderModulesTab(courseId, container, canManage) {
       ${(modules||[]).map(m => `
         <div class="module-card">
           <div class="module-card-header" onclick="this.nextElementSibling.nextElementSibling.classList.toggle('hidden')">
-            <h4>${m.title} ${!m.is_published?'<span class="badge badge-warning">Draft</span>':''}</h4>
+            <h4>${htmlEsc(m.title)} ${!m.is_published?'<span class="badge badge-warning">Draft</span>':''}</h4>
             <small>${m.progress}% complete</small>
           </div>
           <div class="module-progress-bar"><div class="module-progress-fill" style="width:${m.progress}%"></div></div>
@@ -3006,7 +3005,7 @@ async function renderModulesTab(courseId, container, canManage) {
                   <div class="module-item-check${item.completed?' done':''}" onclick="completeModuleItem(${item.id},${courseId})">
                     ${item.completed ? '✓' : ''}
                   </div>` : '<div style="width:20px"></div>'}
-                <div class="module-item-title">${item.title}</div>
+                <div class="module-item-title">${htmlEsc(item.title)}</div>
                 <span class="module-item-type">${item.item_type}</span>
                 ${!item.is_required ? '<span class="badge badge-info" style="font-size:10px">Optional</span>' : ''}
                 ${canManage ? `<button class="btn btn-sm btn-danger" onclick="deleteModuleItem(${item.id},${courseId})" style="margin-left:auto">${t('delete')}</button>` : ''}
@@ -3089,14 +3088,14 @@ async function renderDiscussionsTab(courseId, container, canManage) {
       ${(boards||[]).map(b => `
         <div class="card" style="margin-bottom:12px">
           <div class="card-header">
-            <h3>${b.is_pinned?'📌 ':''}${b.title}</h3>
+            <h3>${b.is_pinned?'📌 ':''}${htmlEsc(b.title)}</h3>
             <div style="display:flex;gap:6px;align-items:center">
               <small class="text-muted">${b.post_count} posts</small>
               <button class="btn btn-sm btn-primary" onclick="navigate('discussion-board',{id:${b.id}})">View Posts</button>
               ${canManage?`<button class="btn btn-sm btn-danger" onclick="deleteBoard(${b.id},${courseId})">${t('delete')}</button>`:''}
             </div>
           </div>
-          ${b.description?`<div class="card-body"><p class="text-muted">${b.description}</p></div>`:''}
+          ${b.description?`<div class="card-body"><p class="text-muted">${htmlEsc(b.description)}</p></div>`:''}
         </div>`).join('') || `<p class="text-muted">${t('no_boards')}</p>`}`;
   } catch(err) { container.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
 }
@@ -3210,7 +3209,7 @@ async function renderSurveysTab(courseId, container, canManage) {
       ${(surveys||[]).map(s => `
         <div class="card" style="margin-bottom:12px">
           <div class="card-header">
-            <h3>${s.title}</h3>
+            <h3>${htmlEsc(s.title)}</h3>
             <div style="display:flex;gap:6px;align-items:center">
               <small class="text-muted">${s.question_count} questions &bull; ${s.response_count} responses</small>
               ${!canManage && !s.already_responded ? `<button class="btn btn-sm btn-primary" onclick="takeSurvey(${s.id})">${t('take_survey')}</button>` : ''}
@@ -3219,7 +3218,7 @@ async function renderSurveysTab(courseId, container, canManage) {
               ${canManage ? `<button class="btn btn-sm btn-danger" onclick="deleteSurvey(${s.id},${courseId})">${t('delete')}</button>` : ''}
             </div>
           </div>
-          ${s.description?`<div class="card-body"><p class="text-muted">${s.description}</p></div>`:''}
+          ${s.description?`<div class="card-body"><p class="text-muted">${htmlEsc(s.description)}</p></div>`:''}
         </div>`).join('') || '<p class="text-muted">No surveys yet.</p>'}`;
   } catch(err) { container.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
 }
@@ -3232,17 +3231,17 @@ async function takeSurvey(surveyId) {
     <div>
       ${survey.questions.map((q, i) => `
         <div class="survey-question-block">
-          <h4>${i+1}. ${q.question_text}</h4>
+          <h4>${i+1}. ${htmlEsc(q.question_text)}</h4>
           ${q.question_type === 'text' ? `
             <textarea id="sq-${q.id}" class="form-control" rows="3"></textarea>` :
           q.question_type === 'rating' ? `
             <div class="survey-rating">
               ${[1,2,3,4,5].map(n=>`<button type="button" class="survey-rating-btn" onclick="selectRating(${q.id},${n},this)">${n}</button>`).join('')}
             </div>` :
-          `<div>${(q.options||[]).map(opt=>`
+          `<div>${(q.options||[]).map((opt,oi)=>`
             <div class="survey-option-row">
-              <input type="radio" name="sq-${q.id}" id="sqo-${q.id}-${opt}" value="${opt}">
-              <label for="sqo-${q.id}-${opt}">${opt}</label>
+              <input type="radio" name="sq-${q.id}" id="sqo-${q.id}-${oi}" value="${htmlEsc(opt)}">
+              <label for="sqo-${q.id}-${oi}">${htmlEsc(opt)}</label>
             </div>`).join('')}</div>`}
         </div>`).join('')}
       <div class="form-actions">
@@ -3288,14 +3287,14 @@ async function viewSurveyResults(surveyId) {
       <p class="text-muted" style="margin-bottom:12px">${results.total_responses} responses</p>
       ${results.questions.map(q => `
         <div class="survey-question-block">
-          <h4>${q.question_text}</h4>
+          <h4>${htmlEsc(q.question_text)}</h4>
           <small class="text-muted">${q.response_count} answers</small>
           <div style="margin-top:8px">
             ${q.question_type === 'rating'
               ? `<strong>Average: ${q.summary.avg}</strong>`
               : q.question_type === 'multiple_choice'
-              ? Object.entries(q.summary||{}).map(([opt,cnt])=>`<div>${opt}: <strong>${cnt}</strong></div>`).join('')
-              : (q.summary.responses||[]).slice(0,5).map(r=>`<div class="bank-question-item" style="padding:6px 10px">${r}</div>`).join('')}
+              ? Object.entries(q.summary||{}).map(([opt,cnt])=>`<div>${htmlEsc(opt)}: <strong>${cnt}</strong></div>`).join('')
+              : (q.summary.responses||[]).slice(0,5).map(r=>`<div class="bank-question-item" style="padding:6px 10px">${htmlEsc(r)}</div>`).join('')}
           </div>
         </div>`).join('')}
       <button class="btn" style="margin-top:8px" onclick="closeModal()">Close</button>
@@ -3364,7 +3363,7 @@ async function renderLeaderboard(el) {
         <h2>🏆 ${t('leaderboard')}</h2>
         <select class="form-control" style="max-width:260px"
           onchange="navigate('leaderboard',{course_id:parseInt(this.value)})">
-          ${relevant.map(c=>`<option value="${c.id}" ${c.id==firstId?'selected':''}>${c.title}</option>`).join('')}
+          ${relevant.map(c=>`<option value="${c.id}" ${c.id==firstId?'selected':''}>${htmlEsc(c.title)}</option>`).join('')}
         </select>
       </div>
 
@@ -3376,7 +3375,7 @@ async function renderLeaderboard(el) {
           return `
           <div class="podium-slot podium-${podiumRank} ${e.is_me ? 'podium-me' : ''}">
             <div class="podium-medal">${medals[podiumRank-1]}</div>
-            <div class="podium-name">${e.name}</div>
+            <div class="podium-name">${htmlEsc(e.name)}</div>
             <div class="podium-score">${e.avg_pct}%</div>
             <div class="podium-block p${podiumRank}"></div>
           </div>`;
@@ -3385,7 +3384,7 @@ async function renderLeaderboard(el) {
 
       <!-- Full table -->
       <div class="card">
-        <div class="card-header ch-gold"><h3>📊 ${data.course_title}</h3></div>
+        <div class="card-header ch-gold"><h3>📊 ${htmlEsc(data.course_title)}</h3></div>
         <div class="card-body" style="padding:0">
           <table class="table">
             <thead><tr>
@@ -3397,7 +3396,7 @@ async function renderLeaderboard(el) {
               ${entries.map(e => `
                 <tr class="${e.is_me ? 'lb-my-row' : ''}">
                   <td><strong>${medals[e.rank-1] || '#'+e.rank}</strong></td>
-                  <td>${e.name}${e.is_me ? ` <span class="badge badge-info">${t('you')}</span>` : ''}</td>
+                  <td>${htmlEsc(e.name)}${e.is_me ? ` <span class="badge badge-info">${t('you')}</span>` : ''}</td>
                   <td style="text-align:right;font-weight:700">${e.avg_pct}%</td>
                 </tr>`).join('')}
               ${entries.length === 0 ? `<tr><td colspan="3" class="text-muted" style="text-align:center;padding:20px">${t('no_leaderboard_data')}</td></tr>` : ''}
@@ -3414,7 +3413,7 @@ async function renderLeaderboard(el) {
             <thead><tr><th>${t('rank')}</th><th>${t('full_name')}</th><th style="text-align:right">${t('avg_score')}</th></tr></thead>
             <tbody>
               ${(schoolData.entries||[]).map(e=>`
-                <tr><td>${medals[e.rank-1]||'#'+e.rank}</td><td>${e.name}</td><td style="text-align:right;font-weight:700">${e.avg_pct}%</td></tr>`).join('')}
+                <tr><td>${medals[e.rank-1]||'#'+e.rank}</td><td>${htmlEsc(e.name)}</td><td style="text-align:right;font-weight:700">${e.avg_pct}%</td></tr>`).join('')}
             </tbody>
           </table>
         </div>
@@ -3809,7 +3808,7 @@ async function sendChatMessage(sessionId) {
     if (messagesArea) messagesArea.scrollTop = messagesArea.scrollHeight;
   } catch(err) {
     thinkingWrap.remove();
-    const isQuizLock = err.message.includes('403') || err.message.toLowerCase().includes('quiz');
+    const isQuizLock = err.message.toLowerCase().includes('quiz') || err.message.toLowerCase().includes('locked');
     const errBubble = document.createElement('div');
     errBubble.className = 'chat-bubble-wrap assistant';
     errBubble.innerHTML = `

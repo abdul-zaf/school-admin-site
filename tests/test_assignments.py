@@ -5,6 +5,7 @@ import pytest
 def assignment_id(client, admin_h, course_id):
     r = client.post(f"/api/assignments/course/{course_id}", json={
         "title": "Homework 1", "description": "Do the thing.", "max_score": 50.0,
+        "allow_resubmission": True,
     }, headers=admin_h)
     assert r.status_code == 200
     return r.json()["id"]

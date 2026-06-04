@@ -11,10 +11,16 @@ import pathlib
 os.environ["TESTING"]      = "1"                         # suppresses seed_admin()
 os.environ["DATABASE_URL"] = "sqlite:///./test_lms.db"  # isolated test DB
 
-# Remove any leftover DB file from a previous aborted run
+# Remove any leftover DB file from a previous aborted run.
+# On Windows a previous pytest process may still hold the file open; the
+# per-test clean_db fixture (drop_all / create_all) will reset state anyway,
+# so a PermissionError here is safe to ignore.
 _test_db = pathlib.Path("test_lms.db")
 if _test_db.exists():
-    _test_db.unlink()
+    try:
+        _test_db.unlink()
+    except PermissionError:
+        pass  # file still in use; clean_db fixture will reset the schema
 
 # ── App imports (after env vars are set) ──────────────────────────────────────
 import pytest  # noqa: E402

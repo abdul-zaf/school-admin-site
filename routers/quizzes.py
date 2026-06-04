@@ -428,18 +428,18 @@ def submit_quiz(
 
     db.commit()
 
+    quiz_obj = db.query(models.Quiz).filter(models.Quiz.id == quiz_id).first()
+    total_possible = sum(qq.points for qq in quiz_obj.questions)
+
     # Record XP and streak for quiz submission
     try:
         from routers.streaks import record_activity
         from routers.xp import award_xp
         record_activity(db, current_user.id)
-        award_xp(db, current_user.id, "quiz_submission", f"Completed quiz: {quiz_obj.title if quiz_obj else quiz_id}")
+        award_xp(db, current_user.id, "quiz_submission", f"Completed quiz: {quiz_obj.title}")
         db.commit()
     except Exception:
         pass
-
-    quiz_obj = db.query(models.Quiz).filter(models.Quiz.id == quiz_id).first()
-    total_possible = sum(qq.points for qq in quiz_obj.questions)
     return {
         "score": attempt.score,
         "total_possible": total_possible,

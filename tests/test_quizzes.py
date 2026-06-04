@@ -22,6 +22,10 @@ def mc_question_id(client, admin_h, quiz_id):
         ],
     }, headers=admin_h)
     assert r.status_code == 200
+    # Publish the quiz so students can attempt it
+    pub = client.patch(f"/api/quizzes/{quiz_id}/publish",
+                       json={"is_published": True}, headers=admin_h)
+    assert pub.status_code == 200, f"Publish failed: {pub.text}"
     return r.json()["id"]
 
 
