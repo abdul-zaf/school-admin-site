@@ -475,30 +475,34 @@ const _flyoutCache   = {};
 const _flyoutFetched = {};
 const FLYOUT_CACHE_MS = 60_000;
 
+// Module-level timer so every caller shares the same timer reference.
+let _flyoutHideTimer = null;
+let _flyoutPanelBound = false;   // flyout panel listeners are attached only once
+
+function _cancelFlyoutHide() { clearTimeout(_flyoutHideTimer); }
+function _scheduleFlyoutHide() { _flyoutHideTimer = setTimeout(hideNavFlyout, 200); }
+
 function initNavFlyout() {
   const flyout = document.getElementById('nav-flyout');
   if (!flyout) return;
 
-  let hideTimer = null;
-  const cancelHide = () => clearTimeout(hideTimer);
-  const startHide  = () => { hideTimer = setTimeout(hideNavFlyout, 160); };
+  // Bind the flyout panel listeners only once (they never need to change)
+  if (!_flyoutPanelBound) {
+    flyout.addEventListener('mouseenter', _cancelFlyoutHide);
+    flyout.addEventListener('mouseleave', _scheduleFlyoutHide);
+    _flyoutPanelBound = true;
+  }
 
-  // Flyout itself keeps it open while the mouse is over it
-  flyout.removeEventListener('mouseenter', cancelHide);
-  flyout.removeEventListener('mouseleave', startHide);
-  flyout.addEventListener('mouseenter', cancelHide);
-  flyout.addEventListener('mouseleave', startHide);
-
-  // Attach to every flyout-capable nav item (fresh listeners each render)
+  // Nav items are rebuilt via innerHTML each time — attach fresh listeners
   document.querySelectorAll('[data-flyout]').forEach(item => {
     item.addEventListener('mouseenter', () => {
-      cancelHide();
+      _cancelFlyoutHide();
       const rect = item.getBoundingClientRect();
       flyout.style.top = Math.max(8, Math.min(rect.top, window.innerHeight - 360)) + 'px';
       flyout.classList.add('visible');
       loadNavFlyout(item.dataset.flyout);
     });
-    item.addEventListener('mouseleave', startHide);
+    item.addEventListener('mouseleave', _scheduleFlyoutHide);
   });
 }
 

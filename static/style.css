@@ -263,7 +263,7 @@ a:hover { text-decoration: underline; }
 /* ── Nav hover flyout (body-level, escapes sidebar overflow) ── */
 .nav-flyout {
   position: fixed;
-  left: calc(var(--sidebar-w) + 6px);
+  left: var(--sidebar-w);              /* flush against sidebar — no gap to fall through */
   top: 120px;                          /* overridden by JS per nav item */
   width: 244px;
   background: var(--card);
@@ -1235,7 +1235,7 @@ select.form-control { cursor: pointer; }
 [dir="rtl"] .toast              { left: 20px; right: auto; }
 [dir="rtl"] .nav-item           { border-left: none; border-right: 3px solid transparent; }
 [dir="rtl"] .nav-item.active    { border-right-color: var(--gold); }
-[dir="rtl"] .nav-flyout         { left: auto; right: calc(var(--sidebar-w) + 6px); transform: translateX(4px); }
+[dir="rtl"] .nav-flyout         { left: auto; right: var(--sidebar-w); transform: translateX(4px); }
 [dir="rtl"] .nav-flyout.visible { transform: translateX(0); }
 
 /* ══════════════════════════════════════════════════════════
