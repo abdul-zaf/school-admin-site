@@ -451,12 +451,107 @@ function subjectAccent(subject, title) {
 function updateSidebarNav() {
   if (!state.user) return;
   const r = state.user.role;
-  document.getElementById('sidebar-nav').innerHTML = NAV_KEYS[r].map(p =>
-    `<a class="nav-item${state.currentPage===p?' active':''}" data-page="${p}" onclick="navigate('${p}')">
+  document.getElementById('sidebar-nav').innerHTML = NAV_KEYS[r].map(p => {
+    const isActive = state.currentPage === p || (p === 'courses' && state.currentPage === 'course');
+    if (p === 'courses') {
+      return `
+        <div class="nav-flyout-wrapper" id="nav-courses-wrapper">
+          <a class="nav-item${isActive?' active':''}" data-page="courses" onclick="navigate('courses')">
+            <span class="nav-icon">📚</span>
+            <span class="nav-label">${t('nav_courses')}</span>
+            <span class="nav-chevron">›</span>
+          </a>
+          <div class="nav-flyout" id="courses-flyout">
+            <div class="nav-flyout-header">${t('all_courses')}</div>
+            <div class="nav-flyout-list" id="courses-flyout-list">
+              <div class="nav-flyout-loading">Loading…</div>
+            </div>
+            <div class="nav-flyout-footer">
+              <span class="nav-flyout-all" onclick="navigate('courses');document.getElementById('courses-flyout').classList.remove('visible')">${t('all_courses')} →</span>
+            </div>
+          </div>
+        </div>`;
+    }
+    return `<a class="nav-item${isActive?' active':''}" data-page="${p}" onclick="navigate('${p}')">
       <span class="nav-icon">${NAV_ICONS[p]||'•'}</span>
       <span class="nav-label">${t(NAV_I18N[p])}</span>
-    </a>`
-  ).join('');
+    </a>`;
+  }).join('');
+  initCoursesFlyout();
+}
+
+// ── Courses hover flyout ───────────────────────────────────────────────────────
+let _coursesFlyoutCache = null;
+let _coursesFlyoutFetchedAt = 0;
+const FLYOUT_CACHE_MS = 60_000; // refresh if older than 60 s
+
+function initCoursesFlyout() {
+  const wrapper = document.getElementById('nav-courses-wrapper');
+  const flyout  = document.getElementById('courses-flyout');
+  if (!wrapper || !flyout) return;
+
+  let hideTimer = null;
+
+  const showFlyout = () => {
+    clearTimeout(hideTimer);
+    // Position: align top of flyout with top of the wrapper, clamped to viewport
+    const rect = wrapper.getBoundingClientRect();
+    const maxTop = window.innerHeight - flyout.offsetHeight - 12;
+    flyout.style.top = Math.max(8, Math.min(rect.top, maxTop)) + 'px';
+    flyout.classList.add('visible');
+    populateCoursesFlyout();
+  };
+
+  const hideFlyout = () => {
+    hideTimer = setTimeout(() => flyout.classList.remove('visible'), 150);
+  };
+
+  wrapper.addEventListener('mouseenter', showFlyout);
+  wrapper.addEventListener('mouseleave', hideFlyout);
+  flyout.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+  flyout.addEventListener('mouseleave', hideFlyout);
+}
+
+function invalidateCoursesFlyoutCache() {
+  _coursesFlyoutCache = null;
+  _coursesFlyoutFetchedAt = 0;
+}
+
+async function populateCoursesFlyout() {
+  const now = Date.now();
+  if (_coursesFlyoutCache && now - _coursesFlyoutFetchedAt < FLYOUT_CACHE_MS) {
+    renderCoursesFlyout(_coursesFlyoutCache);
+    return;
+  }
+  try {
+    const courses = await api('GET', '/courses/');
+    _coursesFlyoutCache = courses;
+    _coursesFlyoutFetchedAt = Date.now();
+    renderCoursesFlyout(courses);
+  } catch (e) {
+    const list = document.getElementById('courses-flyout-list');
+    if (list) list.innerHTML = '<div class="nav-flyout-error">Could not load courses</div>';
+  }
+}
+
+function renderCoursesFlyout(courses) {
+  const list = document.getElementById('courses-flyout-list');
+  if (!list) return;
+  if (!courses || !courses.length) {
+    list.innerHTML = `<div class="nav-flyout-empty">${t('no_courses')}</div>`;
+    return;
+  }
+  const visible = courses.slice(0, 12);
+  const extra   = courses.length - visible.length;
+  list.innerHTML = visible.map(c => `
+    <div class="nav-flyout-item" onclick="navigate('course',{id:${c.id}});document.getElementById('courses-flyout').classList.remove('visible')">
+      <span class="nav-flyout-dot" style="background:${subjectAccent(c.subject||'',c.title||'')}"></span>
+      <div class="nav-flyout-item-text">
+        <div class="nav-flyout-item-title">${htmlEsc(c.title)}</div>
+        ${c.subject ? `<div class="nav-flyout-item-sub">${htmlEsc(c.subject)}</div>` : ''}
+      </div>
+    </div>`).join('')
+    + (extra > 0 ? `<div class="nav-flyout-more">+${extra} more</div>` : '');
 }
 
 function showApp() {
@@ -519,7 +614,9 @@ function navigate(page, params = {}) {
   if (state.quizTimer) { clearInterval(state.quizTimer); state.quizTimer = null; }
   state.currentPage = page; state.currentParams = params;
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-  const a = document.querySelector(`.nav-item[data-page="${page}"]`);
+  // 'course' is a sub-page of 'courses' — highlight the courses nav item
+  const activePage = page === 'course' ? 'courses' : page;
+  const a = document.querySelector(`.nav-item[data-page="${activePage}"]`);
   if (a) a.classList.add('active');
   const el = document.getElementById('page-content');
   const pages = {
@@ -793,7 +890,7 @@ function openNewCourseModal() {
       try {
         await api('POST','/courses/',{ title:fd.get('title'), subject:fd.get('subject')||null,
           grade_level:fd.get('grade_level')||null, description:fd.get('description')||null });
-        closeModal(); toast(t('new_course')); navigate('courses');
+        invalidateCoursesFlyoutCache(); closeModal(); toast(t('new_course')); navigate('courses');
       } catch(err) { toast(err.message,'error'); }
     });
 }
@@ -809,7 +906,7 @@ async function unenrollCourse(id) {
 }
 async function deleteCourse(id) {
   if (!confirm(t('delete')+'?')) return;
-  try { await api('DELETE',`/courses/${id}`); toast(t('delete')); navigate('courses'); }
+  try { await api('DELETE',`/courses/${id}`); invalidateCoursesFlyoutCache(); toast(t('delete')); navigate('courses'); }
   catch(err) { toast(err.message,'error'); }
 }
 
