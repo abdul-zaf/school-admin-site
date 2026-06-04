@@ -141,6 +141,16 @@ const i18n = {
     // Misc
     enrolled_courses:'Enrolled Courses', available_courses:'Available',
     total_students:'Total Students', manage_courses:'Manage Courses',
+    // AI Tutor
+    nav_ai_tutor:'AI Tutor', ai_tutor:'AI Tutor',
+    new_chat:'+ New Chat', study_session:'Study Session',
+    assignment_help:'Assignment Help', chat_send:'Send',
+    chat_placeholder:'Ask a question…',
+    chat_empty:'Ask me anything about your course materials!',
+    chat_hint_note:'I\'m in hint-only mode — I\'ll guide you without giving away answers.',
+    chat_locked:'🔒 AI Tutor is locked while a quiz is in progress. Submit or finish the quiz first.',
+    chat_attach:'Attach file',
+    no_chat_sessions:'No chat sessions yet. Click + New Chat to get started.',
   },
   ur: {
     app_name:'اسکول ایل ایم ایس',
@@ -295,7 +305,11 @@ async function api(method, path, body) {
   if (res.status === 401) { logout(); return null; }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'Request failed' }));
-    throw new Error(err.detail || 'Request failed');
+    const detail = err.detail;
+    const msg = Array.isArray(detail)
+      ? detail.map(e => e.msg || JSON.stringify(e)).join('; ')
+      : (typeof detail === 'string' ? detail : 'Request failed');
+    throw new Error(msg);
   }
   return res.json().catch(() => null);
 }
@@ -402,7 +416,7 @@ function loading(el) {
 const NAV_KEYS = {
   admin:   ['dashboard','courses','users','announcements','gradebook','analytics','leaderboard','calendar','badges','graph','settings'],
   teacher: ['dashboard','courses','announcements','gradebook','analytics','leaderboard','calendar','messages','question_banks','graph','settings'],
-  student: ['dashboard','courses','announcements','gradebook','leaderboard','calendar','messages','portfolio','badges','sr','graph','settings'],
+  student: ['dashboard','courses','announcements','gradebook','leaderboard','calendar','messages','ai_tutor','portfolio','badges','sr','graph','settings'],
   parent:  ['dashboard','settings'],
 };
 const NAV_I18N = {
@@ -411,13 +425,13 @@ const NAV_I18N = {
   gradebook:'nav_gradebook', analytics:'nav_analytics', calendar:'nav_calendar',
   badges:'nav_badges', messages:'nav_messages', question_banks:'nav_question_banks',
   portfolio:'nav_portfolio', sr:'nav_sr', graph:'nav_graph',
-  leaderboard:'nav_leaderboard',
+  leaderboard:'nav_leaderboard', ai_tutor:'nav_ai_tutor',
 };
 const NAV_ICONS = {
   dashboard:'🏠', courses:'📚', users:'👥', announcements:'📢',
   gradebook:'📊', analytics:'📈', calendar:'📅', badges:'🏅',
   messages:'✉️', question_banks:'🗃️', portfolio:'🗂️',
-  sr:'🃏', graph:'🕸️', settings:'⚙️', leaderboard:'🏆',
+  sr:'🃏', graph:'🕸️', settings:'⚙️', leaderboard:'🏆', ai_tutor:'🤖',
 };
 
 // ── Subject → accent colour (used on course cards) ─────────────────────────
@@ -513,13 +527,14 @@ function navigate(page, params = {}) {
     users: renderUsers, announcements: renderAnnouncements, settings: renderSettings,
     gradebook: renderGradebook, calendar: renderCalendar, messages: renderMessages,
     analytics: renderAnalytics, badges: renderBadges, portfolio: renderPortfolio,
-    question_banks: renderQuestionBanks,
+    question_banks: renderQuestionBanks, ai_tutor: renderAiTutor,
   };
   if      (page === 'course')        renderCourseDetail(params.id, el);
   else if (page === 'assignment')    renderAssignmentDetail(params.id, el);
   else if (page === 'quiz-builder')  renderQuizBuilder(params.id, el);
   else if (page === 'quiz-take')     renderQuizTake(params.id, el);
   else if (page === 'discussion-board') renderDiscussionBoard(params.id, el);
+  else if (page === 'ai-chat')       renderAiChat(params.id, el);
   // ── Learning Intelligence & Social ───────────────────────────────────────
   else if (page === 'sr')          { if (typeof renderSRReview       !== 'undefined') renderSRReview(el); }
   else if (page === 'graph')       { if (typeof renderKnowledgeGraph  !== 'undefined') renderKnowledgeGraph(el); }
@@ -2567,43 +2582,64 @@ async function renderBadges(el) {
     ]);
 
     if (role === 'student') {
+      const earned    = myBadges || [];
+      const earnedIds = new Set(earned.map(b => b.badge_id));
       el.innerHTML = `
-        <div class="page-header"><h2>${t('my_badges')}</h2></div>
-        ${(myBadges||[]).length ? `<div class="badges-grid">${(myBadges||[]).map(b => `
-          <div class="badge-card">
-            <span class="badge-icon">${b.badge_icon}</span>
-            <div class="badge-name">${b.badge_name}</div>
-            <div class="badge-desc">${b.badge_description||''}</div>
-            <div class="badge-meta">Awarded by ${b.awarded_by_name}</div>
-            ${b.note ? `<div class="badge-desc" style="margin-top:4px;font-style:italic">${b.note}</div>` : ''}
-          </div>`).join('')}</div>`
-        : `<div class="card"><div class="card-body"><p class="text-muted">${t('no_badges')}</p></div></div>`}
-        <div class="page-header" style="margin-top:24px"><h3>All Badges</h3></div>
-        <div class="badges-grid">${(badges||[]).map(b => `
-          <div class="badge-card">
-            <span class="badge-icon">${b.icon}</span>
-            <div class="badge-name">${b.name}</div>
-            <div class="badge-desc">${b.description||''}</div>
-            <div class="badge-meta">${b.awarded_count} awarded</div>
-          </div>`).join('')}</div>`;
+        <div class="page-header"><h2>🏅 ${t('my_badges')}</h2></div>
+
+        ${earned.length ? `
+          <p class="badges-section-title">Earned — ${earned.length} badge${earned.length !== 1 ? 's' : ''}</p>
+          <div class="badges-grid">
+            ${earned.map(b => `
+              <div class="badge-card earned">
+                <span class="badge-icon">${b.badge_icon}</span>
+                <div class="badge-name">${htmlEsc(b.badge_name)}</div>
+                ${b.badge_description ? `<div class="badge-desc">${htmlEsc(b.badge_description)}</div>` : ''}
+                <div class="badge-earned-stamp">🏆 ${htmlEsc(b.awarded_by_name)}</div>
+                ${b.note ? `<div class="badge-desc" style="font-style:italic">"${htmlEsc(b.note)}"</div>` : ''}
+                <div class="badge-meta">${fmtDate(b.awarded_at)}</div>
+              </div>`).join('')}
+          </div>` : ''}
+
+        <p class="badges-section-title" style="margin-top:${earned.length ? '32px' : '8px'}">
+          All Badges — ${(badges||[]).length} available
+        </p>
+        <div class="badges-grid">
+          ${(badges||[]).map(b => `
+            <div class="badge-card ${earnedIds.has(b.id) ? 'earned' : ''}">
+              <span class="badge-icon">${b.icon}</span>
+              <div class="badge-name">${htmlEsc(b.name)}</div>
+              ${b.description ? `<div class="badge-desc">${htmlEsc(b.description)}</div>` : ''}
+              <div class="badge-meta">${earnedIds.has(b.id) ? '✓ Earned' : `${b.awarded_count} awarded`}</div>
+            </div>`).join('')}
+          ${!(badges||[]).length
+            ? `<p class="text-muted" style="grid-column:1/-1;text-align:center;padding:24px">No badges created yet.</p>`
+            : ''}
+        </div>`;
 
     } else {
       el.innerHTML = `
-        <div class="page-header"><h2>${t('badges')}</h2>
+        <div class="page-header">
+          <h2>🏅 ${t('badges')}</h2>
           <button class="btn btn-primary" onclick="openCreateBadgeModal()">${t('create_badge')}</button>
         </div>
-        <div class="badges-grid">${(badges||[]).map(b => `
-          <div class="badge-card">
-            <span class="badge-icon">${b.icon}</span>
-            <div class="badge-name">${b.name}</div>
-            <div class="badge-desc">${b.description||''}</div>
-            <div class="badge-meta">${b.awarded_count} awarded</div>
-            <div style="margin-top:10px;display:flex;gap:6px;justify-content:center">
-              <button class="btn btn-sm btn-primary" onclick="openAwardBadgeModal(${b.id},'${b.name}')">${t('award_badge')}</button>
-              <button class="btn btn-sm btn-danger" onclick="deleteBadge(${b.id})">${t('delete')}</button>
-            </div>
-          </div>`).join('')}
-        ${!(badges||[]).length ? `<div class="card" style="grid-column:1/-1"><div class="card-body"><p class="text-muted">${t('no_badges')}</p></div></div>` : ''}</div>`;
+        ${!(badges||[]).length
+          ? `<div class="card"><div class="card-body"><p class="text-muted">${t('no_badges')}</p></div></div>`
+          : ''}
+        <div class="badges-grid">
+          ${(badges||[]).map(b => `
+            <div class="badge-card">
+              <span class="badge-icon">${b.icon}</span>
+              <div class="badge-name">${htmlEsc(b.name)}</div>
+              ${b.description ? `<div class="badge-desc">${htmlEsc(b.description)}</div>` : ''}
+              <div class="badge-meta">${b.awarded_count} student${b.awarded_count !== 1 ? 's' : ''} earned this</div>
+              <div style="margin-top:10px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
+                <button class="btn btn-sm btn-primary"
+                  onclick="openAwardBadgeModal(${b.id},${JSON.stringify(b.name)})">🎖 ${t('award_badge')}</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteBadge(${b.id})">${t('delete')}</button>
+              </div>
+            </div>`).join('')}
+        </div>`;
     }
   } catch(err) { el.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
 }
@@ -2630,22 +2666,51 @@ function openCreateBadgeModal() {
     });
 }
 
-function openAwardBadgeModal(badgeId, badgeName) {
-  openModal(`Award: ${badgeName}`, `
+async function openAwardBadgeModal(badgeId, badgeName) {
+  // Load the students this user can award to
+  let students = [];
+  try {
+    if (state.user.role === 'admin') {
+      students = await api('GET', '/users/?role=student') || [];
+    } else {
+      // Teacher: collect unique students from their courses
+      const courses = await api('GET', '/courses/') || [];
+      const myCourses = courses.filter(c => c.teacher_id === state.user.id);
+      const map = {};
+      await Promise.all(myCourses.map(async c => {
+        const detail = await api('GET', `/courses/${c.id}`).catch(() => null);
+        (detail?.students || []).forEach(s => { map[s.id] = s; });
+      }));
+      students = Object.values(map);
+    }
+  } catch(_) { /* fall back to manual entry */ }
+
+  const hasStudents = students.length > 0;
+  const studentField = hasStudents
+    ? `<div class="form-group"><label>Student *</label>
+        <select name="user_id" class="form-control" required>
+          <option value="">— Select a student —</option>
+          ${students.map(s => `<option value="${s.id}">${htmlEsc(s.name)} (${htmlEsc(s.email)})</option>`).join('')}
+        </select></div>`
+    : `<div class="form-group"><label>Student User ID *</label>
+        <input name="user_id" type="number" class="form-control" required placeholder="Enter user ID"></div>`;
+
+  openModal(`🎖 Award: ${badgeName}`, `
     <form id="modal-form">
-      <div class="form-group"><label>Student User ID *</label>
-        <input name="user_id" type="number" class="form-control" required></div>
+      ${studentField}
       <div class="form-group"><label>Note (optional)</label>
-        <input name="note" class="form-control"></div>
+        <input name="note" class="form-control" placeholder="Reason for this award…"></div>
       <div class="form-actions">
         <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
-        <button type="submit" class="btn btn-primary">${t('award_badge')}</button>
+        <button type="submit" class="btn btn-primary">🎖 Award Badge</button>
       </div>
     </form>`,
     async (fd) => {
+      const userId = fd.get('user_id');
+      if (!userId) { toast('Please select a student', 'error'); return; }
       try {
-        await api('POST', `/badges/${badgeId}/award/${fd.get('user_id')}`, { note: fd.get('note')||null });
-        closeModal(); toast(t('award_badge')+'!'); navigate('badges');
+        await api('POST', `/badges/${badgeId}/award/${userId}`, { note: fd.get('note')||null });
+        closeModal(); toast('Badge awarded! 🏅'); navigate('badges');
       } catch(err) { toast(err.message, 'error'); }
     });
 }
@@ -3425,6 +3490,368 @@ async function checkResetToken() {
     }
   } catch(_) {
     showLoginSection('reset-invalid');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// AI Tutor — Session List
+// ═══════════════════════════════════════════════════════════
+async function renderAiTutor(el) {
+  loading(el);
+  try {
+    const [statusData, sessions] = await Promise.all([
+      api('GET', '/ai-tutor/status').catch(() => null),
+      api('GET', '/ai-tutor/sessions').catch(() => []),
+    ]);
+
+    const ollamaOk = statusData?.available;
+    const ollamaBanner = !ollamaOk ? `
+      <div class="chat-ollama-banner">
+        ⚠️ <strong>Ollama is not running.</strong>
+        Start it with: <code>ollama serve</code> and make sure
+        <code>ollama pull ${statusData?.model || 'llama3.2'}</code> has been run.
+      </div>` : '';
+
+    el.innerHTML = `
+      <div class="page-header">
+        <h2>🤖 ${t('ai_tutor')}</h2>
+        <button class="btn btn-primary" onclick="openNewTutorSessionModal()">${t('new_chat')}</button>
+      </div>
+      ${ollamaBanner}
+      <div id="ai-tutor-sessions" style="margin-top:${ollamaOk ? '0' : '12px'}">
+        ${(sessions||[]).length ? (sessions||[]).map(s => `
+          <div class="card" style="margin-bottom:10px;cursor:pointer" onclick="navigate('ai-chat',{id:${s.id}})">
+            <div class="card-body" style="display:flex;align-items:center;gap:14px;padding:14px 18px">
+              <div style="font-size:1.6rem;flex-shrink:0">
+                ${s.mode === 'assignment_help' ? '📝' : '📖'}
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:700;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                  ${htmlEsc(s.title)}
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                  <span class="chat-mode-pill ${s.mode === 'assignment_help' ? 'chat-mode-assignment' : 'chat-mode-study'}">
+                    ${s.mode === 'assignment_help' ? 'Assignment Help' : 'Study'}
+                  </span>
+                  ${s.course_title ? `<small class="text-muted">📚 ${htmlEsc(s.course_title)}</small>` : ''}
+                  <small class="text-muted">💬 ${s.message_count} message${s.message_count !== 1 ? 's' : ''}</small>
+                  <small class="text-muted">${fmtDate(s.created_at)}</small>
+                </div>
+              </div>
+              <button class="btn btn-sm btn-danger" style="flex-shrink:0"
+                onclick="event.stopPropagation();deleteTutorSession(${s.id})">🗑</button>
+            </div>
+          </div>`).join('')
+        : `<div class="card"><div class="card-body">
+            <p class="text-muted" style="text-align:center;padding:24px">
+              ${t('no_chat_sessions')}
+            </p></div></div>`}
+      </div>`;
+  } catch(err) { el.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// AI Tutor — Chat View
+// ═══════════════════════════════════════════════════════════
+async function renderAiChat(sessionId, el) {
+  loading(el);
+  window._chatUploads = [];
+  try {
+    const [session, messages, statusData] = await Promise.all([
+      api('GET', `/ai-tutor/sessions/${sessionId}`),
+      api('GET', `/ai-tutor/sessions/${sessionId}/messages`),
+      api('GET', '/ai-tutor/status').catch(() => null),
+    ]);
+    if (!session) { el.innerHTML = '<div class="alert alert-error">Session not found</div>'; return; }
+
+    const ollamaOk = statusData?.available;
+
+    el.innerHTML = `
+      <div style="margin-bottom:12px">
+        <button class="btn btn-sm" onclick="navigate('ai_tutor')">${t('back')}</button>
+      </div>
+      <div class="chat-layout">
+        <div class="chat-main">
+          <div class="chat-main-header">
+            <div style="flex:1;min-width:0">
+              <h3 style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px">
+                ${htmlEsc(session.title)}
+              </h3>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <span class="chat-mode-pill ${session.mode === 'assignment_help' ? 'chat-mode-assignment' : 'chat-mode-study'}">
+                  ${session.mode === 'assignment_help' ? '📝 Hint-Only Mode' : '📖 Study Mode'}
+                </span>
+                ${session.course_title ? `<small class="text-muted">📚 ${htmlEsc(session.course_title)}</small>` : ''}
+              </div>
+            </div>
+            ${ollamaOk
+              ? `<span class="badge badge-success" style="flex-shrink:0">● Online</span>`
+              : `<span class="badge badge-warning" style="flex-shrink:0">⚠ Ollama offline</span>`}
+          </div>
+
+          ${!ollamaOk ? `<div class="chat-ollama-banner">
+            ⚠️ Ollama is not running — messages will fail until you run <code>ollama serve</code>.
+          </div>` : ''}
+
+          <div class="chat-messages" id="chat-messages-area">
+            ${(messages||[]).length
+              ? (messages||[]).map(m => renderChatBubble(m)).join('')
+              : `<div class="chat-empty">
+                  <div class="chat-empty-icon">🤖</div>
+                  <p>${t('chat_empty')}</p>
+                  ${session.mode === 'assignment_help'
+                    ? `<p style="font-size:12px;color:var(--muted)">${t('chat_hint_note')}</p>`
+                    : ''}
+                </div>`}
+          </div>
+
+          <div class="chat-input-area">
+            <div class="chat-file-chips" id="chat-file-chips"></div>
+            <div class="chat-input-row">
+              <label class="btn btn-sm" title="${t('chat_attach')}" style="cursor:pointer;margin-bottom:0;flex-shrink:0">
+                📎
+                <input type="file" id="chat-file-input" style="display:none"
+                  accept=".txt,.py,.js,.ts,.jsx,.tsx,.java,.c,.cpp,.h,.cs,.go,.rb,.php,.html,.css,.md,.csv,.json,.xml,.yaml,.pdf,.docx,.jpg,.jpeg,.png,.gif,.webp"
+                  onchange="handleChatFileSelect(${sessionId},this)">
+              </label>
+              <textarea id="chat-text-input" placeholder="${t('chat_placeholder')}"
+                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage(${sessionId})}"
+                oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,140)+'px'"></textarea>
+              <button class="btn btn-primary" onclick="sendChatMessage(${sessionId})" id="chat-send-btn" style="flex-shrink:0">
+                ${t('chat_send')} ▶
+              </button>
+            </div>
+            <small class="text-muted" style="font-size:11px">Enter to send · Shift+Enter for new line · Max 3 files · 20 MB each</small>
+          </div>
+        </div>
+      </div>`;
+
+    // Scroll to bottom of messages
+    const area = document.getElementById('chat-messages-area');
+    if (area) area.scrollTop = area.scrollHeight;
+
+    // Focus input
+    document.getElementById('chat-text-input')?.focus();
+  } catch(err) { el.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
+}
+
+function renderChatBubble(m) {
+  const isUser = m.role === 'user';
+  return `
+    <div class="chat-bubble-wrap ${isUser ? 'user' : 'assistant'}">
+      <div class="chat-bubble ${isUser ? 'user' : 'assistant'}">${htmlEsc(m.content)}</div>
+      <div class="chat-bubble-time">${fmtDateTime(m.created_at)}</div>
+    </div>`;
+}
+
+async function handleChatFileSelect(sessionId, input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  input.value = '';
+
+  if ((window._chatUploads || []).length >= 3) {
+    toast('Maximum 3 files per message', 'error'); return;
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    toast('📎 Uploading…');
+    const res = await fetch(`/api/ai-tutor/sessions/${sessionId}/upload`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${state.token}` },
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const detail = err.detail;
+      const msg = Array.isArray(detail)
+        ? detail.map(e => e.msg || JSON.stringify(e)).join('; ')
+        : (typeof detail === 'string' ? detail : 'Upload failed');
+      toast(msg, 'error'); return;
+    }
+    const data = await res.json();
+    window._chatUploads = window._chatUploads || [];
+    window._chatUploads.push({ upload_id: data.upload_id, filename: data.filename, kind: data.file_kind });
+    renderChatChips();
+    toast(`📎 ${data.filename} attached`);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function renderChatChips() {
+  const el = document.getElementById('chat-file-chips');
+  if (!el) return;
+  el.innerHTML = (window._chatUploads || []).map((u, i) => `
+    <span class="upload-chip">
+      ${u.kind === 'image' ? '🖼' : u.kind === 'pdf' ? '📄' : '📎'} ${htmlEsc(u.filename)}
+      <span class="chip-remove" onclick="removeChatUpload(${i})">×</span>
+    </span>`).join('');
+}
+
+function removeChatUpload(i) {
+  window._chatUploads = (window._chatUploads || []).filter((_, idx) => idx !== i);
+  renderChatChips();
+}
+
+async function sendChatMessage(sessionId) {
+  const input   = document.getElementById('chat-text-input');
+  const sendBtn = document.getElementById('chat-send-btn');
+  const content = input?.value.trim();
+  const uploads = window._chatUploads || [];
+
+  if (!content && !uploads.length) return;
+
+  const uploadIds = uploads.map(u => u.upload_id);
+  const messagesArea = document.getElementById('chat-messages-area');
+
+  // Remove empty-state placeholder if present
+  const emptyEl = messagesArea?.querySelector('.chat-empty');
+  if (emptyEl) emptyEl.remove();
+
+  // Optimistic user bubble
+  const userWrap = document.createElement('div');
+  userWrap.innerHTML = renderChatBubble({
+    role: 'user',
+    content: content || `(${uploads.map(u => u.filename).join(', ')})`,
+    created_at: new Date().toISOString(),
+  });
+  messagesArea?.appendChild(userWrap);
+
+  // Thinking indicator
+  const thinkingWrap = document.createElement('div');
+  thinkingWrap.className = 'chat-bubble-wrap assistant';
+  thinkingWrap.innerHTML = `<div class="chat-thinking"><span></span><span></span><span></span></div>`;
+  messagesArea?.appendChild(thinkingWrap);
+  if (messagesArea) messagesArea.scrollTop = messagesArea.scrollHeight;
+
+  // Reset input
+  if (input) { input.value = ''; input.style.height = 'auto'; }
+  window._chatUploads = [];
+  renderChatChips();
+  if (sendBtn) sendBtn.disabled = true;
+
+  try {
+    const reply = await api('POST', `/ai-tutor/sessions/${sessionId}/messages`, {
+      content: content || `(see attached file${uploads.length > 1 ? 's' : ''})`,
+      upload_ids: uploadIds.length ? uploadIds : undefined,
+    });
+    thinkingWrap.remove();
+
+    // The endpoint returns the assistant message object directly
+    const aiMsg = reply?.assistant_message ?? reply;
+    const aiBubble = document.createElement('div');
+    aiBubble.innerHTML = renderChatBubble({
+      role: 'assistant',
+      content: aiMsg?.content ?? JSON.stringify(aiMsg),
+      created_at: aiMsg?.created_at ?? new Date().toISOString(),
+    });
+    messagesArea?.appendChild(aiBubble);
+    if (messagesArea) messagesArea.scrollTop = messagesArea.scrollHeight;
+  } catch(err) {
+    thinkingWrap.remove();
+    const isQuizLock = err.message.includes('403') || err.message.toLowerCase().includes('quiz');
+    const errBubble = document.createElement('div');
+    errBubble.className = 'chat-bubble-wrap assistant';
+    errBubble.innerHTML = `
+      <div class="chat-bubble assistant" style="color:var(--danger);border-color:var(--danger)">
+        ${isQuizLock ? t('chat_locked') : `⚠️ ${htmlEsc(err.message)}`}
+      </div>`;
+    messagesArea?.appendChild(errBubble);
+    if (messagesArea) messagesArea.scrollTop = messagesArea.scrollHeight;
+  } finally {
+    if (sendBtn) sendBtn.disabled = false;
+    document.getElementById('chat-text-input')?.focus();
+  }
+}
+
+async function deleteTutorSession(id) {
+  if (!confirm('Delete this chat session and all its messages?')) return;
+  try {
+    await api('DELETE', `/ai-tutor/sessions/${id}`);
+    toast('Session deleted');
+    navigate('ai_tutor');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function openNewTutorSessionModal() {
+  let enrolled = [];
+  try {
+    const courses = await api('GET', '/courses/') || [];
+    enrolled = courses.filter(c => c.enrolled);
+  } catch(_) {}
+
+  openModal('🤖 New AI Tutor Session', `
+    <form id="modal-form">
+      <div class="form-group"><label>Mode *</label>
+        <select name="mode" class="form-control" id="tutor-mode-sel" onchange="onTutorModeChange()">
+          <option value="study">📖 Study Session</option>
+          <option value="assignment_help">📝 Assignment Help (hints only)</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Course</label>
+        <select name="course_id" class="form-control" id="tutor-course-sel" onchange="onTutorCourseChange()">
+          <option value="">— General (no specific course) —</option>
+          ${enrolled.map(c => `<option value="${c.id}">${htmlEsc(c.title)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group hidden" id="tutor-assignment-group"><label>Assignment *</label>
+        <select name="assignment_id" class="form-control" id="tutor-assignment-sel">
+          <option value="">— Select a course first —</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Session Title <span class="text-muted">(optional)</span></label>
+        <input name="title" class="form-control" placeholder="Auto-generated if blank">
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
+        <button type="submit" class="btn btn-primary">Start Chat ▶</button>
+      </div>
+    </form>`,
+    async (fd) => {
+      try {
+        const courseId     = fd.get('course_id')     ? parseInt(fd.get('course_id'))     : null;
+        const assignmentId = fd.get('assignment_id') ? parseInt(fd.get('assignment_id')) : null;
+        const session = await api('POST', '/ai-tutor/sessions', {
+          course_id:     courseId     || undefined,
+          assignment_id: assignmentId || undefined,
+          title:         fd.get('title') || undefined,
+          mode:          fd.get('mode'),
+        });
+        closeModal();
+        navigate('ai-chat', { id: session.id });
+      } catch(e) { toast(e.message, 'error'); }
+    });
+}
+
+function onTutorModeChange() {
+  const mode  = document.getElementById('tutor-mode-sel')?.value;
+  const group = document.getElementById('tutor-assignment-group');
+  if (!group) return;
+  if (mode === 'assignment_help') {
+    group.classList.remove('hidden');
+    onTutorCourseChange();
+  } else {
+    group.classList.add('hidden');
+  }
+}
+
+async function onTutorCourseChange() {
+  const courseId = document.getElementById('tutor-course-sel')?.value;
+  const sel      = document.getElementById('tutor-assignment-sel');
+  if (!sel) return;
+  if (!courseId) {
+    sel.innerHTML = '<option value="">— Select a course first —</option>';
+    return;
+  }
+  sel.innerHTML = '<option>Loading…</option>';
+  try {
+    const assignments = await api('GET', `/assignments/course/${courseId}`).catch(() => []);
+    sel.innerHTML = (assignments||[]).length
+      ? (assignments||[]).map(a => `<option value="${a.id}">${htmlEsc(a.title)}</option>`).join('')
+      : '<option value="">No assignments in this course</option>';
+  } catch(_) {
+    sel.innerHTML = '<option value="">Error loading assignments</option>';
   }
 }
 
