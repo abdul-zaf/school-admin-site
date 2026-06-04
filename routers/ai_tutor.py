@@ -64,7 +64,12 @@ from services.file_extractor import extract as extract_file, format_for_prompt, 
 
 _UPLOAD_DIR = Path(os.getenv("TUTOR_UPLOAD_DIR", "./uploads/tutor"))
 _MAX_UPLOAD_MB = int(os.getenv("TUTOR_MAX_UPLOAD_MB", "20"))
-_MAX_UPLOADS_PER_MSG = 3   # images + files combined per message
+_MAX_UPLOADS_PER_MSG = 3        # images + files combined per message
+
+# Cross-session memory
+_MAX_PAST_SESSIONS  = 5         # how many prior session summaries to inject
+_MAX_SUMMARY_TOKENS = 150       # target length for each session summary
+_MAX_UNSUMMARIZED   = 10        # cap on how many sessions we'll summarize at once
 
 router = APIRouter()
 
@@ -106,6 +111,109 @@ def _active_quiz_attempt(db: Session, student_id: int) -> Optional[models.QuizAt
     )
 
 
+# ── Cross-session memory helpers ──────────────────────────────────────────────
+
+def _generate_session_summary(session: models.TutorSession) -> str:
+    """
+    Ask Ollama to write a 2-4 sentence summary of the session.
+    Falls back to a rule-based stub when Ollama is unavailable.
+    """
+    msgs = [m for m in session.messages if m.role in ("user", "assistant")]
+    if not msgs:
+        return f"Empty session: '{session.title}'."
+
+    # Condense transcript (cap each turn to keep the prompt short)
+    lines = []
+    for m in msgs:
+        prefix = "Student" if m.role == "user" else "Tutor"
+        lines.append(f"{prefix}: {m.content[:300]}")
+    transcript = "\n".join(lines)[:3500]
+
+    prompt = (
+        f"Summarise this tutoring session in 2-4 concise sentences.\n"
+        f"Session: \"{session.title}\" | Mode: {session.mode}\n\n"
+        f"Transcript:\n{transcript}\n\n"
+        "Cover: topics the student asked about, what they understood, "
+        "and what they found confusing or struggled with. "
+        "Be specific and factual — no filler phrases."
+    )
+    try:
+        if ollama_available():
+            return ollama_chat(
+                [{"role": "user", "content": prompt}],
+                temperature=0.2,
+                max_tokens=_MAX_SUMMARY_TOKENS,
+            ).strip()
+    except Exception:
+        pass
+
+    # Rule-based fallback
+    topic = session.course.title if session.course else session.title
+    return (
+        f"Session '{session.title}' ({len(msgs)} messages). "
+        f"Topic area: {topic}."
+    )
+
+
+def _ensure_summaries(db: Session, student_id: int) -> None:
+    """
+    Lazily generate summaries for any past sessions that have messages but
+    no summary yet.  Called before creating a new session so history is ready.
+    Capped at _MAX_UNSUMMARIZED to keep latency bounded.
+    """
+    from datetime import datetime as _dt
+    unsummarized = (
+        db.query(models.TutorSession)
+        .filter(
+            models.TutorSession.student_id == student_id,
+            models.TutorSession.summary    == None,        # noqa: E711
+        )
+        .order_by(models.TutorSession.created_at.desc())
+        .limit(_MAX_UNSUMMARIZED)
+        .all()
+    )
+    changed = False
+    for s in unsummarized:
+        if not s.messages:
+            continue
+        s.summary       = _generate_session_summary(s)
+        s.summarized_at = _dt.utcnow()
+        changed = True
+    if changed:
+        db.commit()
+
+
+def _get_past_summaries(
+    db: Session,
+    student_id: int,
+    exclude_session_id: Optional[int] = None,
+) -> List[dict]:
+    """
+    Return metadata + summary for up to _MAX_PAST_SESSIONS most recent
+    sessions that have already been summarised, excluding the current one.
+    """
+    q = (
+        db.query(models.TutorSession)
+        .filter(
+            models.TutorSession.student_id == student_id,
+            models.TutorSession.summary    != None,        # noqa: E711
+        )
+        .order_by(models.TutorSession.created_at.desc())
+    )
+    if exclude_session_id is not None:
+        q = q.filter(models.TutorSession.id != exclude_session_id)
+    sessions = q.limit(_MAX_PAST_SESSIONS).all()
+    return [
+        {
+            "title":      s.title,
+            "course":     s.course.title if s.course else None,
+            "created_at": s.created_at,
+            "summary":    s.summary,
+        }
+        for s in sessions
+    ]
+
+
 def _build_system_prompt(
     db: Session,
     session: models.TutorSession,
@@ -113,10 +221,36 @@ def _build_system_prompt(
     query: str,
 ) -> str:
     """Build the full system prompt for this student's message."""
+    from datetime import datetime as _dt
     lines = [
         "You are an AI tutor embedded in a school Learning Management System.",
         f"You are helping student: {student.name}.",
     ]
+
+    # ── Learning history from past sessions ──────────────────────────────────
+    past = _get_past_summaries(db, student.id, exclude_session_id=session.id)
+    if past:
+        now = _dt.utcnow()
+        history_lines = []
+        for p in past:
+            age_days = (now - p["created_at"]).days
+            age_str  = (
+                "today" if age_days == 0
+                else f"{age_days} day{'s' if age_days != 1 else ''} ago"
+            )
+            course_tag = f" [{p['course']}]" if p["course"] else ""
+            history_lines.append(
+                f'• "{p["title"]}"{course_tag} ({age_str}): {p["summary"]}'
+            )
+        lines.append(
+            "\n--- STUDENT LEARNING HISTORY (previous sessions) ---\n"
+            + "\n".join(history_lines)
+            + "\n--- END HISTORY ---"
+        )
+        lines.append(
+            "Use this history to personalise your help. Reference what the student "
+            "previously understood or struggled with when it is relevant to their current question."
+        )
 
     # ── Course context ───────────────────────────────────────────────────────
     if session.course:
@@ -227,6 +361,9 @@ def create_session(
         if not enrolled:
             raise HTTPException(403, "You are not enrolled in this course")
 
+    # Summarise past sessions lazily so the new session can reference them
+    _ensure_summaries(db, current_user.id)
+
     title = data.title or (
         f"Assignment Help: {db.query(models.Assignment).filter(models.Assignment.id == data.assignment_id).first().title}"
         if data.assignment_id else "New Study Session"
@@ -272,6 +409,8 @@ def list_sessions(
             "assignment_id": s.assignment_id,
             "assignment_title": s.assignment.title if s.assignment else None,
             "message_count": len(s.messages),
+            "has_summary": s.summary is not None,
+            "summarized_at": str(s.summarized_at) if s.summarized_at else None,
             "created_at": str(s.created_at),
         }
         for s in sessions
@@ -299,6 +438,9 @@ def get_session(
         "assignment_id": session.assignment_id,
         "assignment_title": session.assignment.title if session.assignment else None,
         "message_count": len(session.messages),
+        "has_summary": session.summary is not None,
+        "summary": session.summary,
+        "summarized_at": str(session.summarized_at) if session.summarized_at else None,
         "created_at": str(session.created_at),
     }
 
@@ -315,9 +457,52 @@ def delete_session(
     ).first()
     if not session:
         raise HTTPException(404, "Session not found")
+
+    # Best-effort: summarise before deleting so history isn't entirely lost
+    # (summary is stored on the row; cascade will delete messages but the row
+    #  itself is deleted below — this is intentional clean-up by the student)
+    if session.messages and not session.summary:
+        try:
+            from datetime import datetime as _dt
+            session.summary       = _generate_session_summary(session)
+            session.summarized_at = _dt.utcnow()
+            db.flush()
+        except Exception:
+            pass
+
     db.delete(session)
     db.commit()
     return {"ok": True}
+
+
+@router.post("/sessions/{session_id}/summarize")
+def summarize_session(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("student")),
+):
+    """
+    Manually trigger summary generation for a session.
+    Useful for forcing a refresh after a long conversation.
+    """
+    from datetime import datetime as _dt
+    session = db.query(models.TutorSession).filter(
+        models.TutorSession.id == session_id,
+        models.TutorSession.student_id == current_user.id,
+    ).first()
+    if not session:
+        raise HTTPException(404, "Session not found")
+    if not session.messages:
+        raise HTTPException(400, "Session has no messages to summarise")
+    if not ollama_available():
+        raise HTTPException(
+            503,
+            f"Ollama is not running. Start it with: ollama serve && ollama pull {OLLAMA_MODEL}",
+        )
+    session.summary       = _generate_session_summary(session)
+    session.summarized_at = _dt.utcnow()
+    db.commit()
+    return {"ok": True, "summary": session.summary}
 
 
 # ── Messages ──────────────────────────────────────────────────────────────────

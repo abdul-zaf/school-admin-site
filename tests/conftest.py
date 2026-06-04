@@ -32,6 +32,11 @@ from main import app  # noqa: E402  ← triggers create_all on test DB (no seed_
 import models   # noqa: E402
 import security  # noqa: E402
 
+# Flush any connections left open by main.py's create_all + apply_migrations.
+# This prevents stale pooled connections from carrying dirty SQLite state into
+# the clean_db fixture's drop_all / create_all cycle.
+engine.dispose()
+
 _Session = sessionmaker(bind=engine)
 
 
@@ -53,12 +58,16 @@ def _add_user(name, email, role):
 @pytest.fixture(autouse=True)
 def clean_db():
     """Drop and recreate every table before each test for full isolation."""
+    # Dispose before drop so no pooled connection carries a stale schema view.
+    engine.dispose()
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     _add_user("Admin",   "admin@test.com",   "admin")
     _add_user("Teacher", "teacher@test.com", "teacher")
     _add_user("Student", "student@test.com", "student")
     yield
+    # Dispose again so the next test's drop_all doesn't inherit open connections.
+    engine.dispose()
     Base.metadata.drop_all(bind=engine)
 
 

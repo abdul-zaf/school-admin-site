@@ -1185,6 +1185,10 @@ class TutorSession(Base):
     title         = Column(String(300), nullable=False, default="New Session")
     # mode: "study" (general learning) | "assignment_help" (hints only, never full answers)
     mode          = Column(String(20), nullable=False, default="study")
+    # AI-generated summary stored after the session has messages, used to inject
+    # learning history into future sessions so the tutor "remembers" the student.
+    summary       = Column(Text,     nullable=True)
+    summarized_at = Column(DateTime, nullable=True)
     created_at    = Column(DateTime, default=datetime.utcnow)
 
     student    = relationship("User")
