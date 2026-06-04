@@ -657,8 +657,8 @@ async function renderDashboard(el) {
           <button class="btn btn-sm btn-primary" onclick="navigate('announcements')">${t('nav_announcements')}</button></div>
           <div class="card-body">
             ${anns.length ? anns.slice(0,4).map(a=>`
-              <div class="announcement-item"><strong>${a.title}</strong><p>${a.content}</p>
-              <small>${t('by')} ${a.author_name} &bull; ${fmtDate(a.created_at)}</small></div>`).join('')
+              <div class="announcement-item"><strong>${htmlEsc(a.title)}</strong><p>${htmlEsc(a.content)}</p>
+              <small>${t('by')} ${htmlEsc(a.author_name)} &bull; ${fmtDate(a.created_at)}</small></div>`).join('')
             : `<p class="text-muted">${t('no_announcements')}</p>`}
           </div>
         </div>`;
@@ -667,8 +667,6 @@ async function renderDashboard(el) {
       const [courses] = await Promise.all([api('GET','/courses/')]);
       const mine = courses.filter(c => c.teacher_id === state.user.id);
       el.innerHTML = `
-        <div class="page-header"><div>
-        </div>
         <div class="welcome-banner">
           <h2>👋 ${t('welcome')}, ${state.user.name}!</h2>
           <p>🧑‍🏫 ${t('teachers')} Dashboard — EduPortal</p>
@@ -719,8 +717,8 @@ async function renderDashboard(el) {
         </div>
         ${anns.length ? `<div class="card"><div class="card-header"><h3>${t('announcements')}</h3></div>
           <div class="card-body">${anns.slice(0,3).map(a=>`
-            <div class="announcement-item"><strong>${a.title}</strong><p>${a.content}</p>
-            <small>${t('by')} ${a.author_name} &bull; ${fmtDate(a.created_at)}</small></div>`).join('')}
+            <div class="announcement-item"><strong>${htmlEsc(a.title)}</strong><p>${htmlEsc(a.content)}</p>
+            <small>${t('by')} ${htmlEsc(a.author_name)} &bull; ${fmtDate(a.created_at)}</small></div>`).join('')}
           </div></div>` : ''}`;
       // Populate urgent quizzes asynchronously
       loadUrgentQuizzes(enrolled);
@@ -1022,10 +1020,10 @@ async function renderCourseDetail(courseId, el) {
           <div class="card-body">
             ${anns.length ? anns.map(a=>`
               <div class="announcement-item">
-                <div class="announcement-header"><strong>${a.title}</strong>
+                <div class="announcement-header"><strong>${htmlEsc(a.title)}</strong>
                   <button class="btn btn-sm btn-danger" onclick="deleteAnnouncement(${a.id},${courseId})">${t('delete')}</button></div>
-                <p>${a.content}</p>
-                <small>${a.author_name} &bull; ${fmtDate(a.created_at)}</small>
+                <p>${htmlEsc(a.content)}</p>
+                <small>${htmlEsc(a.author_name)} &bull; ${fmtDate(a.created_at)}</small>
               </div>`).join('') : `<p class="text-muted">${t('no_announcements')}</p>`}
           </div>
         </div>
@@ -2127,10 +2125,10 @@ async function renderAnnouncements(el) {
       <div class="card"><div class="card-body">
         ${anns.length ? anns.map(a=>`
           <div class="announcement-item">
-            <div class="announcement-header"><strong>${a.title}</strong>
+            <div class="announcement-header"><strong>${htmlEsc(a.title)}</strong>
               ${role!=='student' ? `<button class="btn btn-sm btn-danger" onclick="deleteAnnouncement(${a.id},null)">${t('delete')}</button>` : ''}</div>
-            <p>${a.content}</p>
-            <small>${t('by')} ${a.author_name} &bull; ${fmtDate(a.created_at)}</small>
+            <p>${htmlEsc(a.content)}</p>
+            <small>${t('by')} ${htmlEsc(a.author_name)} &bull; ${fmtDate(a.created_at)}</small>
           </div>`).join('') : `<p class="text-muted">${t('no_announcements')}</p>`}
       </div></div>`;
   } catch(err) { el.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
@@ -2449,35 +2447,27 @@ async function openMessageModal(id, tab) {
     if (!m) return;
     openModal(m.subject, `
       <div>
-        <p><strong>From:</strong> ${m.sender_name}</p>
-        <p><strong>To:</strong> ${m.recipient_name}</p>
+        <p><strong>From:</strong> ${htmlEsc(m.sender_name)}</p>
+        <p><strong>To:</strong> ${htmlEsc(m.recipient_name)}</p>
         <p><strong>Sent:</strong> ${fmtDateTime(m.sent_at)}</p>
         <hr style="margin:12px 0;border-color:var(--border)">
-        <div style="white-space:pre-wrap;font-size:14px">${m.body}</div>
+        <div style="white-space:pre-wrap;font-size:14px;line-height:1.6">${htmlEsc(m.body)}</div>
         <div class="form-actions" style="margin-top:16px">
-          <button class="btn" onclick="closeModal()">Close</button>
+          <button class="btn" onclick="closeModal();navigate('messages',{tab:'${tab}'})">Close</button>
+          <button class="btn btn-primary" onclick="openReplyModal(${m.sender_id},${JSON.stringify(m.subject)})">↩ Reply</button>
           <button class="btn btn-danger" onclick="deleteMsg(${id},'${tab}')">Delete</button>
         </div>
       </div>`);
-    navigate('messages', { tab });
   } catch(err) { toast(err.message, 'error'); }
 }
 
-async function deleteMsg(id, tab) {
-  try {
-    await api('DELETE', `/messages/${id}`);
-    closeModal(); toast('Deleted'); navigate('messages', { tab });
-  } catch(err) { toast(err.message, 'error'); }
-}
-
-async function openComposeModal() {
-  const users = state.user.role === 'admin' ? await api('GET', '/users/') : [];
+async function openReplyModal(recipientId, originalSubject) {
+  const subject = originalSubject.startsWith('Re: ') ? originalSubject : `Re: ${originalSubject}`;
+  closeModal();
   openModal(t('compose_message'), `
     <form id="modal-form">
-      <div class="form-group"><label>${t('recipient')} (User ID)</label>
-        <input name="recipient_id" type="number" class="form-control" required></div>
       <div class="form-group"><label>${t('subject')}</label>
-        <input name="subject" class="form-control" required></div>
+        <input name="subject" class="form-control" value="${htmlEsc(subject)}"></div>
       <div class="form-group"><label>${t('message_body')}</label>
         <textarea name="body" class="form-control" rows="5" required></textarea></div>
       <div class="form-actions">
@@ -2487,7 +2477,76 @@ async function openComposeModal() {
     </form>`,
     async (fd) => {
       try {
-        await api('POST', '/messages/', { recipient_id: parseInt(fd.get('recipient_id')), subject: fd.get('subject'), body: fd.get('body') });
+        await api('POST', '/messages/', { recipient_id: recipientId, subject: fd.get('subject'), body: fd.get('body') });
+        closeModal(); toast(t('send') + '!'); navigate('messages', { tab: 'sent' });
+      } catch(err) { toast(err.message, 'error'); }
+    });
+}
+
+async function deleteMsg(id, tab) {
+  if (!confirm('Delete this message?')) return;
+  try {
+    await api('DELETE', `/messages/${id}`);
+    closeModal(); toast('Deleted'); navigate('messages', { tab });
+  } catch(err) { toast(err.message, 'error'); }
+}
+
+async function openComposeModal() {
+  let recipientField = `<div class="form-group"><label>${t('recipient')} ID *</label>
+    <input name="recipient_id" type="number" class="form-control" required placeholder="Enter user ID"></div>`;
+
+  try {
+    let persons = [];
+    if (state.user.role === 'admin') {
+      const users = await api('GET', '/users/') || [];
+      persons = users.filter(u => u.id !== state.user.id);
+    } else {
+      // Teachers see their enrolled students; students see teachers of their courses
+      const courses = await api('GET', '/courses/') || [];
+      const relevant = state.user.role === 'teacher'
+        ? courses.filter(c => c.teacher_id === state.user.id)
+        : courses.filter(c => c.enrolled);
+      const map = {};
+      await Promise.all(relevant.map(async c => {
+        const detail = await api('GET', `/courses/${c.id}`).catch(() => null);
+        if (!detail) return;
+        if (state.user.role === 'teacher') {
+          (detail.students || []).forEach(s => { map[s.id] = { id: s.id, name: s.name, email: s.email, role: 'student' }; });
+        } else if (detail.teacher_id) {
+          map[detail.teacher_id] = { id: detail.teacher_id, name: detail.teacher_name || '?', email: '', role: 'teacher' };
+        }
+      }));
+      persons = Object.values(map).filter(p => p.id !== state.user.id);
+    }
+
+    if (persons.length) {
+      recipientField = `
+        <div class="form-group"><label>${t('recipient')} *</label>
+          <select name="recipient_id" class="form-control" required>
+            <option value="">— Select recipient —</option>
+            ${persons.map(p => `<option value="${p.id}">${htmlEsc(p.name)}${p.email ? ` (${htmlEsc(p.email)})` : ''} — ${p.role}</option>`).join('')}
+          </select>
+        </div>`;
+    }
+  } catch(_) { /* fall back to ID input */ }
+
+  openModal(t('compose_message'), `
+    <form id="modal-form">
+      ${recipientField}
+      <div class="form-group"><label>${t('subject')} *</label>
+        <input name="subject" class="form-control" required></div>
+      <div class="form-group"><label>${t('message_body')}</label>
+        <textarea name="body" class="form-control" rows="5" required></textarea></div>
+      <div class="form-actions">
+        <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
+        <button type="submit" class="btn btn-primary">${t('send')}</button>
+      </div>
+    </form>`,
+    async (fd) => {
+      const recipId = fd.get('recipient_id');
+      if (!recipId) { toast('Please select a recipient', 'error'); return; }
+      try {
+        await api('POST', '/messages/', { recipient_id: parseInt(recipId), subject: fd.get('subject'), body: fd.get('body') });
         closeModal(); toast(t('send') + '!'); navigate('messages', { tab: 'sent' });
       } catch(err) { toast(err.message, 'error'); }
     });
@@ -3095,13 +3154,13 @@ function renderPosts(posts, canEndorse) {
   return posts.map(p => `
     <div class="discussion-post${p.is_endorsed?' endorsed':''}">
       <div class="discussion-post-header">
-        <div class="discussion-post-author">${p.author_name}</div>
+        <div class="discussion-post-author">${htmlEsc(p.author_name)}</div>
         <div class="discussion-post-time">${fmtDateTime(p.created_at)}</div>
         ${p.is_endorsed?'<span class="endorsed-badge">Endorsed</span>':''}
         ${canEndorse?`<button class="btn btn-sm" onclick="endorsePost(${p.id},${p.board_id})">${t('endorse')}</button>`:''}
         <button class="btn btn-sm" onclick="toggleReplyForm(${p.id})">${t('reply')}</button>
       </div>
-      <div class="discussion-post-content">${p.content}</div>
+      <div class="discussion-post-content" style="white-space:pre-wrap">${htmlEsc(p.content)}</div>
       <div id="reply-form-${p.id}" class="hidden" style="margin-top:10px">
         <textarea id="reply-content-${p.id}" class="form-control" rows="2" placeholder="Your reply..."></textarea>
         <button class="btn btn-sm btn-primary" style="margin-top:6px" onclick="submitReply(${p.id},${p.board_id})">${t('reply')}</button>

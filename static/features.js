@@ -303,12 +303,12 @@ async function openSubmissionsModal(promptId, canGrade) {
       ${subs.map(s => `
         <div class="tb-sub">
           <div class="tb-sub-header">
-            <strong>${s.student_name}</strong>
+            <strong>${htmlEsc(s.student_name)}</strong>
             <span class="badge badge-info">▲ ${s.upvotes}</span>
             ${s.score != null ? `<span class="badge badge-success">${s.score}/100</span>` : ''}
           </div>
-          <p style="margin:8px 0;white-space:pre-wrap;font-size:13px">${s.explanation}</p>
-          ${s.feedback ? `<div class="alert alert-success" style="font-size:12px">${s.feedback}</div>` : ''}
+          <p style="margin:8px 0;white-space:pre-wrap;font-size:13px">${htmlEsc(s.explanation)}</p>
+          ${s.feedback ? `<div class="alert alert-success" style="font-size:12px">${htmlEsc(s.feedback)}</div>` : ''}
           <div class="flex-gap">
             ${!s.is_mine ? `<button class="btn btn-sm ${s.has_voted ? 'btn-primary' : ''}"
               onclick="voteTeachBack(${s.id}, this)">
@@ -422,10 +422,10 @@ async function renderHelpBoardTab(courseId) {
             <div class="help-post-body" onclick="openPostDetail(${p.id}, ${courseId})">
               <div class="help-post-title">
                 ${p.is_resolved ? `<span class="badge badge-success">${t('resolved')}</span>` : `<span class="badge badge-info">${t('open_q')}</span>`}
-                <strong>${p.title}</strong>
+                <strong>${htmlEsc(p.title)}</strong>
               </div>
               <div class="help-post-meta">
-                <small>${p.author} &bull; ${fmtDate(p.created_at)} &bull; ${p.answer_count} answer(s)</small>
+                <small>${htmlEsc(p.author)} &bull; ${fmtDate(p.created_at)} &bull; ${p.answer_count} answer(s)</small>
               </div>
             </div>
           </div>`).join('')}
@@ -467,10 +467,10 @@ async function openPostDetail(postId, courseId) {
   const role = state.user.role;
   const canEndorse = role === 'admin' || role === 'teacher';
 
-  openModal(post.title, `
+  openModal(htmlEsc(post.title), `
     <div>
-      <p style="white-space:pre-wrap;margin-bottom:12px">${post.body}</p>
-      <small class="text-muted">${post.author} &bull; ${fmtDate(post.created_at)}</small>
+      <p style="white-space:pre-wrap;margin-bottom:12px">${htmlEsc(post.body)}</p>
+      <small class="text-muted">${htmlEsc(post.author)} &bull; ${fmtDate(post.created_at)}</small>
       <div class="flex-gap" style="margin-top:10px">
         <button class="btn btn-sm ${post.is_resolved ? 'btn-success' : ''}" onclick="toggleResolve(${postId}, ${courseId})">${t('mark_resolved')}</button>
       </div>
@@ -479,11 +479,11 @@ async function openPostDetail(postId, courseId) {
       ${post.answers.map(a => `
         <div class="help-answer ${a.is_endorsed ? 'endorsed' : ''}">
           <div class="help-answer-meta">
-            <strong>${a.author}</strong>
+            <strong>${htmlEsc(a.author)}</strong>
             ${a.is_endorsed ? `<span class="badge badge-success">${t('endorsed')}</span>` : ''}
             <small class="text-muted">${fmtDate(a.created_at)}</small>
           </div>
-          <p style="white-space:pre-wrap;margin:8px 0">${a.body}</p>
+          <p style="white-space:pre-wrap;margin:8px 0">${htmlEsc(a.body)}</p>
           <div class="flex-gap">
             <button class="btn btn-sm ${a.has_voted ? 'btn-primary' : ''}" onclick="voteAnswer(${a.id})">${t('upvote')} ${a.upvotes}</button>
             ${canEndorse ? `<button class="btn btn-sm ${a.is_endorsed ? 'btn-success' : ''}" onclick="endorseAnswer(${a.id})">${a.is_endorsed ? t('endorsed') : t('endorse')}</button>` : ''}
@@ -754,7 +754,7 @@ async function renderStudyGroupsTab(courseId, canManage) {
         </div>
       </div>
       <div class="card-body">
-        ${groups.length === 0 ? `<p class="text-muted">${t('no_courses')}</p>` : ''}
+        ${groups.length === 0 ? `<p class="text-muted">No study groups yet — create one or ask your teacher to auto-match.</p>` : ''}
         <div class="study-groups-grid">
           ${groups.map(g => `
             <div class="study-group-card">
