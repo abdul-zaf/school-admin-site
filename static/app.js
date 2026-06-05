@@ -449,16 +449,24 @@ function updateSidebarNav() {
   const r = state.user.role;
   document.getElementById('sidebar-nav').innerHTML = NAV_KEYS[r].map(p => {
     const isActive = state.currentPage === p || (p === 'courses' && state.currentPage === 'course');
-    const hasFlyout = p in NAV_FLYOUT_PAGES && NAV_FLYOUT_PAGES[p].roles.includes(r);
-    return `<a class="nav-item${isActive?' active':''}" data-page="${p}"
-        ${hasFlyout ? `data-flyout="${p}"` : ''}
-        onclick="navigate('${p}')">
+    const hasFlyout = NAV_FLYOUT_PAGES[p] && NAV_FLYOUT_PAGES[p].roles.includes(r);
+    const flyoutAttrs = hasFlyout
+      ? `onmouseenter="showNavFlyoutFor('${p}',this)" onmouseleave="_scheduleFlyoutHide()"`
+      : '';
+    return `<a class="nav-item${isActive?' active':''}" data-page="${p}" onclick="navigate('${p}')" ${flyoutAttrs}>
       <span class="nav-icon">${NAV_ICONS[p]||'•'}</span>
       <span class="nav-label">${t(NAV_I18N[p])}</span>
       ${hasFlyout ? '<span class="nav-chevron">›</span>' : ''}
     </a>`;
   }).join('');
-  initNavFlyout();
+
+  // Bind flyout panel listeners once on first nav render
+  const flyout = document.getElementById('nav-flyout');
+  if (flyout && !flyout._flyoutBound) {
+    flyout.addEventListener('mouseenter', _cancelFlyoutHide);
+    flyout.addEventListener('mouseleave', _scheduleFlyoutHide);
+    flyout._flyoutBound = true;
+  }
 }
 
 // ── Shared nav hover flyout system ────────────────────────────────────────────
@@ -475,35 +483,18 @@ const _flyoutCache   = {};
 const _flyoutFetched = {};
 const FLYOUT_CACHE_MS = 60_000;
 
-// Module-level timer so every caller shares the same timer reference.
 let _flyoutHideTimer = null;
-let _flyoutPanelBound = false;   // flyout panel listeners are attached only once
+function _cancelFlyoutHide()   { clearTimeout(_flyoutHideTimer); }
+function _scheduleFlyoutHide() { _flyoutHideTimer = setTimeout(hideNavFlyout, 220); }
 
-function _cancelFlyoutHide() { clearTimeout(_flyoutHideTimer); }
-function _scheduleFlyoutHide() { _flyoutHideTimer = setTimeout(hideNavFlyout, 200); }
-
-function initNavFlyout() {
+function showNavFlyoutFor(page, item) {
+  _cancelFlyoutHide();
   const flyout = document.getElementById('nav-flyout');
   if (!flyout) return;
-
-  // Bind the flyout panel listeners only once (they never need to change)
-  if (!_flyoutPanelBound) {
-    flyout.addEventListener('mouseenter', _cancelFlyoutHide);
-    flyout.addEventListener('mouseleave', _scheduleFlyoutHide);
-    _flyoutPanelBound = true;
-  }
-
-  // Nav items are rebuilt via innerHTML each time — attach fresh listeners
-  document.querySelectorAll('[data-flyout]').forEach(item => {
-    item.addEventListener('mouseenter', () => {
-      _cancelFlyoutHide();
-      const rect = item.getBoundingClientRect();
-      flyout.style.top = Math.max(8, Math.min(rect.top, window.innerHeight - 360)) + 'px';
-      flyout.classList.add('visible');
-      loadNavFlyout(item.dataset.flyout);
-    });
-    item.addEventListener('mouseleave', _scheduleFlyoutHide);
-  });
+  const rect = item.getBoundingClientRect();
+  flyout.style.top = Math.max(8, Math.min(rect.top, window.innerHeight - 360)) + 'px';
+  flyout.classList.add('visible');
+  loadNavFlyout(page);
 }
 
 function hideNavFlyout() {
