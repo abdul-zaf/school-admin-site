@@ -104,13 +104,6 @@ uvicorn main:app --reload
 http://localhost:8000
 ```
 
-Default admin credentials:
-```
-Email:    admin@school.edu
-Password: Admin123
-```
-
-> Change the admin password immediately after first login.
 
 **Next time** you only need steps 1 (navigate to folder), 3 (activate), and 5 (run) — the venv and dependencies are already set up.
 
