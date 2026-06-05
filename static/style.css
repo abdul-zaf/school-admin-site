@@ -263,7 +263,7 @@ a:hover { text-decoration: underline; }
   border-left-color:var(--accent);
   font-weight:600;
 }
-.nav-icon    { font-size:16px;width:20px;text-align:center;flex-shrink:0; }
+.nav-icon    { display:none; }
 .nav-label   { flex:1; }
 .nav-chevron { font-size:11px;opacity:.4;margin-left:auto;transition:opacity .15s; }
 .nav-item:hover .nav-chevron { opacity:.8; }

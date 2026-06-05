@@ -66,24 +66,43 @@ deployment to Render.
 
 ## Quick start (local dev)
 
+> **Prerequisite:** Install Python from [python.org](https://python.org/downloads) — during installation, tick **"Add Python to PATH"** before clicking Install.
+
+**1. Clone the repo**
 ```bash
-# 1. Clone
 git clone https://github.com/abdul-zaf/school-admin-site.git
-cd school-admin-site/lms
+cd school-admin-site
+```
 
-# 2. Virtual environment
+**2. Create a virtual environment**
+```bash
 python -m venv venv
-venv\Scripts\activate          # Windows CMD
-# source venv/Scripts/activate # Git Bash / WSL
+```
 
-# 3. Install dependencies
+**3. Activate it**
+```bash
+# Windows
+venv\Scripts\activate
+
+# macOS / Linux / Git Bash
+source venv/bin/activate
+```
+You should see `(venv)` at the start of your prompt.
+
+**4. Install dependencies**
+```bash
 pip install -r requirements.txt
+```
 
-# 4. Run
+**5. Start the server**
+```bash
 uvicorn main:app --reload
 ```
 
-Open **http://localhost:8000**
+**6. Open your browser**
+```
+http://localhost:8000
+```
 
 Default admin credentials:
 ```
@@ -92,6 +111,8 @@ Password: Admin123
 ```
 
 > Change the admin password immediately after first login.
+
+**Next time** you only need steps 1 (navigate to folder), 3 (activate), and 5 (run) — the venv and dependencies are already set up.
 
 ### Interactive API docs
 ```
