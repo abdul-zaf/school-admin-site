@@ -14,7 +14,7 @@ from routers import (
     discussions, messages, notifications, gradebook, rubrics, question_banks,
     modules, analytics, badges, parents, surveys, portfolio,
     # ── New: Learning Intelligence & Social ──────────────────────────────────
-    spaced_repetition, teach_back, confusion, help_board, knowledge_graph,
+    spaced_repetition, teach_back, confusion, help_board,
     study_groups,
     # ── Auth extras ──────────────────────────────────────────────────────────
     password_reset,
@@ -113,7 +113,6 @@ app.include_router(spaced_repetition.router, prefix="/api/sr",             tags=
 app.include_router(teach_back.router,        prefix="/api/teach-back",     tags=["teach-back"])
 app.include_router(confusion.router,         prefix="/api/confusion",      tags=["confusion"])
 app.include_router(help_board.router,        prefix="/api/help",           tags=["help-board"])
-app.include_router(knowledge_graph.router,   prefix="/api/graph",          tags=["knowledge-graph"])
 app.include_router(study_groups.router,      prefix="/api/study-groups",   tags=["study-groups"])
 
 app.include_router(prerequisites.router,  prefix="/api/prerequisites",  tags=["prerequisites"])

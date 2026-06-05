@@ -410,9 +410,9 @@ function loading(el) {
 // Navigation
 // ═══════════════════════════════════════════════════════════
 const NAV_KEYS = {
-  admin:   ['dashboard','courses','users','announcements','gradebook','analytics','calendar','badges','graph','settings'],
-  teacher: ['dashboard','courses','announcements','gradebook','analytics','calendar','messages','question_banks','graph','settings'],
-  student: ['dashboard','courses','announcements','gradebook','calendar','messages','ai_tutor','portfolio','badges','sr','graph','settings'],
+  admin:   ['dashboard','courses','users','announcements','gradebook','analytics','calendar','badges','settings'],
+  teacher: ['dashboard','courses','announcements','gradebook','analytics','calendar','messages','question_banks','settings'],
+  student: ['dashboard','courses','announcements','gradebook','calendar','messages','ai_tutor','portfolio','badges','sr','settings'],
   parent:  ['dashboard','settings'],
 };
 const NAV_I18N = {
@@ -420,14 +420,14 @@ const NAV_I18N = {
   announcements:'nav_announcements', settings:'nav_settings',
   gradebook:'nav_gradebook', analytics:'nav_analytics', calendar:'nav_calendar',
   badges:'nav_badges', messages:'nav_messages', question_banks:'nav_question_banks',
-  portfolio:'nav_portfolio', sr:'nav_sr', graph:'nav_graph',
+  portfolio:'nav_portfolio', sr:'nav_sr',
   ai_tutor:'nav_ai_tutor',
 };
 const NAV_ICONS = {
   dashboard:'🏠', courses:'📚', users:'👥', announcements:'📢',
   gradebook:'📊', analytics:'📈', calendar:'📅', badges:'🏅',
   messages:'✉️', question_banks:'🗃️', portfolio:'🗂️',
-  sr:'🃏', graph:'🕸️', settings:'⚙️', ai_tutor:'🤖',
+  sr:'🃏', settings:'⚙️', ai_tutor:'🤖',
 };
 
 // ── Subject → accent colour (used on course cards) ─────────────────────────
@@ -766,7 +766,6 @@ function navigate(page, params = {}) {
   else if (page === 'ai-chat')       renderAiChat(params.id, el);
   // ── Learning Intelligence & Social ───────────────────────────────────────
   else if (page === 'sr')          { if (typeof renderSRReview       !== 'undefined') renderSRReview(el); }
-  else if (page === 'graph')       { if (typeof renderKnowledgeGraph  !== 'undefined') renderKnowledgeGraph(el); }
   else if (pages[page])            pages[page](el);
 }
 
