@@ -646,11 +646,11 @@ function showNotifPanel(bellWrapper) {
   _cancelNotifHide();
   const panel = document.getElementById('notif-panel');
   if (!panel) return;
-  // Anchor panel bottom to just above the sidebar footer bell area
   const rect = bellWrapper.getBoundingClientRect();
-  const panelH = Math.min(460, window.innerHeight - rect.top - 8);
+  // Panel grows upward from the bell — available space is rect.top (above bell)
+  const panelH = Math.max(220, Math.min(460, rect.top - 12));
   panel.style.maxHeight = panelH + 'px';
-  panel.style.bottom = (window.innerHeight - rect.bottom - 4) + 'px';
+  panel.style.bottom = (window.innerHeight - rect.bottom - 2) + 'px';
   panel.classList.add('visible');
   loadNotifPanel();
 }
@@ -1243,7 +1243,7 @@ async function renderCourseDetail(courseId, el) {
       <div id="tab-anns" class="hidden">
         <div class="card">
           <div class="card-header"><h3>${t('course_announcements')}</h3>
-            <button class="btn btn-sm btn-primary" onclick="openAnnouncementModal(${courseId})">${t('post_announcement')}</button></div>
+            ${state.user.role !== 'student' ? `<button class="btn btn-sm btn-primary" onclick="openAnnouncementModal(${courseId})">${t('post_announcement')}</button>` : ''}</div>
           <div class="card-body">
             ${anns.length ? anns.map(a=>`
               <div class="announcement-item">

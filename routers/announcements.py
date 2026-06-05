@@ -14,6 +14,7 @@ from database import get_db
 import models
 import security
 from services.email import notify_new_announcement
+from routers.notifications import notify as push_notif
 
 router = APIRouter()
 
@@ -77,25 +78,54 @@ def create_announcement(
     db.commit()
     db.refresh(a)
 
-    # Send email notifications to enrolled students (non-blocking, only for published announcements)
     now = datetime.utcnow()
-    if data.course_id and (not data.publish_at or data.publish_at <= now):
-        enrollments = db.query(models.Enrollment).filter(
-            models.Enrollment.course_id == data.course_id
-        ).all()
-        course = db.query(models.Course).filter(models.Course.id == data.course_id).first()
-        course_title = course.title if course else "Unknown course"
-        for enr in enrollments:
-            student = db.query(models.User).filter(models.User.id == enr.student_id).first()
-            if student and getattr(student, "email_notifications", True):
-                background_tasks.add_task(
-                    notify_new_announcement,
-                    student.email,
-                    student.name,
-                    course_title,
-                    data.title,
-                )
+    is_published = not data.publish_at or data.publish_at <= now
 
+    if is_published:
+        notif_body = data.content[:150] + ("…" if len(data.content) > 150 else "")
+
+        if data.course_id:
+            # ── Course-specific announcement ──────────────────────────────────
+            course = db.query(models.Course).filter(models.Course.id == data.course_id).first()
+            course_title = course.title if course else "your course"
+            enrollments = db.query(models.Enrollment).filter(
+                models.Enrollment.course_id == data.course_id
+            ).all()
+            student_ids = {enr.student_id for enr in enrollments}
+
+            # Admin posting → also notify the course teacher
+            notify_ids = set(student_ids)
+            if current_user.role == "admin" and course and course.teacher_id:
+                notify_ids.add(course.teacher_id)
+
+            for uid in notify_ids:
+                if uid != current_user.id:
+                    push_notif(db, uid, "announcement",
+                               f"📢 {data.title}", notif_body)
+
+            # Email notifications to enrolled students
+            for enr in enrollments:
+                student = db.query(models.User).filter(models.User.id == enr.student_id).first()
+                if student and getattr(student, "email_notifications", True):
+                    background_tasks.add_task(
+                        notify_new_announcement,
+                        student.email, student.name, course_title, data.title,
+                    )
+        else:
+            # ── School-wide announcement ──────────────────────────────────────
+            # Notify all students
+            for student in db.query(models.User).filter(models.User.role == "student").all():
+                push_notif(db, student.id, "announcement",
+                           f"📢 {data.title}", notif_body)
+
+            # If posted by admin, also notify all teachers
+            if current_user.role == "admin":
+                for teacher in db.query(models.User).filter(models.User.role == "teacher").all():
+                    if teacher.id != current_user.id:
+                        push_notif(db, teacher.id, "announcement",
+                                   f"📢 {data.title}", notif_body)
+
+    db.commit()
     return {"id": a.id, "publish_at": str(a.publish_at) if a.publish_at else None}
 
 
