@@ -182,12 +182,12 @@
 
       <!-- Footer -->
       <div class="sidebar-footer">
-        <div class="notif-bell-wrapper">
-          <button class="notif-bell-btn" onclick="toggleNotifDropdown()">
+        <div class="notif-bell-wrapper" id="notif-bell-wrapper"
+             onmouseenter="showNotifPanel(this)" onmouseleave="_scheduleNotifHide()">
+          <button class="notif-bell-btn">
             🔔 <span>Notifications</span>
             <span id="notif-count-badge" class="notif-unread-badge" style="display:none">0</span>
           </button>
-          <div id="notif-dropdown" class="notif-dropdown hidden"></div>
         </div>
         <div class="user-card">
           <div class="user-avatar" id="user-avatar">A</div>
@@ -218,6 +218,10 @@
 
   <!-- Shared nav hover flyout — appended to body so it escapes sidebar overflow -->
   <div id="nav-flyout" class="nav-flyout" aria-hidden="true"></div>
+
+  <!-- Notifications hover panel — body-level to escape sidebar overflow -->
+  <div id="notif-panel" class="notif-panel" aria-hidden="true"
+       onmouseenter="_cancelNotifHide()" onmouseleave="_scheduleNotifHide()"></div>
 
   <script src="/static/app.js"></script>
   <script src="/static/features.js"></script>

@@ -636,27 +636,93 @@ async function refreshNotifCount() {
   } catch(e) { /* silent */ }
 }
 
-let _notifOpen = false;
-async function toggleNotifDropdown() {
-  const dd = document.getElementById('notif-dropdown');
-  if (!dd) return;
-  _notifOpen = !_notifOpen;
-  if (_notifOpen) {
-    dd.classList.remove('hidden');
-    try {
-      const notifs = await api('GET', '/notifications/?limit=10');
-      if (!notifs) return;
-      dd.innerHTML = notifs.length
-        ? notifs.map(n => `
-          <div class="notif-item${n.is_read ? '' : ' unread'}" onclick="markNotifRead(${n.id})">
-            <div class="notif-title">${htmlEsc(n.title)}</div>
-            ${n.body ? `<div class="notif-body">${htmlEsc(n.body).substring(0,60)}</div>` : ''}
-            <div class="notif-time">${fmtDateTime(n.created_at)}</div>
-          </div>`).join('')
-        : `<div class="notif-empty">No notifications</div>`;
-    } catch(e) { dd.innerHTML = '<div class="notif-empty">Error loading</div>'; }
-  } else {
-    dd.classList.add('hidden');
+// ── Notifications hover panel ─────────────────────────────────────────────────
+
+let _notifHideTimer = null;
+function _cancelNotifHide()   { clearTimeout(_notifHideTimer); }
+function _scheduleNotifHide() { _notifHideTimer = setTimeout(hideNotifPanel, 220); }
+
+function showNotifPanel(bellWrapper) {
+  _cancelNotifHide();
+  const panel = document.getElementById('notif-panel');
+  if (!panel) return;
+  // Anchor panel bottom to just above the sidebar footer bell area
+  const rect = bellWrapper.getBoundingClientRect();
+  const panelH = Math.min(460, window.innerHeight - rect.top - 8);
+  panel.style.maxHeight = panelH + 'px';
+  panel.style.bottom = (window.innerHeight - rect.bottom - 4) + 'px';
+  panel.classList.add('visible');
+  loadNotifPanel();
+}
+
+function hideNotifPanel() {
+  const p = document.getElementById('notif-panel');
+  if (p) p.classList.remove('visible');
+}
+
+function _notifIcon(title) {
+  const s = (title || '').toLowerCase();
+  if (/quiz|test|exam/.test(s))       return '📝';
+  if (/assignment|submit/.test(s))    return '📋';
+  if (/grade|score|mark/.test(s))     return '⭐';
+  if (/message|inbox/.test(s))        return '✉️';
+  if (/announce|notice/.test(s))      return '📢';
+  if (/enroll|course/.test(s))        return '📚';
+  if (/badge|award/.test(s))          return '🏅';
+  return '🔔';
+}
+
+function _relTime(iso) {
+  const mins = Math.floor((Date.now() - new Date(iso)) / 60000);
+  if (mins <  1)  return 'Just now';
+  if (mins < 60)  return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs  < 24)  return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days <  7)  return `${days}d ago`;
+  return fmtDate(iso);
+}
+
+async function loadNotifPanel() {
+  const panel = document.getElementById('notif-panel');
+  if (!panel) return;
+  panel.innerHTML = `
+    <div class="notif-panel-header">
+      <span class="notif-panel-title">🔔 Notifications</span>
+      <button class="notif-mark-all" onclick="markAllNotifsRead()">Mark all read</button>
+    </div>
+    <div class="notif-list"><div class="notif-empty-state">
+      <span class="notif-empty-icon">🔔</span><p>Loading…</p>
+    </div></div>`;
+  try {
+    const notifs = await api('GET', '/notifications/?limit=15');
+    const list = panel.querySelector('.notif-list');
+    if (!list) return;
+    if (!notifs?.length) {
+      list.innerHTML = `<div class="notif-empty-state">
+        <span class="notif-empty-icon">🎉</span>
+        <p>You're all caught up!</p>
+      </div>`;
+      return;
+    }
+    list.innerHTML = notifs.map(n => `
+      <div class="notif-item${n.is_read ? '' : ' unread'}" onclick="markNotifRead(${n.id})">
+        <div class="notif-icon">${_notifIcon(n.title)}</div>
+        <div class="notif-content">
+          <div class="notif-title">${htmlEsc(n.title)}</div>
+          ${n.body ? `<div class="notif-body">${htmlEsc(n.body)}</div>` : ''}
+          <div class="notif-time">${_relTime(n.created_at)}</div>
+        </div>
+        ${n.is_read ? '' : '<div class="notif-unread-dot"></div>'}
+      </div>`).join('');
+    panel.innerHTML += `<div class="notif-panel-footer">
+      <button class="notif-view-all" onclick="hideNotifPanel()">Close</button>
+    </div>`;
+  } catch(e) {
+    const list = panel.querySelector('.notif-list');
+    if (list) list.innerHTML = `<div class="notif-empty-state">
+      <span class="notif-empty-icon">⚠️</span><p>Could not load notifications</p>
+    </div>`;
   }
 }
 
@@ -664,7 +730,15 @@ async function markNotifRead(id) {
   try {
     await api('PUT', `/notifications/${id}/read`);
     refreshNotifCount();
-    toggleNotifDropdown(); toggleNotifDropdown(); // refresh
+    loadNotifPanel();
+  } catch(e) { /* silent */ }
+}
+
+async function markAllNotifsRead() {
+  try {
+    await api('PUT', '/notifications/read-all');
+    refreshNotifCount();
+    loadNotifPanel();
   } catch(e) { /* silent */ }
 }
 
