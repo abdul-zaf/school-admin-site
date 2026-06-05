@@ -23,7 +23,7 @@ const i18n = {
     courses:'Courses', new_course:'+ New Course', enroll:'Enroll',
     unenroll:'Unenroll', enrolled:'Enrolled', no_courses:'No courses yet.',
     my_courses:'My Courses', browse_courses:'Browse Courses',
-    subject:'Subject', grade_level:'Grade Level', description:'Description',
+    subject:'Subject', grade_level:'Grade Level', section_number:'Section Number', description:'Description',
     teacher:'Teacher', students:'Students', student_count:'students',
     all_courses:'All Courses',
     // Materials
@@ -156,7 +156,7 @@ const i18n = {
     courses:'کورسز', new_course:'+ نیا کورس', enroll:'داخلہ لیں',
     unenroll:'نام خارج کریں', enrolled:'داخل شدہ', no_courses:'ابھی کوئی کورس نہیں۔',
     my_courses:'میرے کورسز', browse_courses:'کورسز دیکھیں',
-    subject:'مضمون', grade_level:'جماعت', description:'تفصیل',
+    subject:'مضمون', grade_level:'جماعت', section_number:'سیکشن نمبر', description:'تفصیل',
     teacher:'استاد', students:'طلبا', student_count:'طلبا',
     all_courses:'تمام کورسز',
     // Materials
@@ -905,7 +905,7 @@ async function renderDashboard(el) {
           <div class="card-body">
             ${mine.length ? mine.map(c=>`
               <div class="course-item" onclick="navigate('course',{id:${c.id}})">
-                <div><strong>${htmlEsc(c.title)}</strong><small>${htmlEsc(c.subject||'')} ${c.grade_level?'· '+htmlEsc(c.grade_level):''}</small></div>
+                <div><strong>${htmlEsc(c.title)}</strong><small>${htmlEsc(c.subject||'')} ${c.grade_level?'· '+htmlEsc(c.grade_level):''}${c.section_number?' · §'+htmlEsc(c.section_number):''}</small></div>
                 <span class="badge badge-info">${c.student_count} ${t('student_count')}</span>
               </div>`).join('') : `<p class="text-muted">${t('no_courses')}</p>`}
           </div>
@@ -976,6 +976,7 @@ function courseCard(c) {
       <div class="course-card-header">
         <h3>${htmlEsc(c.title)}</h3>
         ${c.grade_level ? `<span class="badge badge-info">${htmlEsc(c.grade_level)}</span>` : ''}
+        ${c.section_number ? `<span class="badge badge-secondary">§ ${htmlEsc(c.section_number)}</span>` : ''}
       </div>
       <div class="course-card-body">
         ${c.subject ? `<p style="color:${accent};font-weight:600;font-size:12px">${htmlEsc(c.subject)}</p>` : ''}
@@ -1007,6 +1008,8 @@ function openNewCourseModal() {
         <div class="form-group"><label>${t('grade_level')}</label>
           <input name="grade_level" class="form-control" placeholder="Grade 8"></div>
       </div>
+      <div class="form-group"><label>${t('section_number')}</label>
+        <input name="section_number" class="form-control" placeholder="e.g. A, B, 01, Morning"></div>
       <div class="form-group"><label>${t('description')}</label>
         <textarea name="description" class="form-control"></textarea></div>
       <div class="form-actions">
@@ -1017,7 +1020,8 @@ function openNewCourseModal() {
     async (fd) => {
       try {
         await api('POST','/courses/',{ title:fd.get('title'), subject:fd.get('subject')||null,
-          grade_level:fd.get('grade_level')||null, description:fd.get('description')||null });
+          grade_level:fd.get('grade_level')||null, section_number:fd.get('section_number')||null,
+          description:fd.get('description')||null });
         invalidateCoursesFlyoutCache(); closeModal(); toast(t('new_course')); navigate('courses');
       } catch(err) { toast(err.message,'error'); }
     });

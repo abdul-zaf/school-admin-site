@@ -76,6 +76,8 @@ def apply_migrations():
         "ALTER TABLE submissions ADD COLUMN file_path TEXT",
         "ALTER TABLE submissions ADD COLUMN file_mime TEXT",
         "ALTER TABLE submissions ADD COLUMN file_size INTEGER",
+        # v9: course section number
+        "ALTER TABLE courses ADD COLUMN section_number TEXT",
     ]
 
     if _is_sqlite:
@@ -123,5 +125,7 @@ def apply_migrations():
                 "ALTER TABLE submissions ADD COLUMN IF NOT EXISTS file_path VARCHAR(500)",
                 "ALTER TABLE submissions ADD COLUMN IF NOT EXISTS file_mime VARCHAR(100)",
                 "ALTER TABLE submissions ADD COLUMN IF NOT EXISTS file_size INTEGER",
+                # v9: course section number
+                "ALTER TABLE courses ADD COLUMN IF NOT EXISTS section_number VARCHAR(50)",
             ]:
                 conn.execute(text(ddl))

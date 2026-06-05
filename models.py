@@ -33,6 +33,7 @@ class Course(Base):
     description = Column(Text)
     subject = Column(String(100))
     grade_level = Column(String(50))
+    section_number = Column(String(50), nullable=True)
     teacher_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     enrollment_cap = Column(Integer, nullable=True)  # None = unlimited

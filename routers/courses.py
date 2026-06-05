@@ -47,6 +47,7 @@ class CourseCreate(BaseModel):
     description: Optional[str] = None
     subject: Optional[str] = None
     grade_level: Optional[str] = None
+    section_number: Optional[str] = None
     enrollment_cap: Optional[int] = None   # None = unlimited
 
 
@@ -87,6 +88,7 @@ def list_courses(
             "description": c.description,
             "subject": c.subject,
             "grade_level": c.grade_level,
+            "section_number": c.section_number,
             "teacher_id": c.teacher_id,
             "teacher_name": c.teacher.name if c.teacher else None,
             "enrolled": c.id in enrolled_ids,
@@ -107,6 +109,7 @@ def create_course(
         description=data.description,
         subject=data.subject,
         grade_level=data.grade_level,
+        section_number=data.section_number,
         teacher_id=current_user.id,
         enrollment_cap=data.enrollment_cap,
     )
@@ -153,6 +156,7 @@ def get_course(
         "description": course.description,
         "subject": course.subject,
         "grade_level": course.grade_level,
+        "section_number": course.section_number,
         "teacher_id": course.teacher_id,
         "teacher_name": course.teacher.name if course.teacher else None,
         "enrolled": enrolled,
@@ -193,6 +197,7 @@ def update_course(
     course.description = data.description
     course.subject = data.subject
     course.grade_level = data.grade_level
+    course.section_number = data.section_number
     course.enrollment_cap = data.enrollment_cap
     db.commit()
     return {"ok": True}
