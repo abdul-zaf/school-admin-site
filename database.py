@@ -71,6 +71,11 @@ def apply_migrations():
         # v7: AI tutor cross-session memory (summary injection)
         "ALTER TABLE tutor_sessions ADD COLUMN summary TEXT",
         "ALTER TABLE tutor_sessions ADD COLUMN summarized_at DATETIME",
+        # v8: submission file attachments
+        "ALTER TABLE submissions ADD COLUMN file_name TEXT",
+        "ALTER TABLE submissions ADD COLUMN file_path TEXT",
+        "ALTER TABLE submissions ADD COLUMN file_mime TEXT",
+        "ALTER TABLE submissions ADD COLUMN file_size INTEGER",
     ]
 
     if _is_sqlite:
@@ -113,5 +118,10 @@ def apply_migrations():
                 # v7: AI tutor cross-session memory (summary injection)
                 "ALTER TABLE tutor_sessions ADD COLUMN IF NOT EXISTS summary TEXT",
                 "ALTER TABLE tutor_sessions ADD COLUMN IF NOT EXISTS summarized_at TIMESTAMP",
+                # v8: submission file attachments
+                "ALTER TABLE submissions ADD COLUMN IF NOT EXISTS file_name VARCHAR(300)",
+                "ALTER TABLE submissions ADD COLUMN IF NOT EXISTS file_path VARCHAR(500)",
+                "ALTER TABLE submissions ADD COLUMN IF NOT EXISTS file_mime VARCHAR(100)",
+                "ALTER TABLE submissions ADD COLUMN IF NOT EXISTS file_size INTEGER",
             ]:
                 conn.execute(text(ddl))

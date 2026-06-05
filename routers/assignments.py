@@ -10,7 +10,11 @@ PUT    /api/assignments/submissions/{id}/grade    Grade a submission; emails stu
 GET    /api/assignments/submissions/{id}/grade-history  Audit trail of grade changes
 """
 import os
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+import uuid
+import mimetypes
+from pathlib import Path
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, File as FFile, Form
+from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
@@ -20,6 +24,14 @@ import models
 import security
 from services.email import send_grade_notification
 from services.knowledge_base import index_assignment
+from routers.notifications import notify as push_notif
+
+_UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "./uploads/submissions"))
+_MAX_MB = int(os.getenv("MAX_UPLOAD_MB", "200"))
+
+def _ensure_upload_dir() -> Path:
+    _UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    return _UPLOAD_DIR
 
 router = APIRouter()
 
@@ -33,10 +45,6 @@ class AssignmentCreate(BaseModel):
     max_late_days: Optional[int] = None
     allow_resubmission: bool = False
     max_submissions: int = 1
-
-
-class SubmissionCreate(BaseModel):
-    content: str
 
 
 class GradeSubmission(BaseModel):
@@ -104,6 +112,19 @@ def create_assignment(
     index_assignment(db, a)   # ← auto-index description for AI tutor KB
     db.commit()
     db.refresh(a)
+
+    # Notify enrolled students
+    due_str = f" — due {a.due_date.strftime('%d %b')}" if a.due_date else ""
+    enrollments = db.query(models.Enrollment).filter(models.Enrollment.course_id == course_id).all()
+    course = db.query(models.Course).filter(models.Course.id == course_id).first()
+    course_title = course.title if course else "your course"
+    for enr in enrollments:
+        push_notif(db, enr.student_id, "assignment",
+                   f"📋 New assignment: {a.title}",
+                   f"{course_title}{due_str}",
+                   link=f"assignment:{a.id}")
+    db.commit()
+
     return {"id": a.id, "title": a.title}
 
 
@@ -127,6 +148,8 @@ def get_assignment(
                 "student_id": s.student_id,
                 "student_name": s.student.name,
                 "content": s.content,
+                "file_name": s.file_name,
+                "file_mime": s.file_mime,
                 "score": s.score,
                 "feedback": s.feedback,
                 "submitted_at": str(s.submitted_at),
@@ -145,6 +168,8 @@ def get_assignment(
             my_sub = {
                 "id": s.id,
                 "content": s.content,
+                "file_name": s.file_name,
+                "file_mime": s.file_mime,
                 "score": s.score,
                 "feedback": s.feedback,
                 "submitted_at": str(s.submitted_at),
@@ -179,9 +204,10 @@ def delete_assignment(
 
 
 @router.post("/{assignment_id}/submit")
-def submit_assignment(
+async def submit_assignment(
     assignment_id: int,
-    data: SubmissionCreate,
+    content: str = Form(""),
+    file: Optional[UploadFile] = FFile(None),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(security.require_role("student")),
 ):
@@ -189,12 +215,34 @@ def submit_assignment(
     if not assignment:
         raise HTTPException(404, "Assignment not found")
 
+    if not content.strip() and (file is None or not file.filename):
+        raise HTTPException(400, "Submission must include text or a file.")
+
     # Check late submission policy
     now = datetime.utcnow()
     if assignment.due_date and now > assignment.due_date:
         days_late = (now - assignment.due_date).days
         if assignment.max_late_days is not None and days_late > assignment.max_late_days:
             raise HTTPException(400, f"Submission deadline passed. Maximum {assignment.max_late_days} late day(s) allowed.")
+
+    # Handle file upload
+    stored_file_name = stored_file_path = stored_file_mime = None
+    stored_file_size = None
+    if file and file.filename:
+        file_bytes = await file.read()
+        if len(file_bytes) > _MAX_MB * 1024 * 1024:
+            raise HTTPException(413, f"File too large — maximum {_MAX_MB} MB allowed.")
+        upload_dir = _ensure_upload_dir()
+        ext = Path(file.filename).suffix.lower()
+        if not ext and file.content_type:
+            ext = mimetypes.guess_extension(file.content_type) or ""
+        stored_file_mime = file.content_type or mimetypes.guess_type(file.filename)[0] or "application/octet-stream"
+        stored_name = f"{uuid.uuid4()}{ext}"
+        stored_path = upload_dir / stored_name
+        stored_path.write_bytes(file_bytes)
+        stored_file_name = file.filename
+        stored_file_path = str(stored_path)
+        stored_file_size = len(file_bytes)
 
     # Count existing submissions for resubmission check
     existing_subs = db.query(models.Submission).filter(
@@ -208,10 +256,18 @@ def submit_assignment(
             raise HTTPException(400, "Resubmission is not allowed for this assignment")
         if assignment.max_submissions > 1 and len(existing_subs) >= assignment.max_submissions:
             raise HTTPException(400, f"Maximum submissions ({assignment.max_submissions}) reached")
-        existing.content = data.content
+        # Delete old file if replaced
+        if stored_file_path and existing.file_path:
+            try: Path(existing.file_path).unlink(missing_ok=True)
+            except Exception: pass
+        existing.content = content
+        if stored_file_path:
+            existing.file_name = stored_file_name
+            existing.file_path = stored_file_path
+            existing.file_mime = stored_file_mime
+            existing.file_size = stored_file_size
         existing.submitted_at = now
         db.commit()
-        # Record streak & XP
         try:
             from routers.streaks import record_activity
             from routers.xp import award_xp
@@ -223,13 +279,18 @@ def submit_assignment(
         return {"id": existing.id, "resubmitted": True}
 
     s = models.Submission(
-        assignment_id=assignment_id, student_id=current_user.id, content=data.content
+        assignment_id=assignment_id,
+        student_id=current_user.id,
+        content=content,
+        file_name=stored_file_name,
+        file_path=stored_file_path,
+        file_mime=stored_file_mime,
+        file_size=stored_file_size,
     )
     db.add(s)
     db.commit()
     db.refresh(s)
 
-    # Record streak & XP
     try:
         from routers.streaks import record_activity
         from routers.xp import award_xp
@@ -240,6 +301,45 @@ def submit_assignment(
         pass
 
     return {"id": s.id, "submitted": True}
+
+
+@router.get("/submissions/{submission_id}/file")
+def serve_submission_file(
+    submission_id: int,
+    dl_token: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.get_current_user_optional),
+):
+    user = current_user
+    if user is None:
+        if not dl_token:
+            raise HTTPException(401, "Authentication required")
+        user = security.get_user_from_token(dl_token, db)
+    if user is None:
+        raise HTTPException(401, "Invalid token")
+
+    s = db.query(models.Submission).filter(models.Submission.id == submission_id).first()
+    if not s:
+        raise HTTPException(404, "Submission not found")
+
+    # Students can only download their own submission; teachers/admins can download any
+    if user.role == "student" and s.student_id != user.id:
+        raise HTTPException(403, "Forbidden")
+    if user.role == "teacher":
+        security.require_course_access(s.assignment.course_id, user, db)
+
+    if not s.file_path:
+        raise HTTPException(404, "No file attached to this submission")
+
+    path = Path(s.file_path)
+    if not path.exists():
+        raise HTTPException(404, "File not found on server")
+
+    return FileResponse(
+        path=str(path),
+        media_type=s.file_mime or "application/octet-stream",
+        filename=s.file_name or path.name,
+    )
 
 
 @router.put("/submissions/{submission_id}/grade")

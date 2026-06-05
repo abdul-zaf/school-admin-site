@@ -11,15 +11,13 @@ import models
 import security
 from routers import (
     auth, users, courses, assignments, announcements, sessions, quizzes,
-    discussions, messages, notifications, gradebook, rubrics, question_banks,
-    modules, analytics, badges, parents, surveys, portfolio,
+    discussions, messages, notifications, gradebook, rubrics,
+    modules, analytics, parents, surveys,
     # ── New: Learning Intelligence & Social ──────────────────────────────────
-    spaced_repetition, teach_back, confusion, help_board,
+    teach_back, confusion, help_board,
     study_groups,
     # ── Auth extras ──────────────────────────────────────────────────────────
     password_reset,
-    # ── New features ─────────────────────────────────────────────────────────
-    certificates,
     # ── Batch 2: New features ─────────────────────────────────────────────────
     prerequisites,
     waitlist,
@@ -89,7 +87,6 @@ app.add_middleware(_SecurityHeadersMiddleware)
 # ── Routers ────────────────────────────────────────────────────────────────────
 app.include_router(auth.router,           prefix="/api/auth",           tags=["auth"])
 app.include_router(password_reset.router, prefix="/api/auth",           tags=["auth"])
-app.include_router(certificates.router,   prefix="/api/certificates",   tags=["certificates"])
 app.include_router(users.router,          prefix="/api/users",          tags=["users"])
 app.include_router(courses.router,        prefix="/api/courses",        tags=["courses"])
 app.include_router(assignments.router,    prefix="/api/assignments",    tags=["assignments"])
@@ -101,15 +98,11 @@ app.include_router(messages.router,       prefix="/api/messages",       tags=["m
 app.include_router(notifications.router,  prefix="/api/notifications",  tags=["notifications"])
 app.include_router(gradebook.router,      prefix="/api/gradebook",      tags=["gradebook"])
 app.include_router(rubrics.router,        prefix="/api/rubrics",        tags=["rubrics"])
-app.include_router(question_banks.router, prefix="/api/question-banks", tags=["question-banks"])
 app.include_router(modules.router,        prefix="/api/modules",        tags=["modules"])
 app.include_router(analytics.router,      prefix="/api/analytics",      tags=["analytics"])
-app.include_router(badges.router,         prefix="/api/badges",         tags=["badges"])
 app.include_router(parents.router,        prefix="/api/parents",        tags=["parents"])
 app.include_router(surveys.router,        prefix="/api/surveys",        tags=["surveys"])
-app.include_router(portfolio.router,      prefix="/api/portfolio",      tags=["portfolio"])
 # ── Learning Intelligence & Social ─────────────────────────────────────────
-app.include_router(spaced_repetition.router, prefix="/api/sr",             tags=["spaced-repetition"])
 app.include_router(teach_back.router,        prefix="/api/teach-back",     tags=["teach-back"])
 app.include_router(confusion.router,         prefix="/api/confusion",      tags=["confusion"])
 app.include_router(help_board.router,        prefix="/api/help",           tags=["help-board"])

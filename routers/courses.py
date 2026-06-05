@@ -209,6 +209,42 @@ def delete_course(
         raise HTTPException(404, "Course not found")
     if current_user.role == "teacher" and course.teacher_id != current_user.id:
         raise HTTPException(403, "Not your course")
+
+    # ── Pre-deletion cleanup ───────────────────────────────────────────────────
+    # SQLAlchemy cascade-deletes both GradeCategory and Assignment from Course.
+    # GradeCategory deletion tries to SET assignment.grade_category_id = NULL,
+    # but those assignments are simultaneously being deleted — conflicting ops.
+    # Null them out first to break the circular dependency.
+    assignment_ids = [
+        a.id for a in db.query(models.Assignment.id)
+        .filter(models.Assignment.course_id == course_id).all()
+    ]
+    if assignment_ids:
+        db.query(models.Assignment).filter(
+            models.Assignment.course_id == course_id
+        ).update({"grade_category_id": None, "rubric_id": None},
+                 synchronize_session=False)
+
+        # PeerReview has NOT NULL FKs to assignments and submissions — delete first
+        submission_ids = [
+            s.id for s in db.query(models.Submission.id)
+            .filter(models.Submission.assignment_id.in_(assignment_ids)).all()
+        ]
+        if submission_ids:
+            db.query(models.PeerReview).filter(
+                models.PeerReview.reviewee_submission_id.in_(submission_ids)
+            ).delete(synchronize_session=False)
+        db.query(models.PeerReview).filter(
+            models.PeerReview.assignment_id.in_(assignment_ids)
+        ).delete(synchronize_session=False)
+
+    # CoursePrerequisite rows reference courses.id via two columns — delete both directions
+    db.query(models.CoursePrerequisite).filter(
+        (models.CoursePrerequisite.course_id == course_id) |
+        (models.CoursePrerequisite.prerequisite_course_id == course_id)
+    ).delete(synchronize_session=False)
+
+    db.flush()
     db.delete(course)
     db.commit()
     return {"ok": True}

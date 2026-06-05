@@ -21,6 +21,7 @@ from datetime import datetime
 from database import get_db
 import models
 import security
+from routers.notifications import notify as push_notif
 
 router = APIRouter()
 
@@ -265,8 +266,22 @@ def toggle_publish(
     if data.is_published and len(q.questions) == 0:
         raise HTTPException(400, "Cannot publish a quiz with no questions. Add at least one question first.")
 
+    was_published = q.is_published
     q.is_published = data.is_published
     db.commit()
+
+    # Notify enrolled students only when going from draft → published
+    if data.is_published and not was_published:
+        course = db.query(models.Course).filter(models.Course.id == q.course_id).first()
+        course_title = course.title if course else "your course"
+        enrollments = db.query(models.Enrollment).filter(models.Enrollment.course_id == q.course_id).all()
+        for enr in enrollments:
+            push_notif(db, enr.student_id, "quiz",
+                       f"📝 New quiz available: {q.title}",
+                       course_title,
+                       link=f"quiz:{q.id}")
+        db.commit()
+
     return {"id": q.id, "is_published": q.is_published}
 
 

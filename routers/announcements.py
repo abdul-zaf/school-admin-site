@@ -101,7 +101,8 @@ def create_announcement(
             for uid in notify_ids:
                 if uid != current_user.id:
                     push_notif(db, uid, "announcement",
-                               f"📢 {data.title}", notif_body)
+                               f"📢 {data.title}", notif_body,
+                               link=f"course:{data.course_id}")
 
             # Email notifications to enrolled students
             for enr in enrollments:
@@ -116,14 +117,16 @@ def create_announcement(
             # Notify all students
             for student in db.query(models.User).filter(models.User.role == "student").all():
                 push_notif(db, student.id, "announcement",
-                           f"📢 {data.title}", notif_body)
+                           f"📢 {data.title}", notif_body,
+                           link="announcements")
 
             # If posted by admin, also notify all teachers
             if current_user.role == "admin":
                 for teacher in db.query(models.User).filter(models.User.role == "teacher").all():
                     if teacher.id != current_user.id:
                         push_notif(db, teacher.id, "announcement",
-                                   f"📢 {data.title}", notif_body)
+                                   f"📢 {data.title}", notif_body,
+                                   link="announcements")
 
     db.commit()
     return {"id": a.id, "publish_at": str(a.publish_at) if a.publish_at else None}

@@ -26,6 +26,12 @@ class MessageCreate(BaseModel):
     body: str
 
 
+class BroadcastCreate(BaseModel):
+    target: str   # "students" | "teachers" | "everyone" | "my_students"
+    subject: str
+    body: str
+
+
 @router.get("/")
 def inbox(
     db: Session = Depends(get_db),
@@ -123,6 +129,84 @@ def send_message(
     db.commit()
     db.refresh(msg)
     return {"id": msg.id, "sent": True}
+
+
+@router.post("/broadcast")
+def broadcast_message(
+    data: BroadcastCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    if current_user.role not in ("admin", "teacher"):
+        raise HTTPException(403, "Only admins and teachers can broadcast messages")
+
+    # Resolve recipient list
+    if data.target == "my_students":
+        # Teacher broadcasts to their own enrolled students only
+        if current_user.role not in ("admin", "teacher"):
+            raise HTTPException(403, "Forbidden")
+        enrolled = (
+            db.query(models.Enrollment)
+            .join(models.Course)
+            .filter(models.Course.teacher_id == current_user.id)
+            .all()
+        )
+        recipient_ids = list({e.student_id for e in enrolled} - {current_user.id})
+    elif data.target == "students":
+        if current_user.role != "admin":
+            raise HTTPException(403, "Only admins can broadcast to all students")
+        recipient_ids = [
+            u.id for u in db.query(models.User).filter(models.User.role == "student").all()
+            if u.id != current_user.id
+        ]
+    elif data.target == "teachers":
+        if current_user.role != "admin":
+            raise HTTPException(403, "Only admins can broadcast to all teachers")
+        recipient_ids = [
+            u.id for u in db.query(models.User).filter(models.User.role == "teacher").all()
+            if u.id != current_user.id
+        ]
+    elif data.target == "everyone":
+        if current_user.role != "admin":
+            raise HTTPException(403, "Only admins can broadcast to everyone")
+        recipient_ids = [
+            u.id for u in db.query(models.User).all()
+            if u.id != current_user.id
+        ]
+    elif data.target.startswith("course:"):
+        try:
+            course_id = int(data.target.split(":", 1)[1])
+        except ValueError:
+            raise HTTPException(400, "Invalid course target")
+        course = db.query(models.Course).filter(models.Course.id == course_id).first()
+        if not course:
+            raise HTTPException(404, "Course not found")
+        # Teachers can only message their own course; admins can message any
+        if current_user.role == "teacher" and course.teacher_id != current_user.id:
+            raise HTTPException(403, "You are not the teacher of this course")
+        enrollments = db.query(models.Enrollment).filter(
+            models.Enrollment.course_id == course_id
+        ).all()
+        recipient_ids = [e.student_id for e in enrollments if e.student_id != current_user.id]
+    else:
+        raise HTTPException(400, f"Unknown target '{data.target}'")
+
+    count = 0
+    for rid in recipient_ids:
+        msg = models.Message(
+            sender_id=current_user.id,
+            recipient_id=rid,
+            subject=data.subject,
+            body=data.body,
+        )
+        db.add(msg)
+        notify(db, rid, "message",
+               f"📨 Message from {current_user.name}",
+               data.subject, link="messages")
+        count += 1
+
+    db.commit()
+    return {"sent": count}
 
 
 @router.get("/{message_id}")

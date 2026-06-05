@@ -8,9 +8,8 @@ const i18n = {
     nav_dashboard:'Dashboard', nav_courses:'Courses', nav_users:'Users',
     nav_announcements:'Announcements', nav_settings:'Settings',
     nav_gradebook:'Gradebook', nav_analytics:'Analytics',
-    nav_calendar:'Calendar', nav_badges:'Badges',
-    nav_messages:'Messages', nav_question_banks:'Question Banks',
-    nav_portfolio:'Portfolio',
+    nav_calendar:'Calendar',
+    nav_messages:'Messages',
     // Auth
     sign_in:'Sign In', sign_out:'Sign out', email:'Email', password:'Password',
     login_hint:'Default admin: admin@school.edu / Admin123',
@@ -89,12 +88,6 @@ const i18n = {
     analytics:'Analytics', grade_distribution:'Grade Distribution',
     submission_rate:'Submission Rate', avg_score:'Avg Score', active_students:'Active Students',
     total_users:'Total Users', total_courses:'Total Courses', submissions_this_week:'Submissions This Week',
-    badges:'Badges', my_badges:'My Badges', award_badge:'Award Badge', create_badge:'+ Create Badge',
-    badge_icon:'Icon (emoji)', no_badges:'No badges yet.', earned_on:'Earned on',
-    portfolio:'Portfolio', my_portfolio:'My Portfolio', add_item:'+ Add Item',
-    portfolio_title:'Portfolio Title', bio:'Bio', make_public:'Make Public',
-    portfolio_items:'Portfolio Items', no_items:'No items yet.',
-    question_banks:'Question Banks', new_bank:'+ New Bank', import_to_quiz:'Import to Quiz',
     add_questions:'+ Add Question', no_banks:'No question banks yet.',
     modules:'Modules', new_module:'+ New Module', add_module_item:'+ Add Item',
     mark_complete:'Mark Complete', completed:'Completed', progress:'Progress',
@@ -108,11 +101,6 @@ const i18n = {
     // Leaderboard
 
     your_rank:'Your Rank', rank:'Rank', top_students:'Top Students',
-    // Certificates
-    download_certificate:'⬇ Download Certificate',
-    cert_not_eligible:'Certificate not available yet',
-    cert_requirements:'Submit all assignments & complete all quizzes (avg ≥ 50%) to earn your certificate.',
-    cert_ready:'🎓 Your certificate is ready to download!',
     // Retake limits
     max_attempts:'Max Attempts', unlimited:'Unlimited',
     attempts_remaining:'attempts left', no_attempts_left:'No attempts remaining',
@@ -223,29 +211,20 @@ const i18n = {
     profile_saved:'پروفائل اپڈیٹ ہو گئی!',
     // New features (Urdu)
     nav_gradebook:'گریڈ بک', nav_analytics:'تجزیات', nav_calendar:'کیلنڈر',
-    nav_badges:'بیجز', nav_messages:'پیغامات', nav_question_banks:'سوال بینک',
-    nav_portfolio:'پورٹ فولیو',
+    nav_messages:'پیغامات',
     gradebook:'گریڈ بک', my_grades:'میرے نمبر', weighted_avg:'وزنی اوسط',
     letter_grade:'حروفی گریڈ', gpa:'جی پی اے', cumulative_gpa:'مجموعی جی پی اے',
     calendar:'کیلنڈر', upcoming_events:'آنے والے واقعات', no_events:'کوئی واقعات نہیں۔',
     messages:'پیغامات', inbox:'ان باکس', sent:'بھیجے گئے', compose:'+ لکھیں',
     compose_message:'پیغام لکھیں', send:'بھیجیں', no_messages:'کوئی پیغام نہیں۔',
     analytics:'تجزیات', grade_distribution:'نمبروں کی تقسیم',
-    badges:'بیجز', my_badges:'میرے بیجز', create_badge:'+ بیج بنائیں',
-    portfolio:'پورٹ فولیو', my_portfolio:'میرا پورٹ فولیو',
     modules:'ماڈیولز', discussions:'بحث', surveys:'سروے',
-    question_banks:'سوال بینک',
     // Dark mode (Urdu)
     theme:'تھیم', theme_desc:'لائٹ یا ڈارک موڈ منتخب کریں',
     light_mode:'☀️ روشن', dark_mode:'🌙 تاریک',
     // Leaderboard (Urdu)
 
     your_rank:'آپ کی پوزیشن', rank:'پوزیشن', top_students:'اعلیٰ طلبا',
-    // Certificates (Urdu)
-    download_certificate:'⬇ سرٹیفکیٹ ڈاؤن لوڈ کریں',
-    cert_not_eligible:'سرٹیفکیٹ ابھی دستیاب نہیں',
-    cert_requirements:'تمام اسائنمنٹس اور کوئز مکمل کریں (اوسط ≥ ۵۰٪)۔',
-    cert_ready:'🎓 آپ کا سرٹیفکیٹ ڈاؤن لوڈ کے لیے تیار ہے!',
     // Retake (Urdu)
     max_attempts:'زیادہ سے زیادہ کوششیں', unlimited:'لامحدود',
     attempts_remaining:'کوششیں باقی', no_attempts_left:'کوئی کوشش باقی نہیں',
@@ -410,24 +389,23 @@ function loading(el) {
 // Navigation
 // ═══════════════════════════════════════════════════════════
 const NAV_KEYS = {
-  admin:   ['dashboard','courses','users','announcements','gradebook','analytics','calendar','badges','settings'],
-  teacher: ['dashboard','courses','announcements','gradebook','analytics','calendar','messages','question_banks','settings'],
-  student: ['dashboard','courses','announcements','gradebook','calendar','messages','ai_tutor','portfolio','badges','sr','settings'],
+  admin:   ['dashboard','courses','users','announcements','gradebook','analytics','calendar','settings'],
+  teacher: ['dashboard','courses','announcements','gradebook','analytics','calendar','messages','settings'],
+  student: ['dashboard','courses','announcements','gradebook','calendar','messages','ai_tutor','settings'],
   parent:  ['dashboard','settings'],
 };
 const NAV_I18N = {
   dashboard:'nav_dashboard', courses:'nav_courses', users:'nav_users',
   announcements:'nav_announcements', settings:'nav_settings',
   gradebook:'nav_gradebook', analytics:'nav_analytics', calendar:'nav_calendar',
-  badges:'nav_badges', messages:'nav_messages', question_banks:'nav_question_banks',
-  portfolio:'nav_portfolio', sr:'nav_sr',
+  messages:'nav_messages', question_banks:'nav_question_banks',
   ai_tutor:'nav_ai_tutor',
 };
 const NAV_ICONS = {
   dashboard:'🏠', courses:'📚', users:'👥', announcements:'📢',
-  gradebook:'📊', analytics:'📈', calendar:'📅', badges:'🏅',
-  messages:'✉️', question_banks:'🗃️', portfolio:'🗂️',
-  sr:'🃏', settings:'⚙️', ai_tutor:'🤖',
+  gradebook:'📊', analytics:'📈', calendar:'📅',
+  messages:'✉️',
+  settings:'⚙️', ai_tutor:'🤖',
 };
 
 // ── Subject → accent colour (used on course cards) ─────────────────────────
@@ -706,7 +684,8 @@ async function loadNotifPanel() {
       return;
     }
     list.innerHTML = notifs.map(n => `
-      <div class="notif-item${n.is_read ? '' : ' unread'}" onclick="markNotifRead(${n.id})">
+      <div class="notif-item${n.is_read ? '' : ' unread'}${n.link ? ' notif-clickable' : ''}"
+           onclick="_notifClick(${n.id},'${(n.link||'').replace(/'/g,"\\'")}')">
         <div class="notif-icon">${_notifIcon(n.title)}</div>
         <div class="notif-content">
           <div class="notif-title">${htmlEsc(n.title)}</div>
@@ -714,6 +693,7 @@ async function loadNotifPanel() {
           <div class="notif-time">${_relTime(n.created_at)}</div>
         </div>
         ${n.is_read ? '' : '<div class="notif-unread-dot"></div>'}
+        ${n.link ? '<div class="notif-arrow">›</div>' : ''}
       </div>`).join('');
     panel.innerHTML += `<div class="notif-panel-footer">
       <button class="notif-view-all" onclick="hideNotifPanel()">Close</button>
@@ -738,8 +718,27 @@ async function markAllNotifsRead() {
   try {
     await api('PUT', '/notifications/read-all');
     refreshNotifCount();
-    loadNotifPanel();
+    const list = document.querySelector('#notif-panel .notif-list');
+    if (list) list.innerHTML = `<div class="notif-empty-state">
+      <span class="notif-empty-icon">🎉</span>
+      <p>You're all caught up!</p>
+    </div>`;
   } catch(e) { /* silent */ }
+}
+
+async function _notifClick(id, link) {
+  // Mark read (best-effort, don't block navigation)
+  api('PUT', `/notifications/${id}/read`).then(() => { refreshNotifCount(); }).catch(() => {});
+  hideNotifPanel();
+  if (!link) return;
+  // Parse link format: "assignment:123", "quiz:456", "course:789", "announcements", "messages"
+  const [type, idStr] = link.split(':');
+  const targetId = parseInt(idStr, 10);
+  if      (type === 'assignment')   navigate('assignment',  { id: targetId });
+  else if (type === 'quiz')         navigate('quiz-take',   { id: targetId });
+  else if (type === 'course')       navigate('course',      { id: targetId });
+  else if (type === 'announcements' || link === 'announcements') navigate('announcements');
+  else if (type === 'messages'      || link === 'messages')      navigate('messages');
 }
 
 function navigate(page, params = {}) {
@@ -755,8 +754,8 @@ function navigate(page, params = {}) {
     dashboard: renderDashboard, courses: renderCourses,
     users: renderUsers, announcements: renderAnnouncements, settings: renderSettings,
     gradebook: renderGradebook, calendar: renderCalendar, messages: renderMessages,
-    analytics: renderAnalytics, badges: renderBadges, portfolio: renderPortfolio,
-    question_banks: renderQuestionBanks, ai_tutor: renderAiTutor,
+    analytics: renderAnalytics,
+    ai_tutor: renderAiTutor,
   };
   if      (page === 'course')        renderCourseDetail(params.id, el);
   else if (page === 'assignment')    renderAssignmentDetail(params.id, el);
@@ -765,7 +764,6 @@ function navigate(page, params = {}) {
   else if (page === 'discussion-board') renderDiscussionBoard(params.id, el);
   else if (page === 'ai-chat')       renderAiChat(params.id, el);
   // ── Learning Intelligence & Social ───────────────────────────────────────
-  else if (page === 'sr')          { if (typeof renderSRReview       !== 'undefined') renderSRReview(el); }
   else if (pages[page])            pages[page](el);
 }
 
@@ -1070,9 +1068,6 @@ async function renderCourseDetail(courseId, el) {
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
           <small class="text-muted">${t('teacher')}: ${htmlEsc(course.teacher_name||'?')}</small>
-          ${role === 'student' ? `<button class="btn btn-sm btn-success" onclick="downloadCertificate(${courseId})">
-            ${t('download_certificate')}
-          </button>` : ''}
         </div>
       </div>
       ${course.description ? `<div class="card"><div class="card-body"><p>${htmlEsc(course.description)}</p></div></div>` : ''}
@@ -1416,6 +1411,7 @@ function viewMaterialFile(event, el) {
       `<div style="text-align:center;padding:8px 0">
         <${tag} controls
           style="max-width:100%;max-height:60vh;border-radius:8px;background:#000"
+          onloadstart="this.muted=false;this.volume=1.0"
           src="${fileUrl}">
           Your browser does not support this media type.
         </${tag}>
@@ -1569,7 +1565,13 @@ async function renderAssignmentDetail(assignmentId, el) {
           <div class="card-body">
             ${a.my_submission ? `
               <div style="margin-bottom:12px">
-                <div class="submission-content"><p>${htmlEsc(a.my_submission.content)}</p></div>
+                ${a.my_submission.content ? `<div class="submission-content"><p>${htmlEsc(a.my_submission.content)}</p></div>` : ''}
+                ${a.my_submission.file_name ? `
+                  <div class="submission-file">
+                    <span>📎 ${htmlEsc(a.my_submission.file_name)}</span>
+                    <a class="btn btn-sm" href="/api/assignments/submissions/${a.my_submission.id}/file?dl_token=${encodeURIComponent(state.token)}"
+                       download="${htmlEsc(a.my_submission.file_name)}">⬇ Download</a>
+                  </div>` : ''}
                 <small class="text-muted">${fmtDateTime(a.my_submission.submitted_at)}</small>
                 ${a.my_submission.score!=null
                   ? `<div class="grade-result mt-8"><strong>${t('score')}: ${a.my_submission.score} / ${a.max_score}</strong>
@@ -1578,8 +1580,14 @@ async function renderAssignmentDetail(assignmentId, el) {
               </div>
               <button class="btn btn-sm" onclick="document.getElementById('sub-area').classList.toggle('hidden')">${t('edit_resubmit')}</button>
               <div id="sub-area" class="hidden" style="margin-top:14px">` : `<div id="sub-area">`}
-            <div class="form-group" style="margin-top:${a.my_submission?'12px':'0'}"><label></label>
-              <textarea id="sub-content" class="form-control" rows="8">${htmlEsc(a.my_submission ? a.my_submission.content : '')}</textarea></div>
+            <div class="form-group" style="margin-top:${a.my_submission?'12px':'0'}">
+              <label>Written response <span class="text-muted">(optional)</span></label>
+              <textarea id="sub-content" class="form-control" rows="6">${htmlEsc(a.my_submission ? a.my_submission.content : '')}</textarea>
+            </div>
+            <div class="form-group">
+              <label>Attach a file <span class="text-muted">(optional — any type, max 200 MB)</span></label>
+              <input id="sub-file" type="file" class="form-control" accept="*/*">
+            </div>
             <button class="btn btn-primary" onclick="submitAssignment(${assignmentId})">
               ${a.my_submission?t('resubmit'):t('submit_assignment')}</button>
             </div>
@@ -1595,7 +1603,13 @@ async function renderAssignmentDetail(assignmentId, el) {
                   ${s.score!=null ? `<span class="badge badge-success">${s.score}/${a.max_score}</span>`
                                   : `<span class="badge badge-warning">${t('not_graded')}</span>`}
                 </div>
-                <div class="submission-content"><p>${htmlEsc(s.content)}</p></div>
+                ${s.content ? `<div class="submission-content"><p>${htmlEsc(s.content)}</p></div>` : ''}
+                ${s.file_name ? `
+                  <div class="submission-file">
+                    <span>📎 ${htmlEsc(s.file_name)}</span>
+                    <a class="btn btn-sm" href="/api/assignments/submissions/${s.id}/file?dl_token=${encodeURIComponent(state.token)}"
+                       download="${htmlEsc(s.file_name)}">⬇ Download</a>
+                  </div>` : ''}
                 <div class="grade-form">
                   <div class="form-row">
                     <div class="form-group"><label>${t('score')} (max ${a.max_score})</label>
@@ -1612,16 +1626,24 @@ async function renderAssignmentDetail(assignmentId, el) {
 }
 
 async function submitAssignment(id) {
-  const content = document.getElementById('sub-content').value.trim();
-  if (!content) { toast(t('submit_assignment'),'error'); return; }
+  const content = document.getElementById('sub-content')?.value.trim() || '';
+  const fileInput = document.getElementById('sub-file');
+  const file = fileInput?.files?.[0];
+  if (!content && !file) { toast('Please add text or attach a file.', 'error'); return; }
   try {
-    await api('POST',`/assignments/${id}/submit`,{content});
-    toast(t('submit_assignment')+'!');
-    navigate('assignment',{id});
-    // Show outstanding-assignments window after a brief pause so the page re-renders first
+    const fd = new FormData();
+    fd.append('content', content);
+    if (file) fd.append('file', file);
+    const res = await fetch(`/api/assignments/${id}/submit`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${state.token}` },
+      body: fd,
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.detail || 'Error'); }
+    toast(t('submit_assignment') + '!');
+    navigate('assignment', {id});
     setTimeout(() => showPostSubmitModal(id), 400);
-  }
-  catch(err) { toast(err.message,'error'); }
+  } catch(err) { toast(err.message, 'error'); }
 }
 
 // ── Post-submission: show remaining assignments across all enrolled courses ──
@@ -2584,7 +2606,7 @@ async function renderCalendar(el) {
       ? courses.filter(c => c.enrolled)
       : (state.user.role === 'teacher' ? courses.filter(c => c.teacher_id === state.user.id) : courses);
 
-    const events = [];
+    const allEvents = [];
     const now = new Date();
 
     for (const c of enrolled) {
@@ -2594,40 +2616,126 @@ async function renderCalendar(el) {
         api('GET', `/quizzes/course/${c.id}`),
       ]);
       (asgns||[]).forEach(a => {
-        if (a.due_date) events.push({ date: new Date(a.due_date), title: a.title, course: c.title, type: 'assignment' });
+        if (a.due_date) allEvents.push({ date: new Date(a.due_date), title: a.title, course: c.title, type: 'assignment' });
       });
       (sessions||[]).forEach(s => {
-        if (s.date) events.push({ date: new Date(s.date), title: s.title, course: c.title, type: 'session' });
+        if (s.date) allEvents.push({ date: new Date(s.date), title: s.title, course: c.title, type: 'session' });
       });
       (quizzes||[]).forEach(q => {
-        if (q.due_date) events.push({ date: new Date(q.due_date), title: q.title, course: c.title, type: 'quiz' });
+        if (q.due_date) allEvents.push({ date: new Date(q.due_date), title: q.title, course: c.title, type: 'quiz' });
       });
     }
 
-    events.sort((a, b) => a.date - b.date);
-    const upcoming = events.filter(e => e.date >= now);
+    allEvents.sort((a, b) => a.date - b.date);
 
-    el.innerHTML = `
-      <div class="page-header"><h2>${t('calendar')}</h2></div>
-      <div class="calendar-list">
-        ${upcoming.length ? upcoming.map(ev => {
-          const msLeft = ev.date - now;
-          const dayLeft = msLeft / 86400000;
-          const cls = dayLeft < 0 ? 'overdue' : dayLeft < 3 ? 'soon' : '';
-          const mon = ev.date.toLocaleString('en-GB', { month: 'short' });
-          const day = ev.date.getDate();
-          const typeIcon = { assignment: '📋', session: '📅', quiz: '📝' }[ev.type] || '📌';
-          return `
-            <div class="calendar-event ${cls}">
-              <div class="calendar-event-date"><span class="cal-day">${day}</span>${mon}</div>
-              <div class="calendar-event-info">
-                <div class="calendar-event-title">${typeIcon} ${htmlEsc(ev.title)}</div>
-                <div class="calendar-event-course">${htmlEsc(ev.course)}</div>
-              </div>
-              <span class="calendar-event-type">${ev.type}</span>
-            </div>`;
-        }).join('') : `<div class="card"><div class="card-body"><p class="text-muted">${t('no_events')}</p></div></div>`}
-      </div>`;
+    window._calState = { events: allEvents, year: now.getFullYear(), month: now.getMonth(), selected: null };
+
+    const TYPE_ICON = { assignment: '📋', session: '📅', quiz: '📝' };
+    const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+    function drawCal() {
+      const { events, year, month, selected } = window._calState;
+      const today = new Date();
+      const firstDay = new Date(year, month, 1);
+      const lastDay  = new Date(year, month + 1, 0);
+      const monthLabel = firstDay.toLocaleString('en-GB', { month: 'long', year: 'numeric' });
+
+      // Monday-anchored start offset
+      const startOff = (firstDay.getDay() + 6) % 7;
+      const totalCells = Math.ceil((startOff + lastDay.getDate()) / 7) * 7;
+
+      let cells = '';
+      for (let i = 0; i < totalCells; i++) {
+        const d = i - startOff + 1;
+        const valid = d >= 1 && d <= lastDay.getDate();
+        if (!valid) { cells += `<div class="cal-cell cal-cell-empty"></div>`; continue; }
+        const cellDate = new Date(year, month, d);
+        const isToday    = cellDate.toDateString() === today.toDateString();
+        const isSel      = selected && cellDate.toDateString() === new Date(selected).toDateString();
+        const dayEvs     = events.filter(e => e.date.toDateString() === cellDate.toDateString());
+        const dotTypes   = [...new Set(dayEvs.map(e => e.type))];
+        cells += `<div class="cal-cell${isToday ? ' cal-today' : ''}${isSel ? ' cal-selected' : ''}"
+          onclick="_calSelect('${cellDate.toISOString()}')">
+          <span class="cal-cell-num">${d}</span>
+          <div class="cal-dots">
+            ${dotTypes.map(tp => `<span class="cal-dot cal-dot-${tp}"></span>`).join('')}
+            ${dayEvs.length > 3 ? `<span class="cal-dot-more">+${dayEvs.length - 3}</span>` : ''}
+          </div>
+        </div>`;
+      }
+
+      // Right panel: selected day or upcoming
+      let panelTitle, panelBody;
+      if (selected) {
+        const selDate = new Date(selected);
+        const dayEvs  = events.filter(e => e.date.toDateString() === selDate.toDateString());
+        panelTitle = selDate.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
+        panelBody  = dayEvs.length
+          ? dayEvs.map(ev => `
+              <div class="cal-event-item">
+                <span class="cal-event-icon">${TYPE_ICON[ev.type]||'📌'}</span>
+                <div class="cal-event-detail">
+                  <div class="cal-event-title">${htmlEsc(ev.title)}</div>
+                  <div class="cal-event-course">${htmlEsc(ev.course)}</div>
+                </div>
+                <span class="cal-event-badge cal-badge-${ev.type}">${ev.type}</span>
+              </div>`).join('')
+          : `<p class="text-muted" style="padding:16px 0">No events on this day.</p>`;
+      } else {
+        const upcoming = events.filter(e => e.date >= today).slice(0, 8);
+        panelTitle = t('upcoming_events');
+        panelBody  = upcoming.length
+          ? upcoming.map(ev => {
+              const daysLeft = Math.ceil((ev.date - today) / 86400000);
+              const urgency  = daysLeft < 0 ? 'overdue' : daysLeft < 3 ? 'soon' : '';
+              return `
+              <div class="cal-event-item${urgency ? ' cal-event-' + urgency : ''}">
+                <span class="cal-event-icon">${TYPE_ICON[ev.type]||'📌'}</span>
+                <div class="cal-event-detail">
+                  <div class="cal-event-title">${htmlEsc(ev.title)}</div>
+                  <div class="cal-event-course">${htmlEsc(ev.course)}</div>
+                </div>
+                <span class="cal-event-when">${daysLeft < 0 ? 'overdue' : daysLeft === 0 ? 'today' : daysLeft === 1 ? 'tomorrow' : `${daysLeft}d`}</span>
+              </div>`;
+            }).join('')
+          : `<p class="text-muted" style="padding:16px 0">${t('no_events')}</p>`;
+      }
+
+      el.innerHTML = `
+        <div class="page-header"><h2>${t('calendar')}</h2></div>
+        <div class="cal-layout">
+          <div class="cal-grid-card">
+            <div class="cal-nav">
+              <button class="btn btn-sm cal-nav-btn" onclick="_calNav(-1)">‹</button>
+              <span class="cal-month-label">${monthLabel}</span>
+              <button class="btn btn-sm cal-nav-btn" onclick="_calNav(1)">›</button>
+            </div>
+            <div class="cal-weekdays">${DAYS.map(d => `<div class="cal-wd">${d}</div>`).join('')}</div>
+            <div class="cal-grid">${cells}</div>
+          </div>
+          <div class="cal-panel">
+            <div class="cal-panel-header">
+              <span class="cal-panel-title">${panelTitle}</span>
+              ${selected ? `<button class="btn-link" onclick="_calSelect(null)">← All upcoming</button>` : ''}
+            </div>
+            <div class="cal-event-list">${panelBody}</div>
+          </div>
+        </div>`;
+    }
+
+    window._calNav = (dir) => {
+      window._calState.month += dir;
+      if (window._calState.month > 11) { window._calState.month = 0; window._calState.year++; }
+      if (window._calState.month <  0) { window._calState.month = 11; window._calState.year--; }
+      window._calState.selected = null;
+      drawCal();
+    };
+    window._calSelect = (iso) => {
+      window._calState.selected = (iso && window._calState.selected === iso) ? null : iso;
+      drawCal();
+    };
+
+    drawCal();
   } catch(err) { el.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
 }
 
@@ -2724,15 +2832,21 @@ async function openComposeModal() {
 
   try {
     let persons = [];
+    let broadcastCourses = [];
+
     if (state.user.role === 'admin') {
-      const users = await api('GET', '/users/') || [];
-      persons = users.filter(u => u.id !== state.user.id);
+      const [users, courses] = await Promise.all([
+        api('GET', '/users/').catch(() => []),
+        api('GET', '/courses/').catch(() => []),
+      ]);
+      persons = (users || []).filter(u => u.id !== state.user.id);
+      broadcastCourses = courses || [];
     } else {
-      // Teachers see their enrolled students; students see teachers of their courses
       const courses = await api('GET', '/courses/') || [];
       const relevant = state.user.role === 'teacher'
         ? courses.filter(c => c.teacher_id === state.user.id)
         : courses.filter(c => c.enrolled);
+      broadcastCourses = relevant;
       const map = {};
       await Promise.all(relevant.map(async c => {
         const detail = await api('GET', `/courses/${c.id}`).catch(() => null);
@@ -2746,12 +2860,35 @@ async function openComposeModal() {
       persons = Object.values(map).filter(p => p.id !== state.user.id);
     }
 
-    if (persons.length) {
+    // Build broadcast options
+    let broadcastOptions = '';
+    if (state.user.role === 'admin') {
+      broadcastOptions += `<optgroup label="── Broadcast to Group ──">
+        <option value="broadcast:students">📢 All Students</option>
+        <option value="broadcast:teachers">📢 All Teachers</option>
+        <option value="broadcast:everyone">📢 Everyone</option>
+      </optgroup>`;
+    } else if (state.user.role === 'teacher') {
+      broadcastOptions += `<optgroup label="── Broadcast ──">
+        <option value="broadcast:my_students">📢 All My Students</option>
+      </optgroup>`;
+    }
+
+    if (broadcastCourses.length) {
+      broadcastOptions += `<optgroup label="── Broadcast to Course ──">
+        ${broadcastCourses.map(c => `<option value="broadcast:course:${c.id}">📚 ${htmlEsc(c.title)}</option>`).join('')}
+      </optgroup>`;
+    }
+
+    if (persons.length || broadcastOptions) {
       recipientField = `
         <div class="form-group"><label>${t('recipient')} *</label>
           <select name="recipient_id" class="form-control" required>
             <option value="">— Select recipient —</option>
-            ${persons.map(p => `<option value="${p.id}">${htmlEsc(p.name)}${p.email ? ` (${htmlEsc(p.email)})` : ''} — ${p.role}</option>`).join('')}
+            ${broadcastOptions}
+            ${persons.length ? `<optgroup label="── Individual ──">
+              ${persons.map(p => `<option value="${p.id}">${htmlEsc(p.name)}${p.email ? ` (${htmlEsc(p.email)})` : ''} — ${p.role}</option>`).join('')}
+            </optgroup>` : ''}
           </select>
         </div>`;
     }
@@ -2773,8 +2910,15 @@ async function openComposeModal() {
       const recipId = fd.get('recipient_id');
       if (!recipId) { toast('Please select a recipient', 'error'); return; }
       try {
-        await api('POST', '/messages/', { recipient_id: parseInt(recipId), subject: fd.get('subject'), body: fd.get('body') });
-        closeModal(); toast(t('send') + '!'); navigate('messages', { tab: 'sent' });
+        if (String(recipId).startsWith('broadcast:')) {
+          const target = recipId.slice('broadcast:'.length); // handles "students", "course:123", etc.
+          const result = await api('POST', '/messages/broadcast', { target, subject: fd.get('subject'), body: fd.get('body') });
+          closeModal(); toast(`📢 Sent to ${result.sent} recipient${result.sent !== 1 ? 's' : ''}!`);
+          navigate('messages', { tab: 'sent' });
+        } else {
+          await api('POST', '/messages/', { recipient_id: parseInt(recipId), subject: fd.get('subject'), body: fd.get('body') });
+          closeModal(); toast(t('send') + '!'); navigate('messages', { tab: 'sent' });
+        }
       } catch(err) { toast(err.message, 'error'); }
     });
 }
@@ -2858,357 +3002,9 @@ async function renderAnalytics(el) {
 // ═══════════════════════════════════════════════════════════
 // Badges Page
 // ═══════════════════════════════════════════════════════════
-async function renderBadges(el) {
-  loading(el);
-  const role = state.user.role;
-  try {
-    const [badges, myBadges] = await Promise.all([
-      api('GET', '/badges/'),
-      role === 'student' ? api('GET', '/badges/my') : Promise.resolve([]),
-    ]);
-
-    if (role === 'student') {
-      const earned    = myBadges || [];
-      const earnedIds = new Set(earned.map(b => b.badge_id));
-      el.innerHTML = `
-        <div class="page-header"><h2>🏅 ${t('my_badges')}</h2></div>
-
-        ${earned.length ? `
-          <p class="badges-section-title">Earned — ${earned.length} badge${earned.length !== 1 ? 's' : ''}</p>
-          <div class="badges-grid">
-            ${earned.map(b => `
-              <div class="badge-card earned">
-                <span class="badge-icon">${b.badge_icon}</span>
-                <div class="badge-name">${htmlEsc(b.badge_name)}</div>
-                ${b.badge_description ? `<div class="badge-desc">${htmlEsc(b.badge_description)}</div>` : ''}
-                <div class="badge-earned-stamp">🏆 ${htmlEsc(b.awarded_by_name)}</div>
-                ${b.note ? `<div class="badge-desc" style="font-style:italic">"${htmlEsc(b.note)}"</div>` : ''}
-                <div class="badge-meta">${fmtDate(b.awarded_at)}</div>
-              </div>`).join('')}
-          </div>` : ''}
-
-        <p class="badges-section-title" style="margin-top:${earned.length ? '32px' : '8px'}">
-          All Badges — ${(badges||[]).length} available
-        </p>
-        <div class="badges-grid">
-          ${(badges||[]).map(b => `
-            <div class="badge-card ${earnedIds.has(b.id) ? 'earned' : ''}">
-              <span class="badge-icon">${b.icon}</span>
-              <div class="badge-name">${htmlEsc(b.name)}</div>
-              ${b.description ? `<div class="badge-desc">${htmlEsc(b.description)}</div>` : ''}
-              <div class="badge-meta">${earnedIds.has(b.id) ? '✓ Earned' : `${b.awarded_count} awarded`}</div>
-            </div>`).join('')}
-          ${!(badges||[]).length
-            ? `<p class="text-muted" style="grid-column:1/-1;text-align:center;padding:24px">No badges created yet.</p>`
-            : ''}
-        </div>`;
-
-    } else {
-      el.innerHTML = `
-        <div class="page-header">
-          <h2>🏅 ${t('badges')}</h2>
-          <button class="btn btn-primary" onclick="openCreateBadgeModal()">${t('create_badge')}</button>
-        </div>
-        ${!(badges||[]).length
-          ? `<div class="card"><div class="card-body"><p class="text-muted">${t('no_badges')}</p></div></div>`
-          : `<div class="badges-grid">
-            ${(badges||[]).map(b => `
-              <div class="badge-card">
-                <span class="badge-icon">${b.icon}</span>
-                <div class="badge-name">${htmlEsc(b.name)}</div>
-                ${b.description ? `<div class="badge-desc">${htmlEsc(b.description)}</div>` : ''}
-                <div class="badge-meta">${b.awarded_count} student${b.awarded_count !== 1 ? 's' : ''} earned this</div>
-                <div style="margin-top:10px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
-                  <button class="btn btn-sm btn-primary"
-                    onclick="openAwardBadgeModal(${b.id},${JSON.stringify(b.name)})">🎖 ${t('award_badge')}</button>
-                  <button class="btn btn-sm btn-danger" onclick="deleteBadge(${b.id})">${t('delete')}</button>
-                </div>
-              </div>`).join('')}
-          </div>`}`;
-    }
-  } catch(err) { el.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
-}
-
-function openCreateBadgeModal() {
-  openModal(t('create_badge'), `
-    <form id="modal-form">
-      <div class="form-group"><label>${t('title_label')} *</label>
-        <input name="name" class="form-control" required placeholder="Excellence Award"></div>
-      <div class="form-group"><label>${t('badge_icon')} (emoji)</label>
-        <input name="icon" class="form-control" value="🏅" maxlength="4"></div>
-      <div class="form-group"><label>${t('description')}</label>
-        <textarea name="description" class="form-control" rows="2"></textarea></div>
-      <div class="form-actions">
-        <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
-        <button type="submit" class="btn btn-primary">${t('create')}</button>
-      </div>
-    </form>`,
-    async (fd) => {
-      try {
-        await api('POST', '/badges/', { name: fd.get('name'), icon: fd.get('icon')||'🏅', description: fd.get('description')||null });
-        closeModal(); toast(t('create')+'!'); navigate('badges');
-      } catch(err) { toast(err.message, 'error'); }
-    });
-}
-
-async function openAwardBadgeModal(badgeId, badgeName) {
-  // Load the students this user can award to
-  let students = [];
-  try {
-    if (state.user.role === 'admin') {
-      students = await api('GET', '/users/?role=student') || [];
-    } else {
-      // Teacher: collect unique students from their courses
-      const courses = await api('GET', '/courses/') || [];
-      const myCourses = courses.filter(c => c.teacher_id === state.user.id);
-      const map = {};
-      await Promise.all(myCourses.map(async c => {
-        const detail = await api('GET', `/courses/${c.id}`).catch(() => null);
-        (detail?.students || []).forEach(s => { map[s.id] = s; });
-      }));
-      students = Object.values(map);
-    }
-  } catch(_) { /* fall back to manual entry */ }
-
-  const hasStudents = students.length > 0;
-  const studentField = hasStudents
-    ? `<div class="form-group"><label>Student *</label>
-        <select name="user_id" class="form-control" required>
-          <option value="">— Select a student —</option>
-          ${students.map(s => `<option value="${s.id}">${htmlEsc(s.name)} (${htmlEsc(s.email)})</option>`).join('')}
-        </select></div>`
-    : `<div class="form-group"><label>Student User ID *</label>
-        <input name="user_id" type="number" class="form-control" required placeholder="Enter user ID"></div>`;
-
-  openModal(`🎖 Award: ${badgeName}`, `
-    <form id="modal-form">
-      ${studentField}
-      <div class="form-group"><label>Note (optional)</label>
-        <input name="note" class="form-control" placeholder="Reason for this award…"></div>
-      <div class="form-actions">
-        <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
-        <button type="submit" class="btn btn-primary">🎖 Award Badge</button>
-      </div>
-    </form>`,
-    async (fd) => {
-      const userId = fd.get('user_id');
-      if (!userId) { toast('Please select a student', 'error'); return; }
-      try {
-        await api('POST', `/badges/${badgeId}/award/${userId}`, { note: fd.get('note')||null });
-        closeModal(); toast('Badge awarded! 🏅'); navigate('badges');
-      } catch(err) { toast(err.message, 'error'); }
-    });
-}
-
-async function deleteBadge(id) {
-  if (!confirm(t('delete')+'?')) return;
-  try { await api('DELETE', `/badges/${id}`); toast(t('delete')); navigate('badges'); }
-  catch(err) { toast(err.message, 'error'); }
-}
-
-// ═══════════════════════════════════════════════════════════
-// Portfolio Page
-// ═══════════════════════════════════════════════════════════
-async function renderPortfolio(el) {
-  loading(el);
-  try {
-    const p = await api('GET', '/portfolio/my');
-    if (!p) return;
-    el.innerHTML = `
-      <div class="page-header"><h2>${t('my_portfolio')}</h2>
-        <button class="btn btn-primary" onclick="openAddPortfolioItemModal()">${t('add_item')}</button>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3>${htmlEsc(p.title)}</h3>
-          <button class="btn btn-sm" onclick="openEditPortfolioModal()">${t('edit')}</button>
-        </div>
-        <div class="card-body">
-          ${p.bio ? `<p style="margin-bottom:12px">${htmlEsc(p.bio)}</p>` : ''}
-          <small class="text-muted">${p.is_public ? '🌐 Public' : '🔒 Private'}</small>
-        </div>
-      </div>
-      <div class="portfolio-items-grid">
-        ${(p.items||[]).map(item => `
-          <div class="portfolio-item-card">
-            <h4>${htmlEsc(item.title)}</h4>
-            ${item.description ? `<p>${htmlEsc(item.description)}</p>` : ''}
-            ${item.content ? `<p style="margin-top:6px;font-size:12px;color:var(--text)">${htmlEsc(item.content).substring(0,100)}${item.content.length>100?'…':''}</p>` : ''}
-            ${item.url ? `<a href="${htmlEsc(item.url)}" target="_blank" rel="noopener" class="link" style="display:block;margin-top:6px">${htmlEsc(item.url).substring(0,40)}</a>` : ''}
-            ${item.tags ? `<div class="portfolio-tags">${item.tags.split(',').map(tag=>`<span class="portfolio-tag">${htmlEsc(tag.trim())}</span>`).join('')}</div>` : ''}
-            <div style="margin-top:10px;display:flex;gap:6px">
-              <button class="btn btn-sm btn-danger" onclick="deletePortfolioItem(${item.id})">${t('delete')}</button>
-            </div>
-          </div>`).join('') || `<div class="card" style="grid-column:1/-1"><div class="card-body"><p class="text-muted">${t('no_items')}</p></div></div>`}
-      </div>`;
-  } catch(err) { el.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
-}
-
-function openEditPortfolioModal() {
-  openModal(t('my_portfolio'), `
-    <form id="modal-form">
-      <div class="form-group"><label>${t('portfolio_title')}</label>
-        <input name="title" class="form-control"></div>
-      <div class="form-group"><label>${t('bio')}</label>
-        <textarea name="bio" class="form-control" rows="3"></textarea></div>
-      <div class="form-group"><label>
-        <input name="is_public" type="checkbox"> ${t('make_public')}
-      </label></div>
-      <div class="form-actions">
-        <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
-        <button type="submit" class="btn btn-primary">${t('save')}</button>
-      </div>
-    </form>`,
-    async (fd) => {
-      try {
-        await api('PUT', '/portfolio/my', { title: fd.get('title')||undefined, bio: fd.get('bio')||null, is_public: !!fd.get('is_public') });
-        closeModal(); toast(t('save')+'!'); navigate('portfolio');
-      } catch(err) { toast(err.message, 'error'); }
-    });
-}
-
-function openAddPortfolioItemModal() {
-  openModal(t('add_item'), `
-    <form id="modal-form">
-      <div class="form-group"><label>${t('title_label')} *</label>
-        <input name="title" class="form-control" required></div>
-      <div class="form-group"><label>${t('description')}</label>
-        <textarea name="description" class="form-control" rows="2"></textarea></div>
-      <div class="form-group"><label>${t('content')}</label>
-        <textarea name="content" class="form-control" rows="3"></textarea></div>
-      <div class="form-group"><label>URL</label>
-        <input name="url" type="url" class="form-control"></div>
-      <div class="form-group"><label>Tags (comma-separated)</label>
-        <input name="tags" class="form-control" placeholder="design, coding, art"></div>
-      <div class="form-actions">
-        <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
-        <button type="submit" class="btn btn-primary">${t('add')}</button>
-      </div>
-    </form>`,
-    async (fd) => {
-      try {
-        await api('POST', '/portfolio/my/items', { title: fd.get('title'), description: fd.get('description')||null, content: fd.get('content')||null, url: fd.get('url')||null, tags: fd.get('tags')||null });
-        closeModal(); toast(t('add')+'!'); navigate('portfolio');
-      } catch(err) { toast(err.message, 'error'); }
-    });
-}
-
-async function deletePortfolioItem(id) {
-  if (!confirm(t('delete')+'?')) return;
-  try { await api('DELETE', `/portfolio/items/${id}`); toast(t('delete')); navigate('portfolio'); }
-  catch(err) { toast(err.message, 'error'); }
-}
-
 // ═══════════════════════════════════════════════════════════
 // Question Banks Page
 // ═══════════════════════════════════════════════════════════
-async function renderQuestionBanks(el) {
-  loading(el);
-  try {
-    const banks = await api('GET', '/question-banks/');
-    el.innerHTML = `
-      <div class="page-header"><h2>${t('question_banks')}</h2>
-        <button class="btn btn-primary" onclick="openNewBankModal()">${t('new_bank')}</button>
-      </div>
-      ${(banks||[]).length ? (banks||[]).map(b => `
-        <div class="card">
-          <div class="card-header">
-            <h3>${htmlEsc(b.title)}</h3>
-            <div style="display:flex;gap:6px">
-              <button class="btn btn-sm btn-primary" onclick="viewBank(${b.id})">${t('edit')}</button>
-              <button class="btn btn-sm btn-danger" onclick="deleteBank(${b.id})">${t('delete')}</button>
-            </div>
-          </div>
-          <div class="card-body">
-            ${b.description ? `<p class="text-muted">${htmlEsc(b.description)}</p>` : ''}
-            <small>${b.question_count} questions</small>
-          </div>
-        </div>`).join('')
-      : `<div class="card"><div class="card-body"><p class="text-muted">${t('no_banks')}</p></div></div>`}`;
-  } catch(err) { el.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
-}
-
-function openNewBankModal() {
-  openModal(t('new_bank'), `
-    <form id="modal-form">
-      <div class="form-group"><label>${t('title_label')} *</label>
-        <input name="title" class="form-control" required></div>
-      <div class="form-group"><label>${t('description')}</label>
-        <textarea name="description" class="form-control" rows="2"></textarea></div>
-      <div class="form-actions">
-        <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
-        <button type="submit" class="btn btn-primary">${t('create')}</button>
-      </div>
-    </form>`,
-    async (fd) => {
-      try {
-        await api('POST', '/question-banks/', { title: fd.get('title'), description: fd.get('description')||null });
-        closeModal(); toast(t('create')+'!'); navigate('question_banks');
-      } catch(err) { toast(err.message, 'error'); }
-    });
-}
-
-async function viewBank(id) {
-  const bank = await api('GET', `/question-banks/${id}`);
-  if (!bank) return;
-  openModal(bank.title, `
-    <div>
-      <p class="text-muted" style="margin-bottom:12px">${bank.question_count||bank.questions.length} questions</p>
-      ${bank.questions.map(q => `
-        <div class="bank-question-item">
-          <div class="q-text">${htmlEsc(q.question_text)}</div>
-          <div class="q-meta">
-            <span>${q.question_type}</span>
-            <span>${q.points} pts</span>
-            ${q.tags ? `<span>🏷 ${htmlEsc(q.tags)}</span>` : ''}
-          </div>
-        </div>`).join('')}
-      <div class="form-actions">
-        <button class="btn" onclick="closeModal()">Close</button>
-        <button class="btn btn-primary" onclick="openAddBankQuestionModal(${id})">+ Add Question</button>
-      </div>
-    </div>`);
-}
-
-function openAddBankQuestionModal(bankId) {
-  closeModal();
-  openModal(t('add_questions'), `
-    <form id="modal-form">
-      <div class="form-group"><label>${t('question_type')}</label>
-        <select name="question_type" class="form-control">
-          <option value="multiple_choice">${t('multiple_choice')}</option>
-          <option value="true_false">${t('true_false')}</option>
-          <option value="short_answer">${t('short_answer')}</option>
-        </select></div>
-      <div class="form-group"><label>${t('question_text')} *</label>
-        <textarea name="question_text" class="form-control" rows="3" required></textarea></div>
-      <div class="form-group"><label>${t('points')}</label>
-        <input name="points" type="number" class="form-control" value="1" step="0.5" min="0.5"></div>
-      <div class="form-group"><label>Tags</label>
-        <input name="tags" class="form-control" placeholder="math, algebra"></div>
-      <div class="form-actions">
-        <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
-        <button type="submit" class="btn btn-primary">${t('add')}</button>
-      </div>
-    </form>`,
-    async (fd) => {
-      try {
-        await api('POST', `/question-banks/${bankId}/questions`, [{
-          question_text: fd.get('question_text'),
-          question_type: fd.get('question_type'),
-          points: parseFloat(fd.get('points'))||1,
-          tags: fd.get('tags')||null,
-        }]);
-        closeModal(); toast(t('add')+'!'); navigate('question_banks');
-      } catch(err) { toast(err.message, 'error'); }
-    });
-}
-
-async function deleteBank(id) {
-  if (!confirm(t('delete')+'?')) return;
-  try { await api('DELETE', `/question-banks/${id}`); toast(t('delete')); navigate('question_banks'); }
-  catch(err) { toast(err.message, 'error'); }
-}
-
 // ═══════════════════════════════════════════════════════════
 // Course Detail — Modules Tab
 // ═══════════════════════════════════════════════════════════
@@ -3555,34 +3351,6 @@ function openNewSurveyModal(courseId) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// Certificates
-// ═══════════════════════════════════════════════════════════
-async function downloadCertificate(courseId) {
-  try {
-    const check = await api('GET', `/certificates/course/${courseId}/check`);
-    if (!check.eligible) {
-      toast(check.reason, 'error'); return;
-    }
-    // Trigger file download via a hidden link
-    const a = document.createElement('a');
-    a.href = `/api/certificates/course/${courseId}`;
-    a.setAttribute('Authorization', `Bearer ${state.token}`);
-    // Use fetch to attach auth header then create blob URL
-    const res = await fetch(`/api/certificates/course/${courseId}`, {
-      headers: { Authorization: `Bearer ${state.token}` },
-    });
-    if (!res.ok) { const e = await res.json(); toast(e.detail || 'Error', 'error'); return; }
-    const blob = await res.blob();
-    const url  = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href     = url;
-    link.download  = `certificate.pdf`;
-    link.click();
-    URL.revokeObjectURL(url);
-    toast('🎓 Certificate downloaded!');
-  } catch(e) { toast(e.message, 'error'); }
-}
-
 // ═══════════════════════════════════════════════════════════
 // Password Reset
 // ═══════════════════════════════════════════════════════════
