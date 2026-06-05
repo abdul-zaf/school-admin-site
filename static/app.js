@@ -263,7 +263,7 @@ function t(key) {
 // State
 // ═══════════════════════════════════════════════════════════
 const state = {
-  token: null, user: null, lang: 'en', theme: 'light',
+  token: null, user: null, lang: 'en', theme: 'dark',
   currentPage: null, currentParams: {},
   quizTimer: null, notifInterval: null,
 };
@@ -318,7 +318,7 @@ function restoreSession() {
   const token = localStorage.getItem('lms_token');
   const user  = localStorage.getItem('lms_user');
   const lang  = localStorage.getItem('lms_lang') || 'en';
-  const theme = localStorage.getItem('lms_theme') || 'light';
+  const theme = localStorage.getItem('lms_theme') || 'dark';
   applyTheme(theme); // always apply saved theme, even before login
   if (token && user) {
     state.token = token; state.user = JSON.parse(user);
