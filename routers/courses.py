@@ -244,6 +244,26 @@ def delete_course(
         (models.CoursePrerequisite.prerequisite_course_id == course_id)
     ).delete(synchronize_session=False)
 
+    # ModuleItem.item_type is an Enum; stale DB rows may have values not in the
+    # current Enum definition (e.g. 'text'). Bulk-delete completions then items
+    # before the ORM cascade so SQLAlchemy never tries to deserialise those rows.
+    module_ids = [
+        m.id for m in db.query(models.CourseModule.id)
+        .filter(models.CourseModule.course_id == course_id).all()
+    ]
+    if module_ids:
+        item_ids = [
+            i.id for i in db.query(models.ModuleItem.id)
+            .filter(models.ModuleItem.module_id.in_(module_ids)).all()
+        ]
+        if item_ids:
+            db.query(models.ModuleCompletion).filter(
+                models.ModuleCompletion.module_item_id.in_(item_ids)
+            ).delete(synchronize_session=False)
+        db.query(models.ModuleItem).filter(
+            models.ModuleItem.module_id.in_(module_ids)
+        ).delete(synchronize_session=False)
+
     db.flush()
     db.delete(course)
     db.commit()
