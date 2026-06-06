@@ -76,9 +76,22 @@ class Material(Base):
     file_path     = Column(String(500))                  # server-side stored path
     file_size     = Column(Integer)                      # bytes
     file_mime     = Column(String(100))                  # MIME type
+    # v11: assessment unlock key — completing this material counts toward unlocking the quiz
+    unlock_quiz_id = Column(Integer, ForeignKey("quizzes.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     course = relationship("Course", back_populates="materials")
+    completions = relationship("MaterialCompletion", back_populates="material", cascade="all, delete")
+
+
+class MaterialCompletion(Base):
+    __tablename__ = "material_completions"
+    id = Column(Integer, primary_key=True)
+    material_id = Column(Integer, ForeignKey("materials.id"), nullable=False)
+    student_id  = Column(Integer, ForeignKey("users.id"), nullable=False)
+    completed_at = Column(DateTime, default=datetime.utcnow)
+
+    material = relationship("Material", back_populates="completions")
 
 
 class Assignment(Base):
@@ -181,6 +194,7 @@ class Quiz(Base):
     shuffle      = Column(Boolean, default=False)
     is_published = Column(Boolean, default=False, nullable=False)
     max_attempts = Column(Integer, nullable=True)  # None = unlimited retakes
+    is_exam      = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     course = relationship("Course", back_populates="quizzes")
@@ -197,7 +211,7 @@ class QuizQuestion(Base):
     quiz_id = Column(Integer, ForeignKey("quizzes.id"), nullable=False)
     question_text = Column(Text, nullable=False)
     question_type = Column(
-        SAEnum("multiple_choice", "true_false", "short_answer"), nullable=False
+        SAEnum("multiple_choice", "true_false", "short_answer", "long_answer"), nullable=False
     )
     points = Column(Float, default=1.0)
     order_num = Column(Integer, default=0)
@@ -238,6 +252,8 @@ class QuizAnswer(Base):
     question_id = Column(Integer, ForeignKey("quiz_questions.id"), nullable=False)
     selected_option_id = Column(Integer, ForeignKey("quiz_options.id"), nullable=True)
     text_answer = Column(Text, nullable=True)
+    teacher_score = Column(Float, nullable=True)
+    teacher_feedback = Column(Text, nullable=True)
 
     attempt = relationship("QuizAttempt", back_populates="answers")
     question = relationship("QuizQuestion", back_populates="answers")

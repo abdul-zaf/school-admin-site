@@ -55,6 +55,7 @@ class MaterialCreate(BaseModel):
     title: str
     content: Optional[str] = None
     url: Optional[str] = None
+    unlock_quiz_id: Optional[int] = None
 
 
 class AttendanceRecord(BaseModel):
@@ -398,6 +399,15 @@ def list_materials(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(security.get_current_user),
 ):
+    mats = db.query(models.Material).filter(models.Material.course_id == course_id).all()
+    # For students, build a set of completed material ids
+    completed_ids: set = set()
+    if current_user.role == "student":
+        comps = db.query(models.MaterialCompletion).filter(
+            models.MaterialCompletion.student_id == current_user.id,
+            models.MaterialCompletion.material_id.in_([m.id for m in mats]),
+        ).all()
+        completed_ids = {c.material_id for c in comps}
     return [
         {
             "id": m.id,
@@ -409,9 +419,11 @@ def list_materials(
             "file_name": m.file_name,
             "file_size": m.file_size,
             "file_mime": m.file_mime,
+            "unlock_quiz_id": m.unlock_quiz_id,
+            "completed": m.id in completed_ids,
             "created_at": str(m.created_at),
         }
-        for m in db.query(models.Material).filter(models.Material.course_id == course_id).all()
+        for m in mats
     ]
 
 
@@ -430,6 +442,7 @@ def add_material(
         content=data.content,
         url=data.url,
         material_type=mat_type,
+        unlock_quiz_id=data.unlock_quiz_id,
     )
     db.add(m)
     db.flush()   # need m.id before indexing
@@ -444,6 +457,7 @@ async def upload_material(
     course_id: int,
     title: str = Form(...),
     file: UploadFile = FFile(...),
+    unlock_quiz_id: Optional[int] = Form(None),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(security.require_role("admin", "teacher")),
 ):
@@ -473,6 +487,7 @@ async def upload_material(
         file_path=str(stored_path),
         file_size=len(content),
         file_mime=mime,
+        unlock_quiz_id=unlock_quiz_id,
     )
     db.add(m)
     db.flush()   # need m.id before indexing
@@ -565,6 +580,32 @@ def delete_material(
     remove_material_index(db, m.id)  # ← remove from AI tutor KB
     db.delete(m)
     db.commit()
+    return {"ok": True}
+
+
+@router.post("/{course_id}/materials/{material_id}/complete")
+def complete_material(
+    course_id: int,
+    material_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.get_current_user),
+):
+    """Mark a material as completed by the current student (idempotent)."""
+    m = db.query(models.Material).filter(
+        models.Material.id == material_id, models.Material.course_id == course_id
+    ).first()
+    if not m:
+        raise HTTPException(404, "Material not found")
+    existing = db.query(models.MaterialCompletion).filter(
+        models.MaterialCompletion.material_id == material_id,
+        models.MaterialCompletion.student_id == current_user.id,
+    ).first()
+    if not existing:
+        db.add(models.MaterialCompletion(
+            material_id=material_id,
+            student_id=current_user.id,
+        ))
+        db.commit()
     return {"ok": True}
 
 

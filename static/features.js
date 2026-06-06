@@ -43,13 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
       resolved:        'Resolved',
       open_q:          'Open',
       upvote:          '▲',
-      // Teach-back
-      teach_back:      'Teach-Back',
-      new_prompt:      '+ New Prompt',
-      explain_concept: 'Explain this concept in your own words',
-      your_explanation:'Your Explanation',
-      submit_explanation: 'Submit Explanation',
-      peer_explanations:  'Peer Explanations',
       upvoted:         'Upvoted ▲',
       upvote_it:       '▲ Upvote',
       // Knowledge Graph
@@ -101,12 +94,6 @@ document.addEventListener('DOMContentLoaded', () => {
       resolved:        'حل ہو گیا',
       open_q:          'جاری',
       upvote:          '▲',
-      teach_back:      'سکھائیں',
-      new_prompt:      '+ نیا سوال',
-      explain_concept: 'اس تصور کو اپنے الفاظ میں بیان کریں',
-      your_explanation:'آپ کی وضاحت',
-      submit_explanation: 'جمع کریں',
-      peer_explanations:  'ساتھیوں کی وضاحتیں',
       upvoted:         'پسند کیا ▲',
       upvote_it:       '▲ پسند کریں',
       knowledge_graph: 'علمی نقشہ',
@@ -218,139 +205,7 @@ async function submitSRReview(cardId, quality) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 2. TEACH-IT-BACK  (rendered as a tab inside course detail)
-// ═══════════════════════════════════════════════════════════════════════════
-async function renderTeachBackTab(courseId, canManage) {
-  const prompts = await api('GET', `/teach-back/course/${courseId}`);
-  const role = state.user.role;
-
-  return `
-    <div class="card">
-      <div class="card-header"><h3>${t('teach_back')}</h3>
-        ${canManage ? `<button class="btn btn-sm btn-primary" onclick="openNewPromptModal(${courseId})">${t('new_prompt')}</button>` : ''}
-      </div>
-      <div class="card-body">
-        ${prompts.length === 0 ? `<p class="text-muted">${t('no_concepts')}</p>` : ''}
-        ${prompts.map(p => `
-          <div class="tb-prompt">
-            <div class="tb-prompt-header">
-              <div>
-                <strong>${p.concept}</strong>
-                ${p.description ? `<p class="text-muted" style="font-size:12px">${p.description}</p>` : ''}
-                <small class="text-muted">${p.submission_count} submission(s)</small>
-              </div>
-              <div class="flex-gap">
-                ${role === 'student' && !p.my_submission
-                  ? `<button class="btn btn-sm btn-primary" onclick="openExplainModal(${p.id})">${t('explain_concept')}</button>`
-                  : ''}
-                ${role === 'student' && p.my_submission
-                  ? `<span class="badge badge-success">Submitted</span>` : ''}
-                <button class="btn btn-sm" onclick="openSubmissionsModal(${p.id}, ${canManage})">${t('peer_explanations')}</button>
-                ${canManage ? `<button class="btn btn-sm btn-danger" onclick="deleteTeachPrompt(${p.id},${courseId})">${t('delete')}</button>` : ''}
-              </div>
-            </div>
-          </div>`).join('')}
-      </div>
-    </div>`;
-}
-
-function openNewPromptModal(courseId) {
-  openModal(t('new_prompt'), `
-    <form id="modal-form">
-      <div class="form-group"><label>${t('concept_name')} *</label>
-        <input name="concept" class="form-control" required placeholder="e.g. Newton's Third Law"></div>
-      <div class="form-group"><label>${t('description')}</label>
-        <textarea name="description" class="form-control" rows="3"></textarea></div>
-      <div class="form-actions">
-        <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
-        <button type="submit" class="btn btn-primary">${t('create')}</button>
-      </div>
-    </form>`,
-    async (fd) => {
-      try {
-        await api('POST', `/teach-back/course/${courseId}`, {
-          concept: fd.get('concept'), description: fd.get('description') || null,
-        });
-        closeModal(); toast(t('create') + '!'); navigate('course', { id: courseId });
-      } catch(err) { toast(err.message, 'error'); }
-    });
-}
-
-function openExplainModal(promptId) {
-  openModal(t('explain_concept'), `
-    <form id="modal-form">
-      <div class="form-group"><label>${t('your_explanation')} *</label>
-        <textarea name="explanation" class="form-control" rows="8" required
-          placeholder="Explain this concept in your own words…"></textarea></div>
-      <div class="form-actions">
-        <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
-        <button type="submit" class="btn btn-primary">${t('submit_explanation')}</button>
-      </div>
-    </form>`,
-    async (fd) => {
-      try {
-        await api('POST', `/teach-back/${promptId}/submit`, { explanation: fd.get('explanation') });
-        closeModal(); toast(t('submit_explanation') + '!');
-      } catch(err) { toast(err.message, 'error'); }
-    });
-}
-
-async function openSubmissionsModal(promptId, canGrade) {
-  const subs = await api('GET', `/teach-back/${promptId}/submissions`);
-  openModal(t('peer_explanations'), `
-    <div style="max-height:60vh;overflow-y:auto">
-      ${subs.length === 0 ? `<p class="text-muted">${t('no_submissions')}</p>` : ''}
-      ${subs.map(s => `
-        <div class="tb-sub">
-          <div class="tb-sub-header">
-            <strong>${htmlEsc(s.student_name)}</strong>
-            <span class="badge badge-info">▲ ${s.upvotes}</span>
-            ${s.score != null ? `<span class="badge badge-success">${s.score}/100</span>` : ''}
-          </div>
-          <p style="margin:8px 0;white-space:pre-wrap;font-size:13px">${htmlEsc(s.explanation)}</p>
-          ${s.feedback ? `<div class="alert alert-success" style="font-size:12px">${htmlEsc(s.feedback)}</div>` : ''}
-          <div class="flex-gap">
-            ${!s.is_mine ? `<button class="btn btn-sm ${s.has_voted ? 'btn-primary' : ''}"
-              onclick="voteTeachBack(${s.id}, this)">
-              ${s.has_voted ? t('upvoted') : t('upvote_it')}</button>` : ''}
-            ${canGrade ? `
-              <input type="number" id="tb-score-${s.id}" class="form-control"
-                style="width:80px" value="${s.score || ''}" min="0" max="100" placeholder="0-100">
-              <input type="text" id="tb-fb-${s.id}" class="form-control"
-                style="flex:1" value="${s.feedback || ''}" placeholder="${t('feedback')}">
-              <button class="btn btn-sm btn-primary" onclick="gradeTeachBack(${s.id}, ${promptId})">${t('save_grade')}</button>
-            ` : ''}
-          </div>
-        </div>`).join('')}
-    </div>`);
-}
-
-async function voteTeachBack(subId, btn) {
-  try {
-    const res = await api('POST', `/teach-back/submissions/${subId}/vote`);
-    btn.textContent = res.voted ? t('upvoted') : t('upvote_it');
-    btn.classList.toggle('btn-primary', res.voted);
-  } catch(err) { toast(err.message, 'error'); }
-}
-
-async function gradeTeachBack(subId, promptId) {
-  const score    = parseFloat(document.getElementById(`tb-score-${subId}`).value);
-  const feedback = document.getElementById(`tb-fb-${subId}`).value;
-  if (isNaN(score)) { toast('Enter a score', 'error'); return; }
-  try {
-    await api('PUT', `/teach-back/submissions/${subId}/grade`, { score, feedback: feedback || null });
-    toast(t('save_grade') + '!'); closeModal();
-  } catch(err) { toast(err.message, 'error'); }
-}
-
-async function deleteTeachPrompt(promptId, courseId) {
-  if (!confirm(t('delete') + '?')) return;
-  try { await api('DELETE', `/teach-back/${promptId}`); toast(t('delete')); navigate('course', { id: courseId }); }
-  catch(err) { toast(err.message, 'error'); }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// 3. CONFUSION HEATMAP  (shown inside session cards)
+// 2. CONFUSION HEATMAP  (shown inside session cards)
 // ═══════════════════════════════════════════════════════════════════════════
 let _confusionPoll = null;
 

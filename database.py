@@ -78,6 +78,13 @@ def apply_migrations():
         "ALTER TABLE submissions ADD COLUMN file_size INTEGER",
         # v9: course section number
         "ALTER TABLE courses ADD COLUMN section_number TEXT",
+        # v10: exam mode flag on quizzes
+        "ALTER TABLE quizzes ADD COLUMN is_exam BOOLEAN NOT NULL DEFAULT 0",
+        # v11: material unlock key for assessments
+        "ALTER TABLE materials ADD COLUMN unlock_quiz_id INTEGER REFERENCES quizzes(id)",
+        # v12: teacher grading columns on quiz answers
+        "ALTER TABLE quiz_answers ADD COLUMN teacher_score REAL",
+        "ALTER TABLE quiz_answers ADD COLUMN teacher_feedback TEXT",
     ]
 
     if _is_sqlite:
@@ -127,5 +134,12 @@ def apply_migrations():
                 "ALTER TABLE submissions ADD COLUMN IF NOT EXISTS file_size INTEGER",
                 # v9: course section number
                 "ALTER TABLE courses ADD COLUMN IF NOT EXISTS section_number VARCHAR(50)",
+                # v10: exam mode flag on quizzes
+                "ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS is_exam BOOLEAN NOT NULL DEFAULT FALSE",
+                # v11: material unlock key for assessments
+                "ALTER TABLE materials ADD COLUMN IF NOT EXISTS unlock_quiz_id INTEGER REFERENCES quizzes(id)",
+                # v12: teacher grading columns on quiz answers
+                "ALTER TABLE quiz_answers ADD COLUMN IF NOT EXISTS teacher_score FLOAT",
+                "ALTER TABLE quiz_answers ADD COLUMN IF NOT EXISTS teacher_feedback TEXT",
             ]:
                 conn.execute(text(ddl))

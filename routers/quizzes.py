@@ -35,6 +35,7 @@ class QuizCreate(BaseModel):
     due_date: Optional[datetime] = None
     shuffle: bool = False
     max_attempts: Optional[int] = None   # None = unlimited
+    is_exam: bool = False
 
 
 class QuizUpdate(BaseModel):
@@ -44,6 +45,7 @@ class QuizUpdate(BaseModel):
     due_date: Optional[datetime] = None
     shuffle: Optional[bool] = None
     max_attempts: Optional[int] = None   # 0 = clear limit (unlimited)
+    is_exam: Optional[bool] = None
 
 
 class PublishToggle(BaseModel):
@@ -85,6 +87,7 @@ def serialise_quiz(q: models.Quiz, hide_correct: bool = True, my_attempt=None):
         "shuffle": q.shuffle,
         "is_published": q.is_published,
         "max_attempts": q.max_attempts,
+        "is_exam": q.is_exam,
         "created_at": str(q.created_at),
         "question_count": len(q.questions),
         "total_points": sum(qq.points for qq in q.questions),
@@ -119,6 +122,35 @@ def list_quizzes(
     current_user: models.User = Depends(security.get_current_user),
 ):
     quizzes = db.query(models.Quiz).filter(models.Quiz.course_id == course_id).all()
+
+    # Build per-student unlock state: which quiz ids are still locked
+    locked_quiz_ids: set = set()
+    lock_requirements: dict = {}  # quiz_id -> list of required material titles
+    if current_user.role == "student":
+        # All key-materials in this course
+        key_mats = db.query(models.Material).filter(
+            models.Material.course_id == course_id,
+            models.Material.unlock_quiz_id.isnot(None),
+        ).all()
+        # Student's completions for those materials
+        if key_mats:
+            completed_ids = {
+                c.material_id for c in db.query(models.MaterialCompletion).filter(
+                    models.MaterialCompletion.student_id == current_user.id,
+                    models.MaterialCompletion.material_id.in_([m.id for m in key_mats]),
+                ).all()
+            }
+            # Group by quiz
+            from collections import defaultdict
+            required: dict = defaultdict(list)
+            for m in key_mats:
+                required[m.unlock_quiz_id].append(m)
+            for quiz_id, mats in required.items():
+                missing = [m for m in mats if m.id not in completed_ids]
+                if missing:
+                    locked_quiz_ids.add(quiz_id)
+                    lock_requirements[quiz_id] = [m.title for m in missing]
+
     result = []
     for q in quizzes:
         # Students only see published quizzes
@@ -151,6 +183,9 @@ def list_quizzes(
             "attempts_used": sum(1 for a in q.attempts if a.student_id == current_user.id)
                              if current_user.role == "student" else None,
             "my_attempt": my_attempt,
+            # Unlock fields (students only)
+            "is_locked": q.id in locked_quiz_ids,
+            "lock_requires": lock_requirements.get(q.id, []),
         })
     return result
 
@@ -171,6 +206,7 @@ def create_quiz(
         due_date=data.due_date,
         shuffle=data.shuffle,
         max_attempts=data.max_attempts,
+        is_exam=data.is_exam,
         is_published=False,  # always starts as draft
     )
     db.add(q)
@@ -211,6 +247,8 @@ def get_quiz(
                         "question_id": ans.question_id,
                         "selected_option_id": ans.selected_option_id,
                         "text_answer": ans.text_answer,
+                        "teacher_score": ans.teacher_score,
+                        "teacher_feedback": ans.teacher_feedback,
                     }
                     for ans in a.answers
                 ],
@@ -245,10 +283,12 @@ def update_quiz(
         q.shuffle = data.shuffle
     if data.max_attempts is not None:
         q.max_attempts = None if data.max_attempts == 0 else data.max_attempts
+    if data.is_exam is not None:
+        q.is_exam = data.is_exam
 
     db.commit()
     db.refresh(q)
-    return {"id": q.id, "title": q.title, "is_published": q.is_published}
+    return {"id": q.id, "title": q.title, "is_published": q.is_published, "is_exam": q.is_exam}
 
 
 @router.patch("/{quiz_id}/publish")
@@ -421,14 +461,14 @@ def submit_quiz(
         ))
     db.flush()
 
-    # Auto-grade MC & True/False; flag short_answer for manual grading
+    # Auto-grade MC & True/False; flag short_answer/long_answer for manual grading
     total_score = 0.0
     has_short = False
     for ans in data.answers:
         qq = db.query(models.QuizQuestion).filter(models.QuizQuestion.id == ans.question_id).first()
         if not qq:
             continue
-        if qq.question_type == "short_answer":
+        if qq.question_type in ("short_answer", "long_answer"):
             has_short = True
         elif ans.selected_option_id:
             opt = db.query(models.QuizOption).filter(
@@ -559,8 +599,10 @@ def get_attempts(
     quiz_obj = db.query(models.Quiz).filter(models.Quiz.id == quiz_id).first()
     total_possible = sum(qq.points for qq in quiz_obj.questions) if quiz_obj else 0
     attempts = db.query(models.QuizAttempt).filter(models.QuizAttempt.quiz_id == quiz_id).all()
-    return [
-        {
+    result = []
+    for a in attempts:
+        needs_grading = a.submitted_at and a.score is None
+        result.append({
             "id": a.id,
             "student_name": a.student.name,
             "student_id": a.student_id,
@@ -568,6 +610,260 @@ def get_attempts(
             "submitted_at": str(a.submitted_at) if a.submitted_at else None,
             "score": a.score,
             "total_possible": total_possible,
-        }
-        for a in attempts
+            "needs_grading": needs_grading,
+        })
+    return result
+
+
+# ── AI-generate questions from selected materials ─────────────────────────────
+
+class AIGenerateRequest(BaseModel):
+    material_ids: List[int]
+    num_mc: int = 5
+    num_tf: int = 3
+    num_short: int = 2
+    num_long: int = 1
+
+
+@router.post("/{quiz_id}/ai-generate")
+def ai_generate_questions(
+    quiz_id: int,
+    data: AIGenerateRequest,
+    db: DBSession = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("admin", "teacher")),
+):
+    """Generate quiz questions from course materials using Ollama."""
+    import json
+    from services.ollama import chat as ollama_chat, is_available as ollama_available
+
+    if not ollama_available():
+        raise HTTPException(
+            503,
+            "AI generation requires Ollama to be running. "
+            "Start it with `ollama serve` and make sure a model is pulled.",
+        )
+
+    quiz_obj = db.query(models.Quiz).filter(models.Quiz.id == quiz_id).first()
+    if not quiz_obj:
+        raise HTTPException(404, "Quiz not found")
+    security.require_course_access(quiz_obj.course_id, current_user, db)
+
+    # Load material content
+    materials = db.query(models.Material).filter(
+        models.Material.id.in_(data.material_ids),
+        models.Material.course_id == quiz_obj.course_id,
+    ).all()
+    if not materials:
+        raise HTTPException(400, "No valid materials selected")
+
+    content_parts = []
+    for m in materials:
+        text = m.content or ""
+        if m.material_type == "file" and m.file_path:
+            try:
+                from pathlib import Path
+                raw = Path(m.file_path).read_text(encoding="utf-8", errors="ignore")
+                text = raw[:8000]  # cap per-file to avoid token overflow
+            except Exception:
+                pass
+        if text:
+            content_parts.append(f"=== {m.title} ===\n{text[:6000]}")
+
+    if not content_parts:
+        raise HTTPException(400, "Selected materials have no readable text content")
+
+    combined = "\n\n".join(content_parts)[:20000]  # total cap
+
+    prompt_lines = [
+        "You are an expert educator creating an assessment based on the following course material.",
+        "",
+        "MATERIAL:",
+        combined,
+        "",
+        "Generate the following questions based ONLY on the material above:",
+        f"- {data.num_mc} multiple-choice questions (4 options each, exactly one correct)",
+        f"- {data.num_tf} true/false questions",
+        f"- {data.num_short} short-answer questions (1-3 sentences expected)",
+        f"- {data.num_long} long-answer/essay questions (paragraph response expected)",
+        "",
+        "Return ONLY a valid JSON array. Each element must have this shape:",
+        '{"type":"multiple_choice","question":"...","points":2,"options":[{"text":"...","correct":true},{"text":"...","correct":false},...]}',
+        'For true_false: {"type":"true_false","question":"...","points":1,"correct":true}',
+        'For short_answer: {"type":"short_answer","question":"...","points":3}',
+        'For long_answer: {"type":"long_answer","question":"...","points":10}',
+        "",
+        "Do not include any explanation or markdown — output only the JSON array.",
     ]
+
+    raw = ollama_chat(
+        [{"role": "user", "content": "\n".join(prompt_lines)}],
+        temperature=0.4,
+        max_tokens=4096,
+    )
+
+    # Strip markdown fences
+    raw = raw.strip()
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
+        raw = raw.rsplit("```", 1)[0].strip()
+
+    try:
+        questions_data = json.loads(raw)
+    except json.JSONDecodeError:
+        # Try to extract JSON array from response
+        import re
+        m = re.search(r'\[.*\]', raw, re.DOTALL)
+        if not m:
+            raise HTTPException(500, "AI returned invalid JSON. Try again.")
+        questions_data = json.loads(m.group())
+
+    created = []
+    for i, qd in enumerate(questions_data):
+        qtype = qd.get("type", "short_answer")
+        if qtype not in ("multiple_choice", "true_false", "short_answer", "long_answer"):
+            continue
+        qq = models.QuizQuestion(
+            quiz_id=quiz_id,
+            question_text=qd.get("question", "").strip(),
+            question_type=qtype,
+            points=float(qd.get("points", 1)),
+            order_num=len(quiz_obj.questions) + i,
+        )
+        db.add(qq)
+        db.flush()
+
+        if qtype == "multiple_choice":
+            for opt in qd.get("options", []):
+                db.add(models.QuizOption(
+                    question_id=qq.id,
+                    option_text=opt.get("text", ""),
+                    is_correct=bool(opt.get("correct", False)),
+                ))
+        elif qtype == "true_false":
+            correct = bool(qd.get("correct", True))
+            db.add(models.QuizOption(question_id=qq.id, option_text="True", is_correct=correct))
+            db.add(models.QuizOption(question_id=qq.id, option_text="False", is_correct=not correct))
+
+        created.append(qq.id)
+
+    db.commit()
+    return {"created": len(created), "question_ids": created}
+
+
+# ── Teacher grading for long-answer questions ─────────────────────────────────
+
+class LongAnswerGrade(BaseModel):
+    answer_id: int
+    score: float
+    feedback: Optional[str] = None
+
+
+class GradeAttemptRequest(BaseModel):
+    grades: List[LongAnswerGrade]
+
+
+@router.post("/{quiz_id}/grade-attempt/{attempt_id}")
+def grade_long_answers(
+    quiz_id: int,
+    attempt_id: int,
+    data: GradeAttemptRequest,
+    db: DBSession = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("admin", "teacher")),
+):
+    """Teacher submits scores for long-answer questions in an attempt."""
+    quiz_obj = db.query(models.Quiz).filter(models.Quiz.id == quiz_id).first()
+    if not quiz_obj:
+        raise HTTPException(404, "Quiz not found")
+    security.require_course_access(quiz_obj.course_id, current_user, db)
+
+    attempt = db.query(models.QuizAttempt).filter(
+        models.QuizAttempt.id == attempt_id,
+        models.QuizAttempt.quiz_id == quiz_id,
+    ).first()
+    if not attempt:
+        raise HTTPException(404, "Attempt not found")
+
+    # Build lookup for this attempt's answers
+    answer_map = {a.id: a for a in attempt.answers}
+
+    for g in data.grades:
+        ans = answer_map.get(g.answer_id)
+        if not ans:
+            continue
+        qq = ans.question
+        if not qq or qq.question_type not in ("short_answer", "long_answer"):
+            continue
+        ans.teacher_score = min(g.score, qq.points)
+        ans.teacher_feedback = g.feedback
+
+    # Recompute total score: auto-graded MC/TF + teacher-graded text answers
+    total = 0.0
+    all_graded = True
+    for ans in attempt.answers:
+        qq = ans.question
+        if not qq:
+            continue
+        if qq.question_type in ("short_answer", "long_answer"):
+            if ans.teacher_score is not None:
+                total += ans.teacher_score
+            else:
+                all_graded = False
+        elif ans.selected_option_id:
+            opt = db.query(models.QuizOption).filter(
+                models.QuizOption.id == ans.selected_option_id
+            ).first()
+            if opt and opt.is_correct:
+                total += qq.points
+
+    if all_graded:
+        attempt.score = total
+
+    db.commit()
+
+    return {
+        "attempt_id": attempt_id,
+        "score": attempt.score,
+        "fully_graded": all_graded,
+    }
+
+
+@router.get("/{quiz_id}/attempt/{attempt_id}/long-answers")
+def get_long_answers(
+    quiz_id: int,
+    attempt_id: int,
+    db: DBSession = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("admin", "teacher")),
+):
+    """Get all long/short answer responses for a specific attempt (for teacher grading)."""
+    quiz_obj = db.query(models.Quiz).filter(models.Quiz.id == quiz_id).first()
+    if not quiz_obj:
+        raise HTTPException(404, "Quiz not found")
+    security.require_course_access(quiz_obj.course_id, current_user, db)
+
+    attempt = db.query(models.QuizAttempt).filter(
+        models.QuizAttempt.id == attempt_id,
+        models.QuizAttempt.quiz_id == quiz_id,
+    ).first()
+    if not attempt:
+        raise HTTPException(404, "Attempt not found")
+
+    results = []
+    for ans in attempt.answers:
+        qq = ans.question
+        if qq and qq.question_type in ("short_answer", "long_answer"):
+            results.append({
+                "answer_id": ans.id,
+                "question_id": qq.id,
+                "question_text": qq.question_text,
+                "question_type": qq.question_type,
+                "max_points": qq.points,
+                "student_answer": ans.text_answer or "",
+                "teacher_score": ans.teacher_score,
+                "teacher_feedback": ans.teacher_feedback,
+            })
+
+    return {
+        "attempt_id": attempt_id,
+        "student_name": attempt.student.name,
+        "answers": results,
+    }

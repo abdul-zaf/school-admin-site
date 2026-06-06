@@ -18,7 +18,7 @@ const i18n = {
     create:'Create', add:'Add', edit:'Edit', submit:'Submit', loading:'Loading…',
     by:'By', yes:'Yes', no:'No',
     // Dashboard
-    welcome:'Welcome back',
+    welcome:'Welcome Back',
     // Courses
     courses:'Courses', new_course:'+ New Course', enroll:'Enroll',
     unenroll:'Unenroll', enrolled:'Enrolled', no_courses:'No courses yet.',
@@ -43,17 +43,17 @@ const i18n = {
     no_submissions:'No submissions yet.', feedback:'Feedback',
     score:'Score', save_grade:'Save Grade', graded:'Graded',
     // Quizzes
-    quizzes:'Quizzes', new_quiz:'+ New Quiz', quiz_builder:'Quiz Builder',
+    quizzes:'Assessments', new_quiz:'+ New Assessment', quiz_builder:'Assessment Builder',
     add_question:'+ Add Question', question_type:'Question Type',
     multiple_choice:'Multiple Choice', true_false:'True / False',
     short_answer:'Short Answer', question_text:'Question', points:'Points',
-    correct_answer:'Correct', start_quiz:'Start Quiz', submit_quiz:'Submit Quiz',
+    correct_answer:'Correct', start_quiz:'Start Assessment', submit_quiz:'Submit Assessment',
     quiz_results:'View Results', time_limit:'Time Limit (min)',
-    minutes:'min', time_remaining:'Time remaining', no_quizzes:'No quizzes yet.',
+    minutes:'min', time_remaining:'Time remaining', no_quizzes:'No assessments yet.',
     attempt_count:'attempts', not_attempted:'Not attempted',
     attempted:'Attempted', q_num:'Question', of:'of',
     short_manual:'Short answer — graded manually by teacher.',
-    quiz_submitted:'Quiz submitted!', your_score:'Your Score',
+    quiz_submitted:'Assessment submitted!', your_score:'Your Score',
     correct:'Correct', wrong:'Wrong', your_answer:'Your answer',
     // Sessions
     sessions:'Sessions', new_session:'+ New Session', virtual:'Virtual',
@@ -80,7 +80,7 @@ const i18n = {
     categories:'Categories', new_category:'+ Category', weight:'Weight',
     drop_lowest:'Drop Lowest', category:'Category',
     calendar:'Calendar', upcoming_events:'Upcoming Events', no_events:'No upcoming events.',
-    event_assignment:'Assignment Due', event_session:'Session', event_quiz:'Quiz Due',
+    event_assignment:'Assignment Due', event_session:'Session', event_quiz:'Assessment Due',
     overdue:'Overdue', due_soon:'Due Soon',
     messages:'Messages', inbox:'Inbox', sent:'Sent', compose:'+ Compose',
     compose_message:'Compose Message', recipient:'Recipient', subject:'Subject',
@@ -93,8 +93,14 @@ const i18n = {
     mark_complete:'Mark Complete', completed:'Completed', progress:'Progress',
     discussions:'Discussions', new_board:'+ New Board', reply:'Reply',
     endorse:'Endorse', no_boards:'No discussion boards yet.', post:'Post',
-    surveys:'Surveys', new_survey:'+ New Survey', take_survey:'Take Survey',
-    view_results:'View Results', submit_survey:'Submit Survey',
+    view_results:'View Results',
+    // Exams
+    exams:'Exams', nav_exams:'Exams',
+    new_exam:'+ New Exam', exam_mode:'Exam Mode',
+    exam_warning:'This is a locked exam. You cannot navigate away until you submit or the time expires.',
+    exam_submit_confirm:'Are you sure you want to submit? You cannot go back.',
+    exam_time_up:'Time is up — your exam has been submitted automatically.',
+    is_exam:'Mark as Exam (locked environment)',
     // Dark mode
     theme:'Theme', theme_desc:'Switch between light and dark mode',
     light_mode:'☀️ Light', dark_mode:'🌙 Dark',
@@ -107,16 +113,32 @@ const i18n = {
     // Quiz publish / edit
     quiz_published:'Published', quiz_draft:'Draft',
     publish_quiz:'Publish to Students', unpublish_quiz:'Unpublish',
-    edit_quiz:'Edit Details', quiz_edit_saved:'Quiz updated!',
-    urgent_quizzes:'⚡ Urgent: Quizzes & Tests',
-    no_urgent:'No pending quizzes — you\'re all caught up!',
+    edit_quiz:'Edit Details', quiz_edit_saved:'Assessment updated!',
+    // Material completion / unlock
+    mark_complete:'Mark as Complete', completed:'Completed',
+    assessment_locked:'Assessment Locked', unlock_key:'Key Material',
+    complete_to_unlock:'Complete these materials to unlock:',
+    set_as_key:'Set as Key for Assessment',
+    // AI quiz generation
+    ai_generate:'🤖 AI Generate', ai_generate_title:'AI Question Generator',
+    select_materials:'Select Materials', select_all:'Select All', deselect_all:'Deselect All',
+    num_mc:'Multiple Choice', num_tf:'True / False', num_short:'Short Answer', num_long:'Long Answer',
+    generating:'Generating…', ai_generated_ok:'Questions generated!',
+    long_answer:'Long Answer', long_manual:'Students write a full paragraph response. Teacher grades this.',
+    // Teacher grading
+    grade_responses:'Grade Responses', grading_panel:'Grading Panel',
+    student_answer:'Student Answer', your_score:'Score', feedback_optional:'Feedback (optional)',
+    save_grades:'Save Grades', grades_saved:'Grades saved!', needs_grading:'Needs Grading',
+    pending_teacher_grade:'Awaiting teacher grading',
+    urgent_quizzes:'⚡ Urgent: Assessments',
+    no_urgent:'No pending assessments — you\'re all caught up!',
     start_now:'Start Now', resume_quiz:'Resume',
     urgent:'Urgent',
     // Post-quiz results popup
     quiz_score_result:'Your Result',
-    outstanding_quizzes:'Outstanding Quizzes & Tests',
-    no_outstanding_quizzes:'No outstanding quizzes or tests! 🎉 Well done!',
-    outstanding_quizzes_msg:'You still have these quizzes / tests to complete:',
+    outstanding_quizzes:'Outstanding Assessments',
+    no_outstanding_quizzes:'No assessments remaining! Well done!',
+    outstanding_quizzes_msg:'You still have these assessments to complete:',
     pending_grading:'Awaiting teacher grading',
     // Post-submit assignment check
     outstanding_assignments:'Outstanding Assignments',
@@ -134,7 +156,7 @@ const i18n = {
     chat_placeholder:'Ask a question…',
     chat_empty:'Ask me anything about your course materials!',
     chat_hint_note:'I\'m in hint-only mode — I\'ll guide you without giving away answers.',
-    chat_locked:'🔒 AI Tutor is locked while a quiz is in progress. Submit or finish the quiz first.',
+    chat_locked:'🔒 AI Tutor is locked while an assessment is in progress. Submit or finish the assessment first.',
     chat_attach:'Attach file',
     no_chat_sessions:'No chat sessions yet. Click + New Chat to get started.',
   },
@@ -218,7 +240,14 @@ const i18n = {
     messages:'پیغامات', inbox:'ان باکس', sent:'بھیجے گئے', compose:'+ لکھیں',
     compose_message:'پیغام لکھیں', send:'بھیجیں', no_messages:'کوئی پیغام نہیں۔',
     analytics:'تجزیات', grade_distribution:'نمبروں کی تقسیم',
-    modules:'ماڈیولز', discussions:'بحث', surveys:'سروے',
+    modules:'ماڈیولز', discussions:'بحث',
+    // Exams (Urdu)
+    exams:'امتحانات', nav_exams:'امتحانات',
+    new_exam:'+ نیا امتحان', exam_mode:'امتحان موڈ',
+    exam_warning:'یہ ایک بند امتحان ہے۔ جمع کرنے یا وقت ختم ہونے تک آپ کہیں نہیں جا سکتے۔',
+    exam_submit_confirm:'کیا آپ واقعی جمع کرنا چاہتے ہیں؟ واپس نہیں جا سکتے۔',
+    exam_time_up:'وقت ختم — آپ کا امتحان خودبخود جمع ہو گیا۔',
+    is_exam:'امتحان کے طور پر نشان زد کریں (بند ماحول)',
     // Dark mode (Urdu)
     theme:'تھیم', theme_desc:'لائٹ یا ڈارک موڈ منتخب کریں',
     light_mode:'☀️ روشن', dark_mode:'🌙 تاریک',
@@ -232,6 +261,22 @@ const i18n = {
     quiz_published:'شائع شدہ', quiz_draft:'مسودہ',
     publish_quiz:'طلبا کو دکھائیں', unpublish_quiz:'چھپائیں',
     edit_quiz:'تفصیل ترمیم', quiz_edit_saved:'کوئز اپڈیٹ ہو گئی!',
+    // Material completion / unlock (Urdu)
+    mark_complete:'مکمل کریں', completed:'مکمل',
+    assessment_locked:'ٹیسٹ مقفل ہے', unlock_key:'کلیدی مواد',
+    complete_to_unlock:'ان مواد کو مکمل کریں:',
+    set_as_key:'ٹیسٹ کے لیے چابی بنائیں',
+    // AI quiz generation (Urdu)
+    ai_generate:'🤖 AI سے بنائیں', ai_generate_title:'AI سوال ساز',
+    select_materials:'مواد منتخب کریں', select_all:'سب منتخب کریں', deselect_all:'سب ہٹائیں',
+    num_mc:'کثیر انتخابی', num_tf:'صحیح / غلط', num_short:'مختصر جواب', num_long:'طویل جواب',
+    generating:'تیار ہو رہا ہے…', ai_generated_ok:'سوالات تیار ہو گئے!',
+    long_answer:'طویل جواب', long_manual:'طالب علم مکمل جواب لکھتا ہے۔ استاد اسے جانچتا ہے۔',
+    // Teacher grading (Urdu)
+    grade_responses:'جوابات جانچیں', grading_panel:'جانچ پینل',
+    student_answer:'طالب علم کا جواب', your_score:'نمبر', feedback_optional:'رائے (اختیاری)',
+    save_grades:'نمبر محفوظ کریں', grades_saved:'نمبر محفوظ!', needs_grading:'جانچ درکار',
+    pending_teacher_grade:'استاد کی جانچ کا انتظار',
     urgent_quizzes:'⚡ ضروری: کوئز اور ٹیسٹ',
     no_urgent:'کوئی زیر التواء کوئز نہیں — آپ نے سب مکمل کر لیے!',
     start_now:'ابھی شروع کریں', resume_quiz:'جاری رکھیں',
@@ -266,6 +311,7 @@ const state = {
   token: null, user: null, lang: 'en', theme: 'dark',
   currentPage: null, currentParams: {},
   quizTimer: null, notifInterval: null,
+  examLocked: false,
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -308,6 +354,7 @@ async function login(email, password) {
 function logout() {
   if (state.quizTimer) clearInterval(state.quizTimer);
   if (state.notifInterval) clearInterval(state.notifInterval);
+  exitExamLock();
   state.token = null; state.user = null;
   localStorage.removeItem('lms_token'); localStorage.removeItem('lms_user');
   document.getElementById('app').classList.add('hidden');
@@ -318,7 +365,7 @@ function restoreSession() {
   const token = localStorage.getItem('lms_token');
   const user  = localStorage.getItem('lms_user');
   const lang  = localStorage.getItem('lms_lang') || 'en';
-  const theme = localStorage.getItem('lms_theme') || 'dark';
+  const theme = localStorage.getItem('lms_theme') || 'light';
   applyTheme(theme); // always apply saved theme, even before login
   if (token && user) {
     state.token = token; state.user = JSON.parse(user);
@@ -742,6 +789,11 @@ async function _notifClick(id, link) {
 }
 
 function navigate(page, params = {}) {
+  // Block all navigation during an active exam
+  if (state.examLocked && page !== 'exam-take') {
+    toast(t('exam_warning'), 'error');
+    return;
+  }
   if (state.quizTimer) { clearInterval(state.quizTimer); state.quizTimer = null; }
   state.currentPage = page; state.currentParams = params;
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -761,6 +813,7 @@ function navigate(page, params = {}) {
   else if (page === 'assignment')    renderAssignmentDetail(params.id, el);
   else if (page === 'quiz-builder')  renderQuizBuilder(params.id, el);
   else if (page === 'quiz-take')     renderQuizTake(params.id, el);
+  else if (page === 'exam-take')     renderExamTake(params.id, el);
   else if (page === 'discussion-board') renderDiscussionBoard(params.id, el);
   else if (page === 'ai-chat')       renderAiChat(params.id, el);
   // ── Learning Intelligence & Social ───────────────────────────────────────
@@ -869,7 +922,7 @@ async function renderDashboard(el) {
       ]);
       el.innerHTML = `
         <div class="welcome-banner">
-          <h2>👋 ${t('welcome')}, ${state.user.name}!</h2>
+          <h2>${t('welcome')}, ${state.user.name}</h2>
           <p>${t('nav_dashboard')} — EduPortal School Management</p>
         </div>
         <div class="stats-grid">
@@ -893,7 +946,7 @@ async function renderDashboard(el) {
       const mine = courses.filter(c => c.teacher_id === state.user.id);
       el.innerHTML = `
         <div class="welcome-banner">
-          <h2>👋 ${t('welcome')}, ${state.user.name}!</h2>
+          <h2>${t('welcome')}, ${state.user.name}</h2>
           <p>🧑‍🏫 ${t('teachers')} Dashboard — EduPortal</p>
         </div>
         <div class="stats-grid">
@@ -916,7 +969,7 @@ async function renderDashboard(el) {
       const enrolled = courses.filter(c => c.enrolled);
       el.innerHTML = `
         <div class="welcome-banner">
-          <h2>👋 ${t('welcome')}, ${state.user.name}!</h2>
+          <h2>${t('welcome')}, ${state.user.name}</h2>
           <p>🎓 ${t('students')} Dashboard — EduPortal</p>
         </div>
         <div class="stats-grid">
@@ -1083,10 +1136,8 @@ async function renderCourseDetail(courseId, el) {
         <button class="tab" onclick="showTab('sessions',this)">${t('sessions')} (${sessions.length})</button>
         <button class="tab" onclick="showTab('modules',this);renderModulesTab(${courseId},document.getElementById('tab-modules'),${canManage})">${t('modules')}</button>
         <button class="tab" onclick="showTab('discussions',this);renderDiscussionsTab(${courseId},document.getElementById('tab-discussions'),${canManage})">${t('discussions')}</button>
-        <button class="tab" onclick="showTab('surveys',this);renderSurveysTab(${courseId},document.getElementById('tab-surveys'),${canManage})">${t('surveys')}</button>
         <!-- ── New feature tabs ── -->
         <button class="tab" onclick="showTab('helpboard',this);renderHelpBoardTab(${courseId}).then(h=>document.getElementById('tab-helpboard').innerHTML=h)">${t('help_board')}</button>
-        <button class="tab" onclick="showTab('teachback',this);renderTeachBackTab(${courseId},${canManage}).then(h=>document.getElementById('tab-teachback').innerHTML=h)">${t('teach_back')}</button>
         <button class="tab" onclick="showTab('studygroups',this);renderStudyGroupsTab(${courseId},${canManage}).then(h=>document.getElementById('tab-studygroups').innerHTML=h)">${t('study_groups')}</button>
         ${canManage ? `<button class="tab" onclick="showTab('students',this)">${t('students')} (${course.students.length})</button>` : ''}
         ${canManage ? `<button class="tab" onclick="showTab('anns',this)">${t('announcements')}</button>` : ''}
@@ -1131,15 +1182,24 @@ async function renderCourseDetail(courseId, el) {
               } else {
                 body = m.content ? `<p class="mat-content">${htmlEsc(m.content)}</p>` : '';
               }
+              const keyBadge = m.unlock_quiz_id
+                ? `<span class="badge badge-warning mat-key-badge">🔑 ${t('unlock_key')}</span>` : '';
+              const completedBadge = (role === 'student' && m.completed)
+                ? `<span class="badge badge-success">✓ ${t('completed')}</span>` : '';
+              const completeBtn = (role === 'student' && !m.completed)
+                ? `<button class="btn btn-sm btn-success" onclick="completeMaterial(${courseId},${m.id},this)">✓ ${t('mark_complete')}</button>` : '';
               return `
-                <div class="material-item">
+                <div class="material-item" id="mat-item-${m.id}">
                   <div class="material-icon">${icon}</div>
                   <div class="material-body">
-                    <div class="material-title"><strong>${htmlEsc(m.title)}</strong>${badge}</div>
+                    <div class="material-title"><strong>${htmlEsc(m.title)}</strong>${badge}${keyBadge}${completedBadge}</div>
                     ${body}
                     <small class="text-muted">${fmtDate(m.created_at)}</small>
                   </div>
-                  ${canManage ? `<button class="btn btn-sm btn-danger" onclick="deleteMaterial(${courseId},${m.id})">${t('delete')}</button>` : ''}
+                  <div style="display:flex;gap:6px;align-items:center">
+                    ${completeBtn}
+                    ${canManage ? `<button class="btn btn-sm btn-danger" onclick="deleteMaterial(${courseId},${m.id})">${t('delete')}</button>` : ''}
+                  </div>
                 </div>`;
             }).join('') : `<p class="text-muted">${t('no_materials')}</p>`}
           </div>
@@ -1205,18 +1265,8 @@ async function renderCourseDetail(courseId, el) {
         <div class="card"><div class="card-body"><p class="text-muted">Loading discussions…</p></div></div>
       </div>
 
-      <!-- SURVEYS -->
-      <div id="tab-surveys" class="hidden">
-        <div class="card"><div class="card-body"><p class="text-muted">Loading surveys…</p></div></div>
-      </div>
-
       <!-- HELP BOARD (async rendered by features.js) -->
       <div id="tab-helpboard" class="hidden">
-        <div class="loading"><div class="spinner"></div></div>
-      </div>
-
-      <!-- TEACH-BACK (async rendered by features.js) -->
-      <div id="tab-teachback" class="hidden">
         <div class="loading"><div class="spinner"></div></div>
       </div>
 
@@ -1270,19 +1320,44 @@ function showTab(name, btn) {
 function quizCard(q, canManage, courseId) {
   const attempted  = q.my_attempt && q.my_attempt.submitted_at;
   const inProgress = q.my_attempt && !q.my_attempt.submitted_at;
+  const isLocked   = !canManage && q.is_locked;
   const scoreLabel = attempted
     ? `${t('score')}: ${q.my_attempt.score!=null ? q.my_attempt.score : '?'}/${q.total_points}`
     : (inProgress ? t('attempted') : t('not_attempted'));
   const attemptBadgeCls = attempted ? 'badge-success' : (inProgress ? 'badge-warning' : 'badge-secondary');
 
-  // Students: flag unpublished-but-not-attempted as urgent
-  const isUrgent = !canManage && q.is_published && !attempted && !inProgress;
+  // Students: flag published-but-not-attempted as urgent (unless locked)
+  const isUrgent = !canManage && q.is_published && !attempted && !inProgress && !isLocked;
+
+  if (isLocked) {
+    return `
+    <div class="quiz-card quiz-locked">
+      <div class="quiz-card-body">
+        <div class="quiz-title-row">
+          <strong>${htmlEsc(q.title)}</strong>
+          ${q.is_exam ? `<span class="exam-badge">EXAM</span>` : ''}
+          <span class="badge badge-secondary">🔒 ${t('assessment_locked')}</span>
+        </div>
+        ${q.description ? `<p class="text-muted" style="margin-top:4px;font-size:13px">${htmlEsc(q.description)}</p>` : ''}
+        <div class="quiz-meta">
+          <small>${q.question_count} ${t('question_text')}(s) &bull; ${q.total_points} ${t('pts')}</small>
+          ${q.time_limit ? `<small>⏱ ${q.time_limit} ${t('minutes')}</small>` : ''}
+          ${q.due_date ? `<small>📅 ${t('due_date')}: ${fmtDate(q.due_date)}</small>` : ''}
+        </div>
+        <div class="quiz-lock-notice">
+          <span>🔑 ${t('complete_to_unlock')}</span>
+          <ul>${(q.lock_requires||[]).map(r=>`<li>${htmlEsc(r)}</li>`).join('')}</ul>
+        </div>
+      </div>
+    </div>`;
+  }
 
   return `
     <div class="quiz-card${isUrgent ? ' quiz-urgent' : ''}">
       <div class="quiz-card-body">
         <div class="quiz-title-row">
           <strong>${htmlEsc(q.title)}</strong>
+          ${q.is_exam ? `<span class="exam-badge">EXAM</span>` : ''}
           ${isUrgent ? `<span class="badge badge-danger">⚡ ${t('urgent')}</span>` : ''}
           ${canManage
             ? (q.is_published
@@ -1309,11 +1384,17 @@ function quizCard(q, canManage, courseId) {
         ${!canManage ? `<span class="badge ${attemptBadgeCls}">${scoreLabel}</span>` : ''}
         ${!canManage && !attempted && !inProgress && q.question_count > 0
           && !(q.max_attempts && (q.attempts_used || 0) >= q.max_attempts)
-          ? `<button class="btn btn-sm btn-primary" onclick="startQuiz(${q.id})">▶ ${t('start_quiz')}</button>` : ''}
+          ? (q.is_exam
+            ? `<button class="btn btn-sm btn-primary" onclick="startExam(${q.id})">▶ ${t('start_quiz')}</button>`
+            : `<button class="btn btn-sm btn-primary" onclick="startQuiz(${q.id})">▶ ${t('start_quiz')}</button>`) : ''}
         ${!canManage && inProgress
-          ? `<button class="btn btn-sm btn-warning" onclick="navigate('quiz-take',{id:${q.id}})">▶ ${t('resume_quiz')}</button>` : ''}
+          ? (q.is_exam
+            ? `<button class="btn btn-sm btn-warning" onclick="navigate('exam-take',{id:${q.id}})">▶ ${t('resume_quiz')}</button>`
+            : `<button class="btn btn-sm btn-warning" onclick="navigate('quiz-take',{id:${q.id}})">▶ ${t('resume_quiz')}</button>`) : ''}
         ${!canManage && attempted
-          ? `<button class="btn btn-sm" onclick="navigate('quiz-take',{id:${q.id}})">${t('quiz_results')}</button>` : ''}
+          ? (q.is_exam
+            ? `<button class="btn btn-sm" onclick="navigate('exam-take',{id:${q.id}})">${t('quiz_results')}</button>`
+            : `<button class="btn btn-sm" onclick="navigate('quiz-take',{id:${q.id}})">${t('quiz_results')}</button>`) : ''}
         ${canManage ? `
           <button class="btn btn-sm ${q.is_published ? 'btn-warning' : 'btn-success'}"
             onclick="togglePublishQuiz(${q.id},${q.is_published},${courseId})">
@@ -1443,7 +1524,14 @@ function viewMaterialFile(event, el) {
 // ═══════════════════════════════════════════════════════════
 // Materials
 // ═══════════════════════════════════════════════════════════
-function openAddMaterialModal(courseId) {
+async function openAddMaterialModal(courseId) {
+  // Fetch published quizzes for the unlock key dropdown
+  let quizOptions = '<option value="">— None —</option>';
+  try {
+    const qs = await api('GET', `/quizzes/course/${courseId}`);
+    quizOptions += qs.map(q => `<option value="${q.id}">${htmlEsc(q.title)}</option>`).join('');
+  } catch(_) {}
+
   openModal(t('add_material'), `
     <div class="mat-mode-tabs">
       <button type="button" class="mat-mode-tab active" onclick="switchMatMode('link',this)">🔗 ${t('link_text')}</button>
@@ -1469,6 +1557,14 @@ function openAddMaterialModal(courseId) {
           <small class="text-muted">${t('file_upload_hint')}</small>
         </div>
       </div>
+      <!-- Unlock key (shared between both modes) -->
+      <div class="form-group">
+        <label>🔑 ${t('set_as_key')}</label>
+        <select name="unlock_quiz_id" class="form-control">
+          ${quizOptions}
+        </select>
+        <small class="text-muted">Students must complete this material to unlock the selected assessment.</small>
+      </div>
       <div class="form-actions">
         <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
         <button type="submit" class="btn btn-primary">${t('add')}</button>
@@ -1477,13 +1573,14 @@ function openAddMaterialModal(courseId) {
     async (fd) => {
       const form = document.getElementById('modal-form');
       const mode = form.dataset.mode;
+      const unlockQuizId = fd.get('unlock_quiz_id') ? parseInt(fd.get('unlock_quiz_id')) : null;
       if (mode !== 'file') {
         // Link / Text
         const title = (fd.get('title') || '').trim();
         if (!title) { toast(t('title_label') + ' is required', 'error'); return; }
         try {
           await api('POST', `/courses/${courseId}/materials`,
-            { title, content: fd.get('content') || null, url: fd.get('url') || null });
+            { title, content: fd.get('content') || null, url: fd.get('url') || null, unlock_quiz_id: unlockQuizId });
           closeModal(); toast(t('add') + '!'); navigate('course', { id: courseId });
         } catch(err) { toast(err.message, 'error'); }
       } else {
@@ -1495,6 +1592,7 @@ function openAddMaterialModal(courseId) {
         const uploadFd = new FormData();
         uploadFd.append('title', fileTitle);
         uploadFd.append('file', file);
+        if (unlockQuizId) uploadFd.append('unlock_quiz_id', unlockQuizId);
         try {
           const resp = await fetch(`/api/courses/${courseId}/materials/upload`, {
             method: 'POST',
@@ -1512,6 +1610,32 @@ async function deleteMaterial(courseId, matId) {
   if (!confirm(t('delete')+'?')) return;
   try { await api('DELETE',`/courses/${courseId}/materials/${matId}`); toast(t('delete')); navigate('course',{id:courseId}); }
   catch(err) { toast(err.message,'error'); }
+}
+
+async function completeMaterial(courseId, matId, btn) {
+  try {
+    await api('POST', `/courses/${courseId}/materials/${matId}/complete`);
+    // Update UI in-place — swap button for completed badge
+    const item = document.getElementById(`mat-item-${matId}`);
+    if (item) {
+      btn.outerHTML = `<span class="badge badge-success">✓ ${t('completed')}</span>`;
+      const titleRow = item.querySelector('.material-title');
+      if (titleRow) {
+        const keyBadge = titleRow.querySelector('.mat-key-badge');
+        const span = document.createElement('span');
+        span.className = 'badge badge-success';
+        span.textContent = `✓ ${t('completed')}`;
+        if (keyBadge) titleRow.insertBefore(span, keyBadge.nextSibling);
+        else titleRow.appendChild(span);
+      }
+    }
+    toast(t('completed') + '!');
+    // Re-fetch quizzes tab to reflect newly unlocked assessments
+    const quizzesTab = document.getElementById('tab-quizzes');
+    if (quizzesTab && !quizzesTab.classList.contains('hidden')) {
+      navigate('course', { id: courseId });
+    }
+  } catch(err) { toast(err.message, 'error'); }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1802,7 +1926,7 @@ function openNewQuizModal(courseId) {
   openModal(t('new_quiz'), `
     <form id="modal-form">
       <div class="form-group"><label>${t('title_label')} *</label>
-        <input name="title" class="form-control" required placeholder="e.g. Chapter 2 Quiz"></div>
+        <input name="title" class="form-control" required placeholder="e.g. Chapter 2 Assessment"></div>
       <div class="form-group"><label>${t('description')}</label>
         <textarea name="description" class="form-control" rows="3"></textarea></div>
       <div class="form-row">
@@ -1845,13 +1969,14 @@ async function renderQuizBuilder(quizId, el) {
     const pubBadge = quiz.is_published
       ? `<span class="badge badge-success">✓ ${t('quiz_published')}</span>`
       : `<span class="badge badge-warning">✏️ ${t('quiz_draft')}</span>`;
+    const examBadge = quiz.is_exam ? `<span class="exam-badge">EXAM</span>` : '';
     el.innerHTML = `
       <div class="page-header">
         <div>
           <button class="btn btn-sm" onclick="navigate('course',{id:${quiz.course_id}})" style="margin-bottom:8px">${t('back')}</button>
           <h2>${t('quiz_builder')}: ${htmlEsc(quiz.title)}</h2>
-          <div style="display:flex;gap:8px;margin-top:6px;align-items:center">
-            ${pubBadge}
+          <div style="display:flex;gap:8px;margin-top:6px;align-items:center;flex-wrap:wrap">
+            ${pubBadge}${examBadge}
             <small class="text-muted">${quiz.question_count} ${t('question_text')}(s) &bull; ${quiz.total_points} ${t('pts')}${quiz.time_limit ? ` &bull; ${quiz.time_limit} ${t('minutes')}` : ''}</small>
           </div>
         </div>
@@ -1861,6 +1986,7 @@ async function renderQuizBuilder(quizId, el) {
             onclick="togglePublishQuiz(${quizId},${quiz.is_published},${quiz.course_id})">
             ${quiz.is_published ? t('unpublish_quiz') : t('publish_quiz')}
           </button>
+          <button class="btn btn-sm btn-info" onclick="openAIGenerateModal(${quizId},${quiz.course_id})">${t('ai_generate')}</button>
           <button class="btn btn-primary" onclick="openAddQuestionModal(${quizId})">${t('add_question')}</button>
         </div>
       </div>
@@ -1871,7 +1997,47 @@ async function renderQuizBuilder(quizId, el) {
       <div id="question-list">
         ${quiz.questions.length ? quiz.questions.map((q,i)=>questionBuilderCard(q,i,quizId)).join('')
                                 : `<div class="card"><div class="card-body"><p class="text-muted">No questions yet — click "${t('add_question')}" to get started.</p></div></div>`}
-      </div>`;
+      </div>
+      <div id="attempts-section" style="margin-top:28px"></div>`;
+
+    // Load attempts asynchronously
+    const attemptsEl = el.querySelector('#attempts-section');
+    try {
+      const attempts = await api('GET', `/quizzes/${quizId}/attempts`);
+      if (!attempts.length) { attemptsEl.innerHTML = ''; return; }
+      const needsGrading = attempts.filter(a => a.needs_grading);
+      attemptsEl.innerHTML = `
+        <h3 style="margin-bottom:12px">📋 Student Submissions
+          ${needsGrading.length ? `<span class="badge badge-warning" style="font-size:12px;margin-left:8px">${needsGrading.length} ${t('needs_grading')}</span>` : ''}
+        </h3>
+        <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead><tr>
+            <th>${t('name')}</th><th>Submitted</th><th>Score</th><th>Status</th><th></th>
+          </tr></thead>
+          <tbody>
+          ${attempts.map(a => {
+            const submitted = a.submitted_at ? fmtDate(a.submitted_at) : '—';
+            const score = a.score != null ? `${a.score} / ${a.total_possible}` : '—';
+            const status = !a.submitted_at
+              ? `<span class="badge">In Progress</span>`
+              : a.needs_grading
+                ? `<span class="badge badge-warning">⏳ ${t('needs_grading')}</span>`
+                : `<span class="badge badge-success">✓ Graded</span>`;
+            const gradeBtn = a.submitted_at
+              ? `<button class="btn btn-sm btn-primary" onclick="openGradingPanel(${quizId},${a.id})">${t('grade_responses')}</button>`
+              : '';
+            return `<tr>
+              <td>${htmlEsc(a.student_name)}</td>
+              <td>${submitted}</td>
+              <td>${score}</td>
+              <td>${status}</td>
+              <td>${gradeBtn}</td>
+            </tr>`;
+          }).join('')}
+          </tbody>
+        </table></div>`;
+    } catch(_) {}
   } catch(err) { el.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
 }
 
@@ -1894,6 +2060,12 @@ async function openEditQuizModal(quizId) {
       </div>
       <div class="form-group"><label>${t('max_attempts')} <small class="text-muted">(0 = ${t('unlimited')})</small></label>
         <input name="max_attempts" type="number" class="form-control" value="${quiz.max_attempts||0}" min="0"></div>
+      <div class="form-group" style="display:flex;align-items:center;gap:10px;padding:10px 0">
+        <input type="checkbox" name="is_exam" id="chk-is-exam" value="1"${quiz.is_exam?' checked':''} style="width:18px;height:18px;accent-color:var(--danger);flex-shrink:0">
+        <label for="chk-is-exam" style="font-size:13px;font-weight:600;color:var(--text);cursor:pointer;margin:0">
+          📝 ${t('is_exam')}
+        </label>
+      </div>
       <div class="form-actions">
         <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
         <button type="submit" class="btn btn-primary">${t('save')}</button>
@@ -1908,7 +2080,8 @@ async function openEditQuizModal(quizId) {
           description: fd.get('description') || null,
           time_limit: tl > 0 ? tl : null,
           due_date: fd.get('due_date') || null,
-          max_attempts: ma,   // 0 = clear limit (backend treats as unlimited)
+          max_attempts: ma,
+          is_exam: !!fd.get('is_exam'),
         });
         closeModal();
         toast(t('quiz_edit_saved'));
@@ -1931,7 +2104,7 @@ async function togglePublishQuiz(quizId, isPublished, courseId) {
 }
 
 function questionBuilderCard(q, idx, quizId) {
-  const typeLabel = { multiple_choice: t('multiple_choice'), true_false: t('true_false'), short_answer: t('short_answer') };
+  const typeLabel = { multiple_choice: t('multiple_choice'), true_false: t('true_false'), short_answer: t('short_answer'), long_answer: t('long_answer') };
   return `
     <div class="question-card">
       <div class="question-card-header">
@@ -1946,7 +2119,7 @@ function questionBuilderCard(q, idx, quizId) {
           <div class="option-row${o.is_correct?' correct':''}">
             <span>${o.is_correct ? '✓' : '○'}</span> ${htmlEsc(o.option_text)}
           </div>`).join('')}
-      </div>` : `<p class="text-muted" style="font-size:12px;margin-top:4px">${t('short_manual')}</p>`}
+      </div>` : `<p class="text-muted" style="font-size:12px;margin-top:4px">${q.question_type === 'long_answer' ? t('long_manual') : t('short_manual')}</p>`}
     </div>`;
 }
 
@@ -1958,6 +2131,7 @@ function openAddQuestionModal(quizId) {
           <option value="multiple_choice">${t('multiple_choice')}</option>
           <option value="true_false">${t('true_false')}</option>
           <option value="short_answer">${t('short_answer')}</option>
+          <option value="long_answer">${t('long_answer')}</option>
         </select>
       </div>
       <div class="form-group"><label>${t('question_text')} *</label>
@@ -1979,6 +2153,8 @@ function updateQTypeUI() {
   if (!area) return;
   if (type === 'short_answer') {
     area.innerHTML = `<p class="text-muted" style="font-size:13px;padding:8px 0">${t('short_manual')}</p>`;
+  } else if (type === 'long_answer') {
+    area.innerHTML = `<p class="text-muted" style="font-size:13px;padding:8px 0">${t('long_manual')}</p>`;
   } else if (type === 'true_false') {
     area.innerHTML = `
       <div class="form-group"><label>${t('correct_answer')}</label>
@@ -2033,6 +2209,138 @@ async function deleteQuestion(questionId, quizId) {
   catch(err) { toast(err.message,'error'); }
 }
 
+// ── AI Question Generator ────────────────────────────────────────────────────
+async function openAIGenerateModal(quizId, courseId) {
+  let materials = [];
+  try { materials = await api('GET', `/courses/${courseId}/materials`); } catch(_) {}
+
+  openModal(t('ai_generate_title'), `
+    <div>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:12px">
+        Select which materials the AI should read to generate questions.
+      </p>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <button type="button" class="btn btn-sm" onclick="aiSelectAll(true)">${t('select_all')}</button>
+        <button type="button" class="btn btn-sm" onclick="aiSelectAll(false)">${t('deselect_all')}</button>
+      </div>
+      <div id="ai-mat-list" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:8px;margin-bottom:14px">
+        ${materials.length ? materials.map(m=>`
+          <label style="display:flex;align-items:center;gap:8px;padding:5px 4px;cursor:pointer">
+            <input type="checkbox" class="ai-mat-cb" value="${m.id}" style="width:15px;height:15px">
+            <span style="font-size:13px">${htmlEsc(m.title)}</span>
+            <span class="badge badge-info" style="font-size:10px">${m.material_type||'text'}</span>
+          </label>`).join('') : `<p class="text-muted" style="font-size:13px">No materials in this course yet.</p>`}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div class="form-group" style="margin:0">
+          <label style="font-size:12px">${t('num_mc')}</label>
+          <input id="ai-num-mc" type="number" class="form-control" value="5" min="0" max="20">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label style="font-size:12px">${t('num_tf')}</label>
+          <input id="ai-num-tf" type="number" class="form-control" value="3" min="0" max="20">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label style="font-size:12px">${t('num_short')}</label>
+          <input id="ai-num-short" type="number" class="form-control" value="2" min="0" max="10">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label style="font-size:12px">${t('num_long')}</label>
+          <input id="ai-num-long" type="number" class="form-control" value="1" min="0" max="5">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
+        <button type="button" class="btn btn-primary" id="ai-gen-btn" onclick="runAIGenerate(${quizId})">${t('ai_generate')}</button>
+      </div>
+    </div>`);
+}
+
+function aiSelectAll(checked) {
+  document.querySelectorAll('.ai-mat-cb').forEach(cb => cb.checked = checked);
+}
+
+async function runAIGenerate(quizId) {
+  const ids = [...document.querySelectorAll('.ai-mat-cb:checked')].map(cb => parseInt(cb.value));
+  if (!ids.length) { toast(t('select_materials'), 'error'); return; }
+  const btn = document.getElementById('ai-gen-btn');
+  if (btn) { btn.disabled = true; btn.textContent = t('generating'); }
+  try {
+    const res = await api('POST', `/quizzes/${quizId}/ai-generate`, {
+      material_ids: ids,
+      num_mc: parseInt(document.getElementById('ai-num-mc').value) || 0,
+      num_tf: parseInt(document.getElementById('ai-num-tf').value) || 0,
+      num_short: parseInt(document.getElementById('ai-num-short').value) || 0,
+      num_long: parseInt(document.getElementById('ai-num-long').value) || 0,
+    });
+    closeModal();
+    toast(`${t('ai_generated_ok')} (${res.created} questions)`);
+    navigate('quiz-builder', {id: quizId});
+  } catch(err) {
+    toast(err.message, 'error');
+    if (btn) { btn.disabled = false; btn.textContent = t('ai_generate'); }
+  }
+}
+
+// ── Teacher grading panel for long/short answers ─────────────────────────────
+async function openGradingPanel(quizId, attemptId) {
+  let data;
+  try { data = await api('GET', `/quizzes/${quizId}/attempt/${attemptId}/long-answers`); }
+  catch(err) { toast(err.message, 'error'); return; }
+
+  if (!data.answers.length) { toast('No text answers to grade.'); return; }
+
+  openModal(`${t('grading_panel')}: ${htmlEsc(data.student_name)}`, `
+    <div>
+      ${data.answers.map(a => `
+        <div style="margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--border)">
+          <div style="font-size:12px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">
+            ${a.question_type === 'long_answer' ? t('long_answer') : t('short_answer')} &bull; max ${a.max_points} pts
+          </div>
+          <p style="font-weight:600;margin-bottom:6px">${htmlEsc(a.question_text)}</p>
+          <div style="background:rgba(148,163,184,.08);border-radius:var(--radius);padding:10px;margin-bottom:8px;font-size:13px">
+            <small style="color:var(--muted)">${t('student_answer')}:</small><br>
+            ${htmlEsc(a.student_answer || '(no answer)')}
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-end">
+            <div class="form-group" style="margin:0;flex:0 0 90px">
+              <label style="font-size:12px">${t('your_score')} / ${a.max_points}</label>
+              <input type="number" class="form-control grade-score-input" data-aid="${a.answer_id}"
+                value="${a.teacher_score ?? ''}" min="0" max="${a.max_points}" step="0.5">
+            </div>
+            <div class="form-group" style="margin:0;flex:1">
+              <label style="font-size:12px">${t('feedback_optional')}</label>
+              <input type="text" class="form-control grade-fb-input" data-aid="${a.answer_id}"
+                value="${htmlEsc(a.teacher_feedback || '')}">
+            </div>
+          </div>
+        </div>`).join('')}
+      <div class="form-actions">
+        <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
+        <button type="button" class="btn btn-primary" onclick="submitGrades(${quizId},${attemptId})">${t('save_grades')}</button>
+      </div>
+    </div>`);
+}
+
+async function submitGrades(quizId, attemptId) {
+  const grades = [];
+  document.querySelectorAll('.grade-score-input').forEach(inp => {
+    const aid = parseInt(inp.dataset.aid);
+    const score = parseFloat(inp.value);
+    if (!isNaN(score)) {
+      const fb = document.querySelector(`.grade-fb-input[data-aid="${aid}"]`)?.value || null;
+      grades.push({ answer_id: aid, score, feedback: fb });
+    }
+  });
+  if (!grades.length) { toast('Enter at least one score', 'error'); return; }
+  try {
+    await api('POST', `/quizzes/${quizId}/grade-attempt/${attemptId}`, { grades });
+    closeModal();
+    toast(t('grades_saved'));
+    navigate('quiz-builder', {id: quizId});
+  } catch(err) { toast(err.message, 'error'); }
+}
+
 // ═══════════════════════════════════════════════════════════
 // Quiz Taking (student) & Results
 // ═══════════════════════════════════════════════════════════
@@ -2077,7 +2385,10 @@ async function renderQuizTake(quizId, el) {
           <div class="quiz-q-num">${t('q_num')} ${i+1} ${t('of')} ${quiz.question_count} &bull; ${q.points} ${t('pts')}</div>
           <div class="quiz-q-text">${htmlEsc(q.question_text)}</div>
           ${q.question_type === 'short_answer' ? `
-            <textarea class="form-control" id="sa-${q.id}" rows="4" placeholder="…"></textarea>` : `
+            <textarea class="form-control" id="sa-${q.id}" rows="4" placeholder="…"></textarea>` :
+          q.question_type === 'long_answer' ? `
+            <div style="font-size:12px;color:var(--muted);margin-bottom:6px">✍️ ${t('long_manual')}</div>
+            <textarea class="form-control" id="sa-${q.id}" rows="7" placeholder="Write your response here…"></textarea>` : `
             <div class="quiz-options">
               ${q.options.map(o=>`
                 <div class="quiz-option">
@@ -2121,7 +2432,7 @@ async function submitQuiz(quizId, courseId) {
   const quiz = await api('GET',`/quizzes/${quizId}`).catch(() => null);
   if (!quiz) return;
   const answers = quiz.questions.map(q => {
-    if (q.question_type === 'short_answer') {
+    if (q.question_type === 'short_answer' || q.question_type === 'long_answer') {
       return { question_id: q.id, text_answer: document.getElementById(`sa-${q.id}`)?.value || '' };
     }
     const sel = document.querySelector(`input[name="q-${q.id}"]:checked`);
@@ -2133,6 +2444,235 @@ async function submitQuiz(quizId, courseId) {
     navigate('quiz-take',{id:quizId}); // re-render page as results view
     setTimeout(() => showPostQuizModal(quizId, result), 450);
   } catch(err) { toast(err.message,'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// EXAMS LIST PAGE
+// ═══════════════════════════════════════════════════════════
+async function renderExams(el) {
+  loading(el);
+  try {
+    const courses = await api('GET', '/courses/');
+    if (!courses) return;
+    const relevant = state.user.role === 'student'
+      ? courses.filter(c => c.enrolled)
+      : courses.filter(c => c.teacher_id === state.user.id || state.user.role === 'admin');
+
+    const perCourse = await Promise.all(
+      relevant.map(c =>
+        api('GET', `/quizzes/course/${c.id}`)
+          .then(qs => ({ course: c, quizzes: (qs || []).filter(q => q.is_exam) }))
+          .catch(() => ({ course: c, quizzes: [] }))
+      )
+    );
+
+    const allExams = [];
+    perCourse.forEach(({ course, quizzes }) => {
+      quizzes.forEach(q => allExams.push({ ...q, course_title: course.title, course_id: course.id }));
+    });
+
+    const isTeacher = state.user.role !== 'student';
+
+    let html = `<div class="page-header">
+      <div><h2>📝 ${t('exams')}</h2><p class="text-muted">${isTeacher ? 'Manage your course exams' : 'Your scheduled exams'}</p></div>
+    </div>`;
+
+    if (!allExams.length) {
+      html += `<div class="card"><div class="card-body" style="text-align:center;color:var(--muted);padding:40px">${t('no_quizzes')}</div></div>`;
+    } else {
+      allExams.forEach(q => {
+        const submitted = q.my_attempt && q.my_attempt.submitted_at;
+        const started   = q.my_attempt && !q.my_attempt.submitted_at;
+        const statusBadge = submitted
+          ? `<span class="badge badge-success">Submitted</span>`
+          : started
+          ? `<span class="badge badge-warning">In Progress</span>`
+          : `<span class="badge badge-secondary">${t('not_attempted')}</span>`;
+
+        const publishBadge = q.is_published
+          ? `<span class="badge badge-success">${t('quiz_published')}</span>`
+          : `<span class="badge badge-secondary">${t('quiz_draft')}</span>`;
+
+        let actionBtn = '';
+        if (isTeacher) {
+          actionBtn = `<button class="btn btn-sm btn-primary" onclick="navigate('quiz-builder',{id:${q.id}})">${t('edit_quiz')}</button>`;
+        } else if (!submitted) {
+          actionBtn = started
+            ? `<button class="btn btn-sm btn-warning" onclick="startExam(${q.id})">▶ ${t('resume_quiz')}</button>`
+            : `<button class="btn btn-sm btn-primary" onclick="startExam(${q.id})">${t('start_now')}</button>`;
+        } else {
+          actionBtn = `<button class="btn btn-sm" onclick="navigate('exam-take',{id:${q.id}})">${t('quiz_results')}</button>`;
+        }
+
+        html += `<div class="exam-card">
+          <div class="exam-card-body">
+            <div class="exam-title-row">
+              <strong>${htmlEsc(q.title)}</strong>
+              <span class="exam-badge">EXAM</span>
+              ${isTeacher ? publishBadge : statusBadge}
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-top:3px">${htmlEsc(q.course_title)}</div>
+            <div class="exam-meta">
+              ${q.time_limit ? `<small>⏱ ${q.time_limit} ${t('minutes')}</small>` : ''}
+              ${q.due_date   ? `<small>📅 ${t('due_date')}: ${fmtDateTime(q.due_date)}</small>` : ''}
+              ${q.question_count ? `<small>${q.question_count} questions · ${q.total_points} ${t('pts')}</small>` : ''}
+            </div>
+          </div>
+          <div class="exam-card-actions">${actionBtn}</div>
+        </div>`;
+      });
+    }
+
+    el.innerHTML = html;
+  } catch(err) {
+    el.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+  }
+}
+
+async function startExam(examId) {
+  try {
+    await api('POST', `/quizzes/${examId}/start`);
+    navigate('exam-take', { id: examId });
+  } catch(err) { toast(err.message, 'error'); }
+}
+
+function enterExamLock() {
+  state.examLocked = true;
+  document.body.classList.add('exam-lock-active');
+  // Block browser back/forward during exam
+  history.pushState(null, '', location.href);
+  window.onpopstate = () => {
+    history.pushState(null, '', location.href);
+    toast(t('exam_warning'), 'error');
+  };
+  window._examBeforeUnload = (e) => {
+    e.preventDefault();
+    e.returnValue = t('exam_warning');
+    return t('exam_warning');
+  };
+  window.addEventListener('beforeunload', window._examBeforeUnload);
+}
+
+function exitExamLock() {
+  state.examLocked = false;
+  document.body.classList.remove('exam-lock-active');
+  window.onpopstate = null;
+  if (window._examBeforeUnload) {
+    window.removeEventListener('beforeunload', window._examBeforeUnload);
+    window._examBeforeUnload = null;
+  }
+}
+
+async function renderExamTake(examId, el) {
+  loading(el);
+  try {
+    const quiz = await api('GET', `/quizzes/${examId}`);
+    const submitted = quiz.my_attempt && quiz.my_attempt.submitted_at;
+
+    if (submitted) {
+      exitExamLock();
+      renderQuizResults(quiz, el);
+      return;
+    }
+
+    // Enter lock mode
+    enterExamLock();
+
+    let timerHtml = '';
+    if (quiz.time_limit && quiz.my_attempt) {
+      timerHtml = `<div class="exam-topbar-timer" id="exam-timer">--:--</div>`;
+    }
+
+    el.innerHTML = `
+      <div class="exam-topbar">
+        <div class="exam-topbar-title">
+          <span class="exam-topbar-badge">EXAM</span>
+          ${htmlEsc(quiz.title)}
+        </div>
+        <div style="display:flex;align-items:center;gap:16px">
+          <small style="color:var(--muted)">${quiz.question_count} questions · ${quiz.total_points} ${t('pts')}</small>
+          ${timerHtml}
+        </div>
+      </div>
+      <div class="exam-body">
+        <div class="exam-warning-banner">
+          🔒 ${t('exam_warning')}
+        </div>
+        ${quiz.questions.map((q, i) => `
+          <div class="quiz-question-block">
+            <div class="quiz-q-num">${t('q_num')} ${i+1} ${t('of')} ${quiz.question_count} &bull; ${q.points} ${t('pts')}</div>
+            <div class="quiz-q-text">${htmlEsc(q.question_text)}</div>
+            ${q.question_type === 'short_answer' ? `
+              <textarea class="form-control" id="sa-${q.id}" rows="4" placeholder="…"></textarea>` : `
+              <div class="quiz-options">
+                ${q.options.map(o => `
+                  <div class="quiz-option">
+                    <input type="radio" name="q-${q.id}" id="opt-${o.id}" value="${o.id}">
+                    <label for="opt-${o.id}">${htmlEsc(o.option_text)}</label>
+                  </div>`).join('')}
+              </div>`}
+          </div>`).join('')}
+        <div class="exam-submit-bar">
+          <small style="color:var(--muted)">${t('exam_warning').split('.')[0]}.</small>
+          <button class="btn btn-primary" onclick="submitExam(${examId})">${t('submit_quiz')}</button>
+        </div>
+      </div>`;
+
+    // Timer
+    if (quiz.time_limit && quiz.my_attempt) {
+      const elapsed = (Date.now() - new Date(quiz.my_attempt.started_at)) / 1000;
+      const remaining = Math.max(0, quiz.time_limit * 60 - elapsed);
+      startExamTimer(Math.floor(remaining), () => submitExamAuto(examId));
+    }
+  } catch(err) {
+    exitExamLock();
+    el.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+  }
+}
+
+function startExamTimer(seconds, onExpire) {
+  let rem = seconds;
+  const tick = () => {
+    const el = document.getElementById('exam-timer');
+    if (!el) { clearInterval(state.quizTimer); return; }
+    const m = Math.floor(rem / 60), s = rem % 60;
+    el.textContent = `${m}:${String(s).padStart(2, '0')}`;
+    el.className = 'exam-topbar-timer' +
+      (rem < 60 ? ' exam-timer-urgent' : rem < 300 ? ' exam-timer-warn' : '');
+    if (rem <= 0) { clearInterval(state.quizTimer); onExpire(); }
+    rem--;
+  };
+  tick();
+  state.quizTimer = setInterval(tick, 1000);
+}
+
+async function submitExam(examId) {
+  if (!confirm(t('exam_submit_confirm'))) return;
+  await _doSubmitExam(examId);
+}
+
+async function submitExamAuto(examId) {
+  toast(t('exam_time_up'), 'error');
+  await _doSubmitExam(examId);
+}
+
+async function _doSubmitExam(examId) {
+  if (state.quizTimer) { clearInterval(state.quizTimer); state.quizTimer = null; }
+  const quiz = await api('GET', `/quizzes/${examId}`).catch(() => null);
+  if (!quiz) return;
+  const answers = quiz.questions.map(q => {
+    if (q.question_type === 'short_answer' || q.question_type === 'long_answer') {
+      return { question_id: q.id, text_answer: document.getElementById(`sa-${q.id}`)?.value || '' };
+    }
+    const sel = document.querySelector(`input[name="q-${q.id}"]:checked`);
+    return { question_id: q.id, selected_option_id: sel ? parseInt(sel.value) : null };
+  });
+  try {
+    await api('POST', `/quizzes/${examId}/submit`, { answers });
+    exitExamLock();
+    toast(t('quiz_submitted'));
+    navigate('exam-take', { id: examId });
+  } catch(err) { toast(err.message, 'error'); }
 }
 
 // ── Post-quiz popup: score + outstanding quizzes across all courses ──
@@ -2329,7 +2869,7 @@ function renderQuizResults(quiz, el) {
             <div class="stat-number">${attempt.score}</div>
             <div class="stat-label">${t('your_score')} / ${quiz.total_points}</div>
            </div>`
-        : `<span class="badge badge-warning">${t('short_manual')}</span>`}
+        : `<span class="badge badge-warning">⏳ ${t('pending_teacher_grade')}</span>`}
     </div>
     ${quiz.questions.map((q,i) => {
       const myAns = answerMap[q.id];
@@ -2339,11 +2879,13 @@ function renderQuizResults(quiz, el) {
         <div class="quiz-question-block">
           <div class="quiz-q-num">${t('q_num')} ${i+1} &bull; ${q.points} ${t('pts')}</div>
           <div class="quiz-q-text">${htmlEsc(q.question_text)}</div>
-          ${q.question_type === 'short_answer' ? `
+          ${(q.question_type === 'short_answer' || q.question_type === 'long_answer') ? `
             <div class="alert alert-success" style="margin-top:8px">
               <strong>${t('your_answer')}:</strong> ${htmlEsc(myText || '—')}
             </div>
-            <p class="text-muted" style="font-size:12px">${t('short_manual')}</p>` : `
+            ${myAns?.teacher_score != null
+              ? `<p style="font-size:13px;color:var(--success)">✓ ${myAns.teacher_score} / ${q.points} pts${myAns.teacher_feedback ? ` — ${htmlEsc(myAns.teacher_feedback)}` : ''}</p>`
+              : `<p class="text-muted" style="font-size:12px">⏳ ${t('pending_teacher_grade')}</p>`}` : `
             <div class="quiz-options" style="pointer-events:none">
               ${q.options.map(o => {
                 let cls = '';
@@ -2507,37 +3049,62 @@ async function renderGradebook(el) {
     if (role === 'student') {
       const data = await api('GET', '/gradebook/my');
       if (!data) return;
+      const hasGrades = data.courses && data.courses.length > 0;
       el.innerHTML = `
         <div class="page-header"><h2>${t('my_grades')}</h2>
-          <div class="stat-card" style="min-width:120px;text-align:center">
+          ${hasGrades ? `<div class="stat-card" style="min-width:120px;text-align:center">
             <div class="stat-number">${data.cumulative_gpa}</div>
             <div class="stat-label">${t('cumulative_gpa')}</div>
-          </div>
+          </div>` : ''}
         </div>
-        ${data.courses.map(c => `
-          <div class="card">
+        ${!hasGrades ? `
+          <div class="gb-empty-state">
+            <div class="gb-empty-icon">📊</div>
+            <p class="gb-empty-title">No grades yet</p>
+            <p class="gb-empty-sub">Your grades will appear here once your teacher has graded your submissions.</p>
+          </div>` :
+        data.courses.map(c => {
+          const scores = Object.values(c.scores);
+          return `
+          <div class="card" style="margin-bottom:18px">
             <div class="card-header">
               <h3>${htmlEsc(c.course_title)}</h3>
               <div style="display:flex;gap:10px;align-items:center">
-                <span class="grade-cell grade-${c.letter}">${c.letter} (${c.weighted_pct}%)</span>
+                <span class="grade-cell grade-${c.letter}">${c.letter} &nbsp;${c.weighted_pct}%</span>
                 <small class="text-muted">GPA: ${c.gpa}</small>
               </div>
             </div>
+            ${scores.length === 0 ? `
             <div class="card-body">
-              <table class="table">
-                <thead><tr><th>${t('title_label')}</th><th>${t('score')}</th><th>${t('max_score')}</th><th>%</th></tr></thead>
-                <tbody>
-                  ${Object.values(c.scores).map(s => `
-                    <tr>
-                      <td>${htmlEsc(s.title)}</td>
-                      <td>${s.score !== null ? s.score : '<span class="text-muted">—</span>'}</td>
-                      <td>${s.max_score}</td>
-                      <td>${s.score !== null && s.max_score ? Math.round(s.score/s.max_score*100)+'%' : '—'}</td>
-                    </tr>`).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>`).join('')}`;
+              <div class="gb-empty-state" style="padding:32px 24px">
+                <div class="gb-empty-icon" style="font-size:32px">📝</div>
+                <p class="gb-empty-title" style="font-size:14px">No graded work yet</p>
+                <p class="gb-empty-sub" style="font-size:12.5px">Assignments will appear here once graded.</p>
+              </div>
+            </div>` : `
+            <div class="card-body" style="padding:0">
+              <div class="gradebook-table-wrapper">
+                <table class="gradebook-table">
+                  <thead><tr>
+                    <th>${t('title_label')}</th>
+                    <th>${t('score')}</th>
+                    <th>${t('max_score')}</th>
+                    <th>%</th>
+                  </tr></thead>
+                  <tbody>
+                    ${scores.map(s => `
+                      <tr>
+                        <td>${htmlEsc(s.title)}</td>
+                        <td>${s.score !== null ? `<strong>${s.score}</strong>` : '<span class="text-muted">—</span>'}</td>
+                        <td>${s.max_score}</td>
+                        <td>${s.score !== null && s.max_score ? `<span class="grade-cell grade-${scoreToLetter(s.score, s.max_score)}" style="min-width:0;padding:2px 8px">${Math.round(s.score/s.max_score*100)}%</span>` : '<span class="text-muted">—</span>'}</td>
+                      </tr>`).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>`}
+          </div>`;
+        }).join('')}`;
 
     } else {
       // Teacher/Admin: pick course
@@ -2552,31 +3119,77 @@ async function renderGradebook(el) {
         gb = await api('GET', `/gradebook/course/${cid}`);
       }
 
+      if (!mine.length) {
+        el.innerHTML = `
+          <div class="page-header"><h2>${t('gradebook')}</h2></div>
+          <div class="gb-empty-state">
+            <div class="gb-empty-icon">📊</div>
+            <p class="gb-empty-title">No courses yet</p>
+            <p class="gb-empty-sub">Create a course and add assignments to start tracking grades.</p>
+          </div>`;
+        return;
+      }
       el.innerHTML = `
         <div class="page-header"><h2>${t('gradebook')}</h2>
           <select class="form-control" style="max-width:280px" onchange="navigate('gradebook',{course_id:parseInt(this.value)})">
             ${mine.map(c => `<option value="${c.id}" ${c.id==cid?'selected':''}>${htmlEsc(c.title)}</option>`).join('')}
           </select>
         </div>
-        ${gb ? renderGradebookTable(gb) : '<div class="card"><div class="card-body"><p class="text-muted">Select a course to view gradebook.</p></div></div>'}`;
+        ${gb ? renderGradebookTable(gb) : `
+          <div class="gb-empty-state">
+            <div class="gb-empty-icon">📋</div>
+            <p class="gb-empty-title">Select a course</p>
+            <p class="gb-empty-sub">Choose a course from the dropdown above to view its gradebook.</p>
+          </div>`}`;
     }
   } catch(err) { el.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
 }
 
+function scoreToLetter(score, max) {
+  if (!max) return 'N';
+  const p = score / max * 100;
+  if (p >= 90) return 'A';
+  if (p >= 80) return 'B';
+  if (p >= 70) return 'C';
+  if (p >= 60) return 'D';
+  return 'F';
+}
+
 function renderGradebookTable(gb) {
-  if (!gb.students.length) return '<div class="card"><div class="card-body"><p class="text-muted">No students enrolled.</p></div></div>';
+  if (!gb.students.length) return `
+    <div class="gb-empty-state">
+      <div class="gb-empty-icon">🎓</div>
+      <p class="gb-empty-title">No students enrolled</p>
+      <p class="gb-empty-sub">Students who enroll in this course will appear here with their grades.</p>
+    </div>`;
   const assignments = gb.assignments;
+  if (!assignments.length) return `
+    <div class="card">
+      <div class="card-header"><h3>${htmlEsc(gb.course_title)}</h3>
+        <small class="text-muted">${gb.students.length} student${gb.students.length!==1?'s':''} enrolled</small>
+      </div>
+      <div class="card-body">
+        <div class="gb-empty-state" style="padding:36px 24px">
+          <div class="gb-empty-icon" style="font-size:36px">📝</div>
+          <p class="gb-empty-title" style="font-size:15px">No assignments yet</p>
+          <p class="gb-empty-sub">Add assignments to this course to start tracking grades.</p>
+        </div>
+      </div>
+    </div>`;
   return `
     <div class="card">
-      <div class="card-header"><h3>${htmlEsc(gb.course_title)}</h3></div>
+      <div class="card-header">
+        <h3>${htmlEsc(gb.course_title)}</h3>
+        <small class="text-muted">${gb.students.length} student${gb.students.length!==1?'s':''} · ${assignments.length} assignment${assignments.length!==1?'s':''}</small>
+      </div>
       <div class="card-body" style="padding:0">
         <div class="gradebook-table-wrapper">
           <table class="gradebook-table">
             <thead>
               <tr>
                 <th>Student</th>
-                ${assignments.map(a => `<th title="${htmlEsc(a.title)}">${htmlEsc(a.title).substring(0,12)}${a.title.length>12?'…':''}${a.is_extra_credit?' ⭐':''}</th>`).join('')}
-                <th>Avg%</th><th>Grade</th>
+                ${assignments.map(a => `<th title="${htmlEsc(a.title)}">${htmlEsc(a.title).substring(0,14)}${a.title.length>14?'…':''}${a.is_extra_credit?' ⭐':''}</th>`).join('')}
+                <th>Avg %</th><th>Grade</th>
               </tr>
             </thead>
             <tbody>
@@ -2585,9 +3198,10 @@ function renderGradebookTable(gb) {
                   <td>${htmlEsc(s.student_name)}</td>
                   ${assignments.map(a => {
                     const sc = s.scores[a.id];
-                    if (!sc || sc.score === null) return `<td><span class="text-muted">—</span></td>`;
-                    const pct = a.max_score ? Math.round(sc.score/a.max_score*100) : 0;
-                    return `<td>${sc.score}</td>`;
+                    if (!sc || sc.score === null) return `<td class="text-muted">—</td>`;
+                    const pct = a.max_score ? Math.round(sc.score/a.max_score*100) : null;
+                    const letter = pct !== null ? scoreToLetter(sc.score, a.max_score) : 'N';
+                    return `<td><span class="grade-cell grade-${letter}" style="min-width:0;padding:2px 8px;font-size:11.5px">${sc.score}</span></td>`;
                   }).join('')}
                   <td><strong>${s.weighted_pct}%</strong></td>
                   <td><span class="grade-cell grade-${s.letter}">${s.letter}</span></td>
@@ -3224,137 +3838,6 @@ async function endorsePost(postId, boardId) {
   } catch(err) { toast(err.message, 'error'); }
 }
 
-// ═══════════════════════════════════════════════════════════
-// Course Detail — Surveys Tab
-// ═══════════════════════════════════════════════════════════
-async function renderSurveysTab(courseId, container, canManage) {
-  container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
-  try {
-    const surveys = await api('GET', `/surveys/course/${courseId}`);
-    container.innerHTML = `
-      ${canManage ? `<div style="margin-bottom:12px"><button class="btn btn-sm btn-primary" onclick="openNewSurveyModal(${courseId})">${t('new_survey')}</button></div>` : ''}
-      ${(surveys||[]).map(s => `
-        <div class="card" style="margin-bottom:12px">
-          <div class="card-header">
-            <h3>${htmlEsc(s.title)}</h3>
-            <div style="display:flex;gap:6px;align-items:center">
-              <small class="text-muted">${s.question_count} questions &bull; ${s.response_count} responses</small>
-              ${!canManage && !s.already_responded ? `<button class="btn btn-sm btn-primary" onclick="takeSurvey(${s.id})">${t('take_survey')}</button>` : ''}
-              ${s.already_responded ? '<span class="badge badge-success">Submitted</span>' : ''}
-              ${canManage ? `<button class="btn btn-sm" onclick="viewSurveyResults(${s.id})">${t('view_results')}</button>` : ''}
-              ${canManage ? `<button class="btn btn-sm btn-danger" onclick="deleteSurvey(${s.id},${courseId})">${t('delete')}</button>` : ''}
-            </div>
-          </div>
-          ${s.description?`<div class="card-body"><p class="text-muted">${htmlEsc(s.description)}</p></div>`:''}
-        </div>`).join('') || '<p class="text-muted">No surveys yet.</p>'}`;
-  } catch(err) { container.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
-}
-
-async function takeSurvey(surveyId) {
-  const survey = await api('GET', `/surveys/${surveyId}`);
-  if (!survey) return;
-  const answers = {};
-  openModal(survey.title, `
-    <div>
-      ${survey.questions.map((q, i) => `
-        <div class="survey-question-block">
-          <h4>${i+1}. ${htmlEsc(q.question_text)}</h4>
-          ${q.question_type === 'text' ? `
-            <textarea id="sq-${q.id}" class="form-control" rows="3"></textarea>` :
-          q.question_type === 'rating' ? `
-            <div class="survey-rating">
-              ${[1,2,3,4,5].map(n=>`<button type="button" class="survey-rating-btn" onclick="selectRating(${q.id},${n},this)">${n}</button>`).join('')}
-            </div>` :
-          `<div>${(q.options||[]).map((opt,oi)=>`
-            <div class="survey-option-row">
-              <input type="radio" name="sq-${q.id}" id="sqo-${q.id}-${oi}" value="${htmlEsc(opt)}">
-              <label for="sqo-${q.id}-${oi}">${htmlEsc(opt)}</label>
-            </div>`).join('')}</div>`}
-        </div>`).join('')}
-      <div class="form-actions">
-        <button class="btn" onclick="closeModal()">${t('cancel')}</button>
-        <button class="btn btn-primary" onclick="submitSurvey(${surveyId},'${JSON.stringify(survey.questions.map(q=>q.id)).replace(/'/g,"\\'")}' )">${t('submit_survey')}</button>
-      </div>
-    </div>`);
-}
-
-window._surveyRatings = {};
-function selectRating(qId, val, btn) {
-  window._surveyRatings[qId] = val;
-  btn.closest('.survey-rating').querySelectorAll('.survey-rating-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-}
-
-async function submitSurvey(surveyId, qIdsStr) {
-  const qIds = JSON.parse(qIdsStr);
-  const answers = [];
-  for (const qId of qIds) {
-    let answerText = '';
-    const textEl = document.getElementById(`sq-${qId}`);
-    if (textEl) {
-      answerText = textEl.value;
-    } else {
-      const radioEl = document.querySelector(`input[name="sq-${qId}"]:checked`);
-      if (radioEl) answerText = radioEl.value;
-      else if (window._surveyRatings[qId]) answerText = String(window._surveyRatings[qId]);
-    }
-    if (answerText) answers.push({ question_id: qId, answer_text: answerText });
-  }
-  try {
-    await api('POST', `/surveys/${surveyId}/respond`, { answers });
-    closeModal(); toast(t('submit_survey')+'!');
-  } catch(err) { toast(err.message, 'error'); }
-}
-
-async function viewSurveyResults(surveyId) {
-  const results = await api('GET', `/surveys/${surveyId}/results`);
-  if (!results) return;
-  openModal(`Results: ${results.title}`, `
-    <div>
-      <p class="text-muted" style="margin-bottom:12px">${results.total_responses} responses</p>
-      ${results.questions.map(q => `
-        <div class="survey-question-block">
-          <h4>${htmlEsc(q.question_text)}</h4>
-          <small class="text-muted">${q.response_count} answers</small>
-          <div style="margin-top:8px">
-            ${q.question_type === 'rating'
-              ? `<strong>Average: ${q.summary.avg}</strong>`
-              : q.question_type === 'multiple_choice'
-              ? Object.entries(q.summary||{}).map(([opt,cnt])=>`<div>${htmlEsc(opt)}: <strong>${cnt}</strong></div>`).join('')
-              : (q.summary.responses||[]).slice(0,5).map(r=>`<div class="bank-question-item" style="padding:6px 10px">${htmlEsc(r)}</div>`).join('')}
-          </div>
-        </div>`).join('')}
-      <button class="btn" style="margin-top:8px" onclick="closeModal()">Close</button>
-    </div>`);
-}
-
-async function deleteSurvey(surveyId, courseId) {
-  if (!confirm(t('delete')+'?')) return;
-  try { await api('DELETE', `/surveys/${surveyId}`); toast(t('delete')); renderSurveysTab(courseId, document.getElementById('tab-surveys'), true); }
-  catch(err) { toast(err.message, 'error'); }
-}
-
-function openNewSurveyModal(courseId) {
-  openModal(t('new_survey'), `
-    <form id="modal-form">
-      <div class="form-group"><label>${t('title_label')} *</label>
-        <input name="title" class="form-control" required></div>
-      <div class="form-group"><label>${t('description')}</label>
-        <textarea name="description" class="form-control" rows="2"></textarea></div>
-      <div class="form-actions">
-        <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
-        <button type="submit" class="btn btn-primary">${t('create')}</button>
-      </div>
-    </form>`,
-    async (fd) => {
-      try {
-        await api('POST', `/surveys/course/${courseId}`, { title: fd.get('title'), description: fd.get('description')||null, questions: [] });
-        closeModal(); toast(t('create')+'!'); renderSurveysTab(courseId, document.getElementById('tab-surveys'), true);
-      } catch(err) { toast(err.message, 'error'); }
-    });
-}
-
-// ═══════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════
 // Password Reset
 // ═══════════════════════════════════════════════════════════
