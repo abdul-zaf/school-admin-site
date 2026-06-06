@@ -2329,6 +2329,9 @@ async function openAIGenerateModal(quizId, courseId, autoOpen) {
           <input id="ai-num-long" type="number" class="form-control" value="1" min="0" max="5">
         </div>
       </div>
+      <p id="ai-gen-hint" style="display:none;color:var(--muted);font-size:12px;margin-bottom:8px">
+        ⏳ This can take up to a minute — please wait…
+      </p>
       <div class="form-actions">
         ${cancelBtn}
         <button type="button" class="btn btn-primary" id="ai-gen-btn" onclick="runAIGenerate(${quizId})">${t('ai_generate')}</button>
@@ -2345,6 +2348,8 @@ async function runAIGenerate(quizId) {
   if (!ids.length) { toast(t('select_materials'), 'error'); return; }
   const btn = document.getElementById('ai-gen-btn');
   if (btn) { btn.disabled = true; btn.textContent = t('generating'); }
+  const hint = document.getElementById('ai-gen-hint');
+  if (hint) hint.style.display = 'block';
   try {
     const res = await api('POST', `/quizzes/${quizId}/ai-generate`, {
       material_ids: ids,

@@ -17,7 +17,7 @@ from typing import Optional, List
 
 OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
 OLLAMA_MODEL: str    = os.getenv("OLLAMA_MODEL",    "llama3.2")
-OLLAMA_TIMEOUT: int  = int(os.getenv("OLLAMA_TIMEOUT", "60"))
+OLLAMA_TIMEOUT: int  = int(os.getenv("OLLAMA_TIMEOUT", "300"))
 
 
 # ── Public helpers ────────────────────────────────────────────────────────────
