@@ -121,6 +121,8 @@ const i18n = {
     set_as_key:'Set as Key for Assessment',
     // AI quiz generation
     ai_generate:'🤖 AI Generate', ai_generate_title:'AI Question Generator',
+    ai_generate_prompt:'Want AI to generate questions from your course materials?',
+    ai_skip:'Skip — add manually',
     select_materials:'Select Materials', select_all:'Select All', deselect_all:'Deselect All',
     num_mc:'Multiple Choice', num_tf:'True / False', num_short:'Short Answer', num_long:'Long Answer',
     generating:'Generating…', ai_generated_ok:'Questions generated!',
@@ -272,6 +274,8 @@ const i18n = {
     set_as_key:'ٹیسٹ کے لیے چابی بنائیں',
     // AI quiz generation (Urdu)
     ai_generate:'🤖 AI سے بنائیں', ai_generate_title:'AI سوال ساز',
+    ai_generate_prompt:'کیا AI آپ کے کورس مواد سے سوالات بنائے؟',
+    ai_skip:'چھوڑیں — خود شامل کریں',
     select_materials:'مواد منتخب کریں', select_all:'سب منتخب کریں', deselect_all:'سب ہٹائیں',
     num_mc:'کثیر انتخابی', num_tf:'صحیح / غلط', num_short:'مختصر جواب', num_long:'طویل جواب',
     generating:'تیار ہو رہا ہے…', ai_generated_ok:'سوالات تیار ہو گئے!',
@@ -2022,7 +2026,7 @@ function openNewQuizModal(courseId) {
           time_limit: tl > 0 ? tl : null, due_date: fd.get('due_date')||null,
         });
         closeModal(); toast(t('create')+'!');
-        navigate('quiz-builder',{id: res.id});
+        openAIGenerateModal(res.id, courseId, true);
       } catch(err) { toast(err.message,'error'); }
     });
 }
@@ -2282,15 +2286,19 @@ async function deleteQuestion(questionId, quizId) {
 }
 
 // ── AI Question Generator ────────────────────────────────────────────────────
-async function openAIGenerateModal(quizId, courseId) {
+async function openAIGenerateModal(quizId, courseId, autoOpen) {
   let materials = [];
   try { materials = await api('GET', `/courses/${courseId}/materials`); } catch(_) {}
 
+  const cancelBtn = autoOpen
+    ? `<button type="button" class="btn" onclick="closeModal();navigate('quiz-builder',{id:${quizId}})">${t('ai_skip')}</button>`
+    : `<button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>`;
+
   openModal(t('ai_generate_title'), `
     <div>
-      <p style="color:var(--muted);font-size:13px;margin-bottom:12px">
-        Select which materials the AI should read to generate questions.
-      </p>
+      ${autoOpen ? `<p style="color:var(--info);font-size:13px;margin-bottom:12px;font-weight:600">
+        ✨ ${t('ai_generate_prompt')}</p>` : `<p style="color:var(--muted);font-size:13px;margin-bottom:12px">
+        Select which materials the AI should read to generate questions.</p>`}
       <div style="display:flex;gap:8px;margin-bottom:8px">
         <button type="button" class="btn btn-sm" onclick="aiSelectAll(true)">${t('select_all')}</button>
         <button type="button" class="btn btn-sm" onclick="aiSelectAll(false)">${t('deselect_all')}</button>
@@ -2298,7 +2306,7 @@ async function openAIGenerateModal(quizId, courseId) {
       <div id="ai-mat-list" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:8px;margin-bottom:14px">
         ${materials.length ? materials.map(m=>`
           <label style="display:flex;align-items:center;gap:8px;padding:5px 4px;cursor:pointer">
-            <input type="checkbox" class="ai-mat-cb" value="${m.id}" style="width:15px;height:15px">
+            <input type="checkbox" class="ai-mat-cb" value="${m.id}" ${autoOpen?'checked':''} style="width:15px;height:15px">
             <span style="font-size:13px">${htmlEsc(m.title)}</span>
             <span class="badge badge-info" style="font-size:10px">${m.material_type||'text'}</span>
           </label>`).join('') : `<p class="text-muted" style="font-size:13px">No materials in this course yet.</p>`}
@@ -2322,7 +2330,7 @@ async function openAIGenerateModal(quizId, courseId) {
         </div>
       </div>
       <div class="form-actions">
-        <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
+        ${cancelBtn}
         <button type="button" class="btn btn-primary" id="ai-gen-btn" onclick="runAIGenerate(${quizId})">${t('ai_generate')}</button>
       </div>
     </div>`);
