@@ -159,6 +159,10 @@ const i18n = {
     chat_locked:'🔒 AI Tutor is locked while an assessment is in progress. Submit or finish the assessment first.',
     chat_attach:'Attach file',
     no_chat_sessions:'No chat sessions yet. Click + New Chat to get started.',
+    // Due date picker
+    dp_today:'Today', dp_tomorrow:'Tomorrow', dp_next_week:'+1 Week',
+    dp_clear:'Clear', dp_date:'Date', dp_time:'Time',
+    dp_no_due:'No due date',
   },
   ur: {
     app_name:'اسکول ایل ایم ایس',
@@ -296,12 +300,86 @@ const i18n = {
     // Misc
     enrolled_courses:'داخل شدہ کورسز', available_courses:'دستیاب',
     total_students:'کل طلبا', manage_courses:'کورسز منظم کریں',
+    // Due date picker (Urdu)
+    dp_today:'آج', dp_tomorrow:'کل', dp_next_week:'+1 ہفتہ',
+    dp_clear:'ہٹائیں', dp_date:'تاریخ', dp_time:'وقت',
+    dp_no_due:'کوئی آخری تاریخ نہیں',
   }
 };
 
 function t(key) {
   const lang = state.lang || 'en';
   return (i18n[lang] && i18n[lang][key]) || i18n.en[key] || key;
+}
+
+// ═══════════════════════════════════════════════════════════
+// Due-date picker helper
+// ═══════════════════════════════════════════════════════════
+// Renders a date + time row with quick-pick shortcuts.
+// `id`    — unique id prefix used for the hidden <input name="due_date">
+//           and for the date/time sub-inputs.
+// `value` — ISO string "YYYY-MM-DDTHH:MM" (or empty) to pre-fill.
+function dueDatePicker(id, value) {
+  const datePart = value ? value.slice(0, 10) : '';
+  const timePart = value ? value.slice(11, 16) : '23:59';
+  return `
+    <div class="due-date-picker" id="${id}-picker">
+      <div class="ddp-shortcuts">
+        <button type="button" class="btn btn-sm ddp-btn" onclick="ddpSet('${id}','today')">${t('dp_today')}</button>
+        <button type="button" class="btn btn-sm ddp-btn" onclick="ddpSet('${id}','tomorrow')">${t('dp_tomorrow')}</button>
+        <button type="button" class="btn btn-sm ddp-btn" onclick="ddpSet('${id}','week')">${t('dp_next_week')}</button>
+        <button type="button" class="btn btn-sm ddp-btn ddp-clear" onclick="ddpClear('${id}')">${t('dp_clear')}</button>
+      </div>
+      <div class="ddp-inputs">
+        <div class="ddp-field">
+          <label class="ddp-label">${t('dp_date')}</label>
+          <input type="date" id="${id}-date" class="form-control ddp-date"
+            value="${datePart}" onchange="ddpSync('${id}')">
+        </div>
+        <div class="ddp-field">
+          <label class="ddp-label">${t('dp_time')}</label>
+          <input type="time" id="${id}-time" class="form-control ddp-time"
+            value="${timePart}" onchange="ddpSync('${id}')">
+        </div>
+      </div>
+      <div id="${id}-preview" class="ddp-preview">${value ? fmtDateTimeLocal(value) : t('dp_no_due')}</div>
+      <input type="hidden" name="due_date" id="${id}-val" value="${value||''}">
+    </div>`;
+}
+
+function ddpSet(id, preset) {
+  const now = new Date();
+  if (preset === 'today') { /* keep today */ }
+  else if (preset === 'tomorrow') now.setDate(now.getDate() + 1);
+  else if (preset === 'week') now.setDate(now.getDate() + 7);
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  document.getElementById(id + '-date').value = `${y}-${m}-${d}`;
+  document.getElementById(id + '-time').value = '23:59';
+  ddpSync(id);
+}
+
+function ddpClear(id) {
+  document.getElementById(id + '-date').value = '';
+  document.getElementById(id + '-time').value = '23:59';
+  ddpSync(id);
+}
+
+function ddpSync(id) {
+  const date = document.getElementById(id + '-date').value;
+  const time = document.getElementById(id + '-time').value || '23:59';
+  const combined = date ? `${date}T${time}` : '';
+  document.getElementById(id + '-val').value = combined;
+  document.getElementById(id + '-preview').textContent = combined ? fmtDateTimeLocal(combined) : t('dp_no_due');
+}
+
+function fmtDateTimeLocal(iso) {
+  if (!iso) return '';
+  const d = new Date(iso.includes('T') ? iso : iso.replace(' ', 'T'));
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString(undefined, { weekday:'short', year:'numeric', month:'short', day:'numeric' })
+    + ' at ' + d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1648,12 +1726,10 @@ function openNewAssignmentModal(courseId) {
         <input name="title" class="form-control" required></div>
       <div class="form-group"><label>${t('instructions')}</label>
         <textarea name="description" class="form-control" rows="4"></textarea></div>
-      <div class="form-row">
-        <div class="form-group"><label>${t('due_date')}</label>
-          <input name="due_date" type="datetime-local" class="form-control"></div>
-        <div class="form-group"><label>${t('max_score')}</label>
-          <input name="max_score" type="number" class="form-control" value="100" min="1"></div>
-      </div>
+      <div class="form-group"><label>${t('max_score')}</label>
+        <input name="max_score" type="number" class="form-control" value="100" min="1"></div>
+      <div class="form-group"><label>${t('due_date')}</label>
+        ${dueDatePicker('asgn-due', '')}</div>
       <div class="form-actions">
         <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
         <button type="submit" class="btn btn-primary">${t('create')}</button>
@@ -1929,12 +2005,10 @@ function openNewQuizModal(courseId) {
         <input name="title" class="form-control" required placeholder="e.g. Chapter 2 Assessment"></div>
       <div class="form-group"><label>${t('description')}</label>
         <textarea name="description" class="form-control" rows="3"></textarea></div>
-      <div class="form-row">
-        <div class="form-group"><label>${t('time_limit')} <small class="text-muted">(0 = none)</small></label>
-          <input name="time_limit" type="number" class="form-control" value="0" min="0"></div>
-        <div class="form-group"><label>${t('due_date')}</label>
-          <input name="due_date" type="datetime-local" class="form-control"></div>
-      </div>
+      <div class="form-group"><label>${t('time_limit')} <small class="text-muted">(0 = none)</small></label>
+        <input name="time_limit" type="number" class="form-control" value="0" min="0"></div>
+      <div class="form-group"><label>${t('due_date')}</label>
+        ${dueDatePicker('quiz-due', '')}</div>
       <div class="form-actions">
         <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
         <button type="submit" class="btn btn-primary">${t('create')}</button>
@@ -2052,12 +2126,10 @@ async function openEditQuizModal(quizId) {
         <input name="title" class="form-control" required value="${htmlEsc(quiz.title)}"></div>
       <div class="form-group"><label>${t('description')}</label>
         <textarea name="description" class="form-control" rows="3">${htmlEsc(quiz.description||'')}</textarea></div>
-      <div class="form-row">
-        <div class="form-group"><label>${t('time_limit')} <small class="text-muted">(0 = ${t('no')} limit)</small></label>
-          <input name="time_limit" type="number" class="form-control" value="${quiz.time_limit||0}" min="0"></div>
-        <div class="form-group"><label>${t('due_date')}</label>
-          <input name="due_date" type="datetime-local" class="form-control" value="${dueFmt}"></div>
-      </div>
+      <div class="form-group"><label>${t('time_limit')} <small class="text-muted">(0 = ${t('no')} limit)</small></label>
+        <input name="time_limit" type="number" class="form-control" value="${quiz.time_limit||0}" min="0"></div>
+      <div class="form-group"><label>${t('due_date')}</label>
+        ${dueDatePicker('quiz-edit-due', dueFmt)}</div>
       <div class="form-group"><label>${t('max_attempts')} <small class="text-muted">(0 = ${t('unlimited')})</small></label>
         <input name="max_attempts" type="number" class="form-control" value="${quiz.max_attempts||0}" min="0"></div>
       <div class="form-group" style="display:flex;align-items:center;gap:10px;padding:10px 0">
