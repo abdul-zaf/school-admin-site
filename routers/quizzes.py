@@ -819,6 +819,7 @@ def ai_generate_questions(
         model=model_to_use,
         temperature=0.3,
         max_tokens=2048,
+        num_ctx=4096,
     )
 
     # Log raw response for debugging

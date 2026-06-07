@@ -17,7 +17,7 @@ from typing import Optional, List
 
 OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
 OLLAMA_MODEL: str    = os.getenv("OLLAMA_MODEL",    "llama3.2")
-OLLAMA_TIMEOUT: int  = int(os.getenv("OLLAMA_TIMEOUT", "300"))
+OLLAMA_TIMEOUT: int  = int(os.getenv("OLLAMA_TIMEOUT", "600"))
 
 
 # ── Public helpers ────────────────────────────────────────────────────────────
@@ -39,6 +39,7 @@ def chat(
     model: Optional[str] = None,
     temperature: float = 0.7,
     max_tokens: int = 1024,
+    num_ctx: Optional[int] = None,
     images: Optional[List[str]] = None,
 ) -> str:
     """
@@ -74,14 +75,15 @@ def chat(
                 m[i] = {**m[i], "images": images}
                 break
 
+    options: dict = {"temperature": temperature, "num_predict": max_tokens}
+    if num_ctx is not None:
+        options["num_ctx"] = num_ctx
+
     payload = {
         "model": model or OLLAMA_MODEL,
         "messages": m,
         "stream": False,
-        "options": {
-            "temperature": temperature,
-            "num_predict": max_tokens,
-        },
+        "options": options,
     }
     body = json.dumps(payload).encode()
     req = urllib.request.Request(
