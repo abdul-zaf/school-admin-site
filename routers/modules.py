@@ -214,4 +214,17 @@ def complete_item(
     )
     db.add(completion)
     db.commit()
+    try:
+        from routers.notifications import notify
+        module = db.query(models.CourseModule).filter(models.CourseModule.id == item.module_id).first()
+        if module:
+            course = db.query(models.Course).filter(models.Course.id == module.course_id).first()
+            if course:
+                notify(db, course.teacher_id, "completion",
+                       f"{current_user.name} completed a module item",
+                       f'"{item.title}" in {course.title}',
+                       f"courses?id={course.id}")
+                db.commit()
+    except Exception:
+        pass
     return {"ok": True}

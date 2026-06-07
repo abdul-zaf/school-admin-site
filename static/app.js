@@ -101,9 +101,6 @@ const i18n = {
     exam_submit_confirm:'Are you sure you want to submit? You cannot go back.',
     exam_time_up:'Time is up — your exam has been submitted automatically.',
     is_exam:'Mark as Exam (locked environment)',
-    // Dark mode
-    theme:'Theme', theme_desc:'Switch between light and dark mode',
-    light_mode:'☀️ Light', dark_mode:'🌙 Dark',
     // Leaderboard
 
     your_rank:'Your Rank', rank:'Rank', top_students:'Top Students',
@@ -165,6 +162,27 @@ const i18n = {
     dp_today:'Today', dp_tomorrow:'Tomorrow', dp_next_week:'+1 Week',
     dp_clear:'Clear', dp_date:'Date', dp_time:'Time',
     dp_no_due:'No due date',
+    // Attendance
+    nav_attendance:'Attendance', attendance_title:'Attendance Tracker',
+    att_pick_course:'Select a course', att_pick_date:'Date',
+    att_mark:'Mark Attendance', att_save:'Save Attendance',
+    att_present:'Present', att_absent:'Absent', att_late:'Late',
+    att_no_students:'No students enrolled.', att_saved:'Attendance saved.',
+    att_history:'History', att_summary:'Summary',
+    att_total:'Total', att_present_count:'Present', att_absent_count:'Absent', att_late_count:'Late',
+    att_rate:'Attendance Rate',
+    // Report Cards
+    nav_report_cards:'Report Cards', report_cards_title:'Report Cards',
+    rc_generate:'Generate with AI', rc_generating:'Generating…',
+    rc_publish:'Publish', rc_unpublish:'Unpublish', rc_delete:'Delete',
+    rc_edit:'Edit', rc_save:'Save', rc_cancel:'Cancel',
+    rc_published:'Published', rc_draft:'Draft',
+    rc_no_cards:'No report cards yet.',
+    rc_pick_student:'Select student',
+    rc_pick_course:'Select course',
+    rc_generated:'Report card generated.',
+    rc_deleted:'Report card deleted.',
+    rc_view:'View Report Card',
   },
   ur: {
     app_name:'اسکول ایل ایم ایس',
@@ -254,9 +272,6 @@ const i18n = {
     exam_submit_confirm:'کیا آپ واقعی جمع کرنا چاہتے ہیں؟ واپس نہیں جا سکتے۔',
     exam_time_up:'وقت ختم — آپ کا امتحان خودبخود جمع ہو گیا۔',
     is_exam:'امتحان کے طور پر نشان زد کریں (بند ماحول)',
-    // Dark mode (Urdu)
-    theme:'تھیم', theme_desc:'لائٹ یا ڈارک موڈ منتخب کریں',
-    light_mode:'☀️ روشن', dark_mode:'🌙 تاریک',
     // Leaderboard (Urdu)
 
     your_rank:'آپ کی پوزیشن', rank:'پوزیشن', top_students:'اعلیٰ طلبا',
@@ -308,6 +323,27 @@ const i18n = {
     dp_today:'آج', dp_tomorrow:'کل', dp_next_week:'+1 ہفتہ',
     dp_clear:'ہٹائیں', dp_date:'تاریخ', dp_time:'وقت',
     dp_no_due:'کوئی آخری تاریخ نہیں',
+    // Attendance (Urdu)
+    nav_attendance:'حاضری', attendance_title:'حاضری ٹریکر',
+    att_pick_course:'کورس منتخب کریں', att_pick_date:'تاریخ',
+    att_mark:'حاضری لگائیں', att_save:'حاضری محفوظ کریں',
+    att_present:'حاضر', att_absent:'غیر حاضر', att_late:'دیر سے',
+    att_no_students:'کوئی طالب علم داخل نہیں۔', att_saved:'حاضری محفوظ ہو گئی۔',
+    att_history:'تاریخ', att_summary:'خلاصہ',
+    att_total:'کل', att_present_count:'حاضر', att_absent_count:'غیر حاضر', att_late_count:'دیر سے',
+    att_rate:'حاضری شرح',
+    // Report Cards (Urdu)
+    nav_report_cards:'رپورٹ کارڈ', report_cards_title:'رپورٹ کارڈ',
+    rc_generate:'AI سے بنائیں', rc_generating:'بن رہا ہے…',
+    rc_publish:'شائع کریں', rc_unpublish:'غیر شائع کریں', rc_delete:'حذف کریں',
+    rc_edit:'ترمیم', rc_save:'محفوظ', rc_cancel:'منسوخ',
+    rc_published:'شائع شدہ', rc_draft:'مسودہ',
+    rc_no_cards:'ابھی کوئی رپورٹ کارڈ نہیں۔',
+    rc_pick_student:'طالب علم منتخب کریں',
+    rc_pick_course:'کورس منتخب کریں',
+    rc_generated:'رپورٹ کارڈ بن گیا۔',
+    rc_deleted:'رپورٹ کارڈ حذف ہو گیا۔',
+    rc_view:'رپورٹ کارڈ دیکھیں',
   }
 };
 
@@ -390,7 +426,7 @@ function fmtDateTimeLocal(iso) {
 // State
 // ═══════════════════════════════════════════════════════════
 const state = {
-  token: null, user: null, lang: 'en', theme: 'dark',
+  token: null, user: null, lang: 'en',
   currentPage: null, currentParams: {},
   quizTimer: null, notifInterval: null,
   examLocked: false,
@@ -447,8 +483,6 @@ function restoreSession() {
   const token = localStorage.getItem('lms_token');
   const user  = localStorage.getItem('lms_user');
   const lang  = localStorage.getItem('lms_lang') || 'en';
-  const theme = localStorage.getItem('lms_theme') || 'light';
-  applyTheme(theme); // always apply saved theme, even before login
   if (token && user) {
     state.token = token; state.user = JSON.parse(user);
     state.lang = lang;
@@ -472,21 +506,6 @@ function setLanguage(lang) {
   applyLang(lang);
   updateSidebarNav();
   navigate(state.currentPage || 'dashboard', state.currentParams);
-}
-
-// ── Theme (dark / light mode) ────────────────────────────────────────────────
-function applyTheme(theme) {
-  document.documentElement.dataset.theme = theme;
-  state.theme = theme;
-}
-
-function setTheme(theme) {
-  applyTheme(theme);
-  localStorage.setItem('lms_theme', theme);
-  // Re-render settings so the active button updates
-  if (state.currentPage === 'settings') {
-    navigate('settings', state.currentParams);
-  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -519,8 +538,8 @@ function loading(el) {
 // ═══════════════════════════════════════════════════════════
 const NAV_KEYS = {
   admin:   ['dashboard','courses','users','announcements','gradebook','analytics','calendar','settings'],
-  teacher: ['dashboard','courses','announcements','gradebook','analytics','calendar','messages','settings'],
-  student: ['dashboard','courses','announcements','gradebook','calendar','messages','ai_tutor','settings'],
+  teacher: ['dashboard','courses','announcements','gradebook','attendance','report_cards','analytics','calendar','messages','settings'],
+  student: ['dashboard','courses','announcements','gradebook','report_cards','calendar','messages','ai_tutor','settings'],
   parent:  ['dashboard','settings'],
 };
 const NAV_I18N = {
@@ -529,12 +548,14 @@ const NAV_I18N = {
   gradebook:'nav_gradebook', analytics:'nav_analytics', calendar:'nav_calendar',
   messages:'nav_messages', question_banks:'nav_question_banks',
   ai_tutor:'nav_ai_tutor',
+  attendance:'nav_attendance', report_cards:'nav_report_cards',
 };
 const NAV_ICONS = {
   dashboard:'🏠', courses:'📚', users:'👥', announcements:'📢',
   gradebook:'📊', analytics:'📈', calendar:'📅',
   messages:'✉️',
   settings:'⚙️', ai_tutor:'🤖',
+  attendance:'📋', report_cards:'📄',
 };
 
 // ── Subject → accent colour (used on course cards) ─────────────────────────
@@ -890,6 +911,8 @@ function navigate(page, params = {}) {
     gradebook: renderGradebook, calendar: renderCalendar, messages: renderMessages,
     analytics: renderAnalytics,
     ai_tutor: renderAiTutor,
+    attendance: renderAttendance,
+    report_cards: renderReportCards,
   };
   if      (page === 'course')        renderCourseDetail(params.id, el);
   else if (page === 'assignment')    renderAssignmentDetail(params.id, el);
@@ -959,17 +982,6 @@ function renderSettings(el) {
           <button class="lang-btn${state.lang==='ur'?' active':''}" onclick="setLanguage('ur')">
             🇵🇰&nbsp; اردو
           </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card settings-section">
-      <div class="card-header"><h3>🌓 ${t('theme')}</h3></div>
-      <div class="card-body">
-        <p class="text-muted">${t('theme_desc')}</p>
-        <div class="lang-buttons">
-          <button class="lang-btn${state.theme==='light'?' active':''}" onclick="setTheme('light')">${t('light_mode')}</button>
-          <button class="lang-btn${state.theme==='dark'?' active':''}" onclick="setTheme('dark')">${t('dark_mode')}</button>
         </div>
       </div>
     </div>
@@ -3179,7 +3191,7 @@ async function renderGradebook(el) {
                   <tbody>
                     ${scores.map(s => `
                       <tr>
-                        <td>${htmlEsc(s.title)}</td>
+                        <td><a class="table-link" onclick="navigate('assignment',{id:${s.id}})">${htmlEsc(s.title)}</a></td>
                         <td>${s.score !== null ? `<strong>${s.score}</strong>` : '<span class="text-muted">—</span>'}</td>
                         <td>${s.max_score}</td>
                         <td>${s.score !== null && s.max_score ? `<span class="grade-cell grade-${scoreToLetter(s.score, s.max_score)}" style="min-width:0;padding:2px 8px">${Math.round(s.score/s.max_score*100)}%</span>` : '<span class="text-muted">—</span>'}</td>
@@ -3192,17 +3204,9 @@ async function renderGradebook(el) {
         }).join('')}`;
 
     } else {
-      // Teacher/Admin: pick course
+      // Teacher/Admin: course → student drill-down
       const courses = await api('GET', '/courses/');
       const mine = role === 'admin' ? courses : courses.filter(c => c.teacher_id === state.user.id);
-      if (!state.currentParams.course_id && mine.length > 0) {
-        state.currentParams.course_id = mine[0].id;
-      }
-      const cid = state.currentParams.course_id;
-      let gb = null;
-      if (cid) {
-        gb = await api('GET', `/gradebook/course/${cid}`);
-      }
 
       if (!mine.length) {
         el.innerHTML = `
@@ -3214,18 +3218,43 @@ async function renderGradebook(el) {
           </div>`;
         return;
       }
+
+      if (!state.currentParams.course_id) state.currentParams.course_id = mine[0].id;
+      const cid = state.currentParams.course_id;
+      const sid = state.currentParams.student_id || null;
+
+      let gb = await api('GET', `/gradebook/course/${cid}`);
+
       el.innerHTML = `
-        <div class="page-header"><h2>${t('gradebook')}</h2>
-          <select class="form-control" style="max-width:280px" onchange="navigate('gradebook',{course_id:parseInt(this.value)})">
-            ${mine.map(c => `<option value="${c.id}" ${c.id==cid?'selected':''}>${htmlEsc(c.title)}</option>`).join('')}
-          </select>
+        <div class="page-header"><h2>${t('gradebook')}</h2></div>
+        <div class="card" style="margin-bottom:18px;padding:20px 24px">
+          <div style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px">
+              <label class="form-label" style="margin-bottom:6px;display:block">Course</label>
+              <select class="form-control" id="gb-course-sel">
+                ${mine.map(c => `<option value="${c.id}" ${c.id==cid?'selected':''}>${htmlEsc(c.title)}</option>`).join('')}
+              </select>
+            </div>
+            <div style="flex:1;min-width:200px">
+              <label class="form-label" style="margin-bottom:6px;display:block">Student</label>
+              <select class="form-control" id="gb-student-sel">
+                <option value="">— All students (overview) —</option>
+                ${(gb ? gb.students : []).map(s => `<option value="${s.student_id}" ${s.student_id==sid?'selected':''}>${htmlEsc(s.student_name)}</option>`).join('')}
+              </select>
+            </div>
+          </div>
         </div>
-        ${gb ? renderGradebookTable(gb) : `
-          <div class="gb-empty-state">
-            <div class="gb-empty-icon">📋</div>
-            <p class="gb-empty-title">Select a course</p>
-            <p class="gb-empty-sub">Choose a course from the dropdown above to view its gradebook.</p>
-          </div>`}`;
+        <div id="gb-body">
+          ${gb ? (sid ? renderGradebookStudent(gb, parseInt(sid)) : renderGradebookTable(gb)) : ''}
+        </div>`;
+
+      el.querySelector('#gb-course-sel').addEventListener('change', function() {
+        navigate('gradebook', {course_id: parseInt(this.value)});
+      });
+      el.querySelector('#gb-student-sel').addEventListener('change', function() {
+        const v = this.value ? parseInt(this.value) : null;
+        navigate('gradebook', {course_id: cid, ...(v ? {student_id: v} : {})});
+      });
     }
   } catch(err) { el.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
 }
@@ -3273,7 +3302,7 @@ function renderGradebookTable(gb) {
             <thead>
               <tr>
                 <th>Student</th>
-                ${assignments.map(a => `<th title="${htmlEsc(a.title)}">${htmlEsc(a.title).substring(0,14)}${a.title.length>14?'…':''}${a.is_extra_credit?' ⭐':''}</th>`).join('')}
+                ${assignments.map(a => `<th><a class="table-link" onclick="navigate('assignment',{id:${a.id}})" title="${htmlEsc(a.title)}">${htmlEsc(a.title).substring(0,14)}${a.title.length>14?'…':''}${a.is_extra_credit?' ⭐':''}</a></th>`).join('')}
                 <th>Avg %</th><th>Grade</th>
               </tr>
             </thead>
@@ -3295,6 +3324,108 @@ function renderGradebookTable(gb) {
           </table>
         </div>
       </div>
+    </div>`;
+}
+
+function renderGradebookStudent(gb, studentId) {
+  const student = gb.students.find(s => s.student_id === studentId);
+  if (!student) return `<div class="alert alert-error">Student not found in this course.</div>`;
+  const assignments = gb.assignments;
+
+  const submitted = assignments.filter(a => student.scores[a.id]?.submitted).length;
+  const graded    = assignments.filter(a => student.scores[a.id]?.graded).length;
+  const missing   = assignments.filter(a => !student.scores[a.id]?.submitted).length;
+
+  return `
+    <div class="card" style="margin-bottom:18px;padding:20px 24px">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="width:44px;height:44px;border-radius:50%;background:var(--indigo);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0">
+          ${htmlEsc(student.student_name.charAt(0).toUpperCase())}
+        </div>
+        <div>
+          <div style="font-size:16px;font-weight:700;color:var(--text)">${htmlEsc(student.student_name)}</div>
+          <div style="font-size:12px;color:var(--muted)">${htmlEsc(gb.course_title)}</div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:12px;flex-wrap:wrap">
+          <div style="text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--text)">${student.weighted_pct}%</div>
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Average</div>
+          </div>
+          <div style="text-align:center">
+            <span class="grade-cell grade-${student.letter}" style="font-size:20px;padding:4px 14px">${student.letter}</span>
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:4px">Grade</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:20px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:6px;font-size:13px">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--success);display:inline-block"></span>
+          <strong>${submitted}</strong> <span class="text-muted">submitted</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:13px">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--indigo);display:inline-block"></span>
+          <strong>${graded}</strong> <span class="text-muted">graded</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:13px">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--danger);display:inline-block"></span>
+          <strong>${missing}</strong> <span class="text-muted">missing</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:0">
+      <div class="card-header" style="padding:14px 20px">
+        <h3>Assignments</h3>
+        <small class="text-muted">${assignments.length} total</small>
+      </div>
+      ${assignments.length === 0 ? `
+        <div class="card-body">
+          <div class="gb-empty-state" style="padding:36px">
+            <div class="gb-empty-icon">📝</div>
+            <p class="gb-empty-title">No assignments yet</p>
+          </div>
+        </div>` : `
+      <div class="card-body" style="padding:0">
+        <table class="gradebook-table" style="width:100%">
+          <thead>
+            <tr>
+              <th style="padding:10px 18px">Assignment</th>
+              <th style="padding:10px 12px;text-align:center">Status</th>
+              <th style="padding:10px 12px;text-align:center">Score</th>
+              <th style="padding:10px 12px;text-align:center">Max</th>
+              <th style="padding:10px 12px;text-align:center">%</th>
+              <th style="padding:10px 12px;text-align:center">Grade</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${assignments.map(a => {
+              const sc = student.scores[a.id] || {};
+              const submitted = sc.submitted;
+              const graded    = sc.graded;
+              const score     = sc.score;
+              const max       = a.max_score;
+              const pct       = (graded && max) ? Math.round(score / max * 100) : null;
+              const letter    = pct !== null ? scoreToLetter(score, max) : null;
+
+              const statusBadge = !submitted
+                ? `<span class="badge badge-danger">Missing</span>`
+                : graded
+                  ? `<span class="badge badge-success">Graded</span>`
+                  : `<span class="badge badge-warning">Submitted</span>`;
+
+              return `
+                <tr>
+                  <td style="padding:12px 18px;font-weight:500"><a class="table-link" onclick="navigate('assignment',{id:${a.id}})">${htmlEsc(a.title)}</a>${a.is_extra_credit ? ' <span style="font-size:11px;color:var(--gold)">⭐ Extra credit</span>' : ''}</td>
+                  <td style="padding:12px;text-align:center">${statusBadge}</td>
+                  <td style="padding:12px;text-align:center">${graded ? `<strong>${score}</strong>` : '<span class="text-muted">—</span>'}</td>
+                  <td style="padding:12px;text-align:center;color:var(--muted)">${max}</td>
+                  <td style="padding:12px;text-align:center">${pct !== null ? `${pct}%` : '<span class="text-muted">—</span>'}</td>
+                  <td style="padding:12px;text-align:center">${letter ? `<span class="grade-cell grade-${letter}" style="min-width:0;padding:2px 10px">${letter}</span>` : '<span class="text-muted">—</span>'}</td>
+                </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>`}
     </div>`;
 }
 
@@ -3673,10 +3804,11 @@ async function renderAnalytics(el) {
                 const pct = Math.round(count / total * 100);
                 return `
                   <div class="chart-bar-container">
-                    <div class="chart-bar-label"><span>${letter}</span><span>${count} students</span></div>
+                    <div class="chart-bar-letter">${letter}</div>
                     <div class="chart-bar-track">
-                      <div class="chart-bar-fill chart-bar-${letter}" style="width:${pct}%">${pct}%</div>
+                      <div class="chart-bar-fill chart-bar-fill-${letter}" style="width:${pct}%"></div>
                     </div>
+                    <div class="chart-bar-meta">${count} <span style="font-weight:400">(${pct}%)</span></div>
                   </div>`;
               }).join('')}
             </div>
@@ -4384,6 +4516,390 @@ async function onTutorCourseChange() {
   } catch(_) {
     sel.innerHTML = '<option value="">Error loading assignments</option>';
   }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Attendance Tracker
+// ═══════════════════════════════════════════════════════════
+async function renderAttendance(el) {
+  loading(el);
+  try {
+    const courses = await api('GET', '/courses');
+    const myCourses = state.user.role === 'teacher'
+      ? courses.filter(c => c.teacher_id === state.user.id)
+      : courses;
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    el.innerHTML = `
+      <div class="page-header"><h1>${t('attendance_title')}</h1></div>
+      <div class="card" style="margin-bottom:20px;padding:20px 24px">
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+          <div class="form-group" style="margin:0;flex:1;min-width:200px">
+            <label style="margin-bottom:6px;display:block">${t('att_pick_course')}</label>
+            <select class="form-control" id="att-course-sel">
+              <option value="">— ${t('att_pick_course')} —</option>
+              ${myCourses.map(c => `<option value="${c.id}">${htmlEsc(c.title)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label style="margin-bottom:6px;display:block">${t('att_pick_date')}</label>
+            <input type="date" class="form-control" id="att-date-inp" value="${today}" style="min-width:160px">
+          </div>
+          <div style="padding-bottom:2px">
+            <button class="btn btn-primary" id="att-load-btn" style="white-space:nowrap">${t('att_mark')}</button>
+          </div>
+        </div>
+      </div>
+      <div id="att-sheet"></div>
+      <div class="card" style="margin-top:20px;padding:20px 24px">
+        <h3 style="margin:0 0 16px">${t('att_history')}</h3>
+        <div id="att-history-area"><p class="text-muted">${t('att_pick_course')}</p></div>
+      </div>`;
+
+    const sheetEl   = document.getElementById('att-sheet');
+    const histEl    = document.getElementById('att-history-area');
+    const courseSel = document.getElementById('att-course-sel');
+    const dateInp   = document.getElementById('att-date-inp');
+
+    async function loadSheet() {
+      const cid  = courseSel.value;
+      const date = dateInp.value;
+      if (!cid || !date) return;
+
+      loading(sheetEl);
+      try {
+        const [students, records] = await Promise.all([
+          api('GET', `/courses/${cid}/students`),
+          api('GET', `/courses/${cid}/attendance`),
+        ]);
+
+        const dayMap = {};
+        records.filter(r => r.date === date).forEach(r => { dayMap[r.student_id] = r.status; });
+
+        if (!students.length) {
+          sheetEl.innerHTML = `<div class="card"><p class="text-muted">${t('att_no_students')}</p></div>`;
+          return;
+        }
+
+        sheetEl.innerHTML = `
+          <div class="card" style="padding:20px 24px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+              <h3 style="margin:0">${t('att_mark')} — ${date}</h3>
+              <button class="btn btn-primary" id="att-save-btn">${t('att_save')}</button>
+            </div>
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse" id="att-table">
+                <thead>
+                  <tr style="border-bottom:2px solid var(--border)">
+                    <th style="text-align:left;padding:10px 14px;color:var(--muted);font-weight:600;font-size:13px">#</th>
+                    <th style="text-align:left;padding:10px 14px;color:var(--muted);font-weight:600;font-size:13px">Student</th>
+                    <th style="text-align:center;padding:10px 14px;color:var(--success);font-weight:600;font-size:13px">${t('att_present')}</th>
+                    <th style="text-align:center;padding:10px 14px;color:var(--gold);font-weight:600;font-size:13px">${t('att_late')}</th>
+                    <th style="text-align:center;padding:10px 14px;color:var(--danger);font-weight:600;font-size:13px">${t('att_absent')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${students.map((s, i) => {
+                    const cur = dayMap[s.id] || 'present';
+                    return `<tr style="border-bottom:1px solid var(--border)" data-sid="${s.id}">
+                      <td style="padding:12px 14px;color:var(--muted);font-size:13px">${i + 1}</td>
+                      <td style="padding:12px 14px;font-weight:600">${htmlEsc(s.name)}</td>
+                      ${['present','late','absent'].map(st => `
+                        <td style="text-align:center;padding:12px 14px">
+                          <label style="cursor:pointer;display:flex;justify-content:center">
+                            <input type="radio" name="att-${s.id}" value="${st}" ${cur === st ? 'checked' : ''}
+                              style="accent-color:${st==='present'?'var(--success)':st==='late'?'var(--gold)':'var(--danger)'};width:20px;height:20px;cursor:pointer">
+                          </label>
+                        </td>`).join('')}
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>`;
+
+        document.getElementById('att-save-btn').onclick = async () => {
+          const rows = document.querySelectorAll('#att-table tbody tr[data-sid]');
+          const records = [];
+          rows.forEach(row => {
+            const sid = parseInt(row.dataset.sid);
+            const sel = row.querySelector('input[type=radio]:checked');
+            if (sel) records.push({ student_id: sid, status: sel.value });
+          });
+          try {
+            await api('POST', `/courses/${cid}/attendance`, { date, records });
+            toast(t('att_saved'), 'success');
+            loadHistory(cid);
+          } catch(e) { toast(e.message, 'error'); }
+        };
+
+        loadHistory(cid);
+      } catch(e) {
+        sheetEl.innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+      }
+    }
+
+    async function loadHistory(cid) {
+      try {
+        const [students, records] = await Promise.all([
+          api('GET', `/courses/${cid}/students`),
+          api('GET', `/courses/${cid}/attendance`),
+        ]);
+
+        if (!records.length) {
+          histEl.innerHTML = `<p class="text-muted">${t('att_no_students')}</p>`;
+          return;
+        }
+
+        // Build summary per student
+        const stdMap = {};
+        students.forEach(s => { stdMap[s.id] = s.name; });
+
+        const summary = {};
+        records.forEach(r => {
+          if (!summary[r.student_id]) summary[r.student_id] = { present:0, late:0, absent:0 };
+          summary[r.student_id][r.status]++;
+        });
+
+        // Unique sorted dates
+        const dates = [...new Set(records.map(r => r.date))].sort();
+        const dayRecords = {};
+        records.forEach(r => {
+          if (!dayRecords[r.date]) dayRecords[r.date] = {};
+          dayRecords[r.date][r.student_id] = r.status;
+        });
+
+        histEl.innerHTML = `
+          <h4 style="margin:0 0 14px">${t('att_summary')}</h4>
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <thead>
+                <tr style="border-bottom:2px solid var(--border)">
+                  <th style="text-align:left;padding:8px 12px;color:var(--muted);font-weight:600">Student</th>
+                  <th style="text-align:center;padding:8px 12px;color:var(--success);font-weight:600">${t('att_present_count')}</th>
+                  <th style="text-align:center;padding:8px 12px;color:var(--gold);font-weight:600">${t('att_late_count')}</th>
+                  <th style="text-align:center;padding:8px 12px;color:var(--danger);font-weight:600">${t('att_absent_count')}</th>
+                  <th style="text-align:center;padding:8px 12px;color:var(--muted);font-weight:600">${t('att_rate')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${Object.entries(summary).map(([sid, s]) => {
+                  const total = s.present + s.late + s.absent;
+                  const rate  = total ? Math.round(s.present / total * 100) : 0;
+                  const color = rate >= 80 ? 'var(--success)' : rate >= 60 ? 'var(--gold)' : 'var(--danger)';
+                  return `<tr style="border-bottom:1px solid var(--border)">
+                    <td style="padding:10px 12px;font-weight:600">${htmlEsc(stdMap[sid] || sid)}</td>
+                    <td style="text-align:center;padding:10px 12px">${s.present}</td>
+                    <td style="text-align:center;padding:10px 12px">${s.late}</td>
+                    <td style="text-align:center;padding:10px 12px">${s.absent}</td>
+                    <td style="text-align:center;padding:10px 12px;font-weight:700;color:${color}">${rate}%</td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>`;
+      } catch(e) {
+        histEl.innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+      }
+    }
+
+    document.getElementById('att-load-btn').onclick = loadSheet;
+
+  } catch(err) {
+    el.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Report Cards
+// ═══════════════════════════════════════════════════════════
+async function renderReportCards(el) {
+  loading(el);
+  try {
+    if (state.user.role === 'student') {
+      await renderStudentReportCards(el);
+    } else {
+      await renderTeacherReportCards(el);
+    }
+  } catch(err) {
+    el.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+  }
+}
+
+async function renderStudentReportCards(el) {
+  const cards = await api('GET', '/report-cards/my');
+  el.innerHTML = `
+    <div class="page-header"><h1>${t('report_cards_title')}</h1></div>
+    ${!cards.length
+      ? `<div class="card"><p class="text-muted">${t('rc_no_cards')}</p></div>`
+      : cards.map(rc => `
+        <div class="card" style="margin-bottom:16px;padding:20px 24px">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <strong style="font-size:16px">${htmlEsc(rc.course_title)}</strong>
+              <span class="badge badge-success">${t('rc_published')}</span>
+            </div>
+            <span style="color:var(--muted);font-size:12px">${fmtDate(rc.updated_at)}</span>
+          </div>
+          <pre style="white-space:pre-wrap;font-family:inherit;line-height:1.75;color:var(--text);margin:0;background:var(--surface-2,var(--card));border:1px solid var(--border);padding:16px 18px;border-radius:8px;font-size:13px">${htmlEsc(rc.content)}</pre>
+        </div>`).join('')}`;
+}
+
+async function renderTeacherReportCards(el) {
+  const courses = await api('GET', '/courses');
+  const myCourses = state.user.role === 'teacher'
+    ? courses.filter(c => c.teacher_id === state.user.id)
+    : courses;
+
+  el.innerHTML = `
+    <div class="page-header"><h1>${t('report_cards_title')}</h1></div>
+    <div class="card" style="margin-bottom:20px;padding:20px 24px">
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+        <div class="form-group" style="margin:0;flex:1;min-width:200px">
+          <label style="margin-bottom:6px;display:block">${t('rc_pick_course')}</label>
+          <select class="form-control" id="rc-course-sel">
+            <option value="">— ${t('rc_pick_course')} —</option>
+            ${myCourses.map(c => `<option value="${c.id}">${htmlEsc(c.title)}</option>`).join('')}
+          </select>
+        </div>
+        <div style="padding-bottom:2px">
+          <button class="btn btn-primary" id="rc-load-btn" style="white-space:nowrap">Load</button>
+        </div>
+      </div>
+    </div>
+    <div id="rc-students-panel"></div>
+    <div id="rc-cards-panel" style="margin-top:20px"></div>`;
+
+  const studentsPanel = document.getElementById('rc-students-panel');
+  const cardsPanel    = document.getElementById('rc-cards-panel');
+  const courseSel     = document.getElementById('rc-course-sel');
+
+  async function loadCourseCards() {
+    const cid = courseSel.value;
+    if (!cid) return;
+    loading(studentsPanel);
+    loading(cardsPanel);
+
+    const [students, cards] = await Promise.all([
+      api('GET', `/courses/${cid}/students`),
+      api('GET', `/report-cards/course/${cid}`),
+    ]);
+
+    const cardMap = {};
+    cards.forEach(c => { cardMap[c.student_id] = c; });
+
+    studentsPanel.innerHTML = `
+      <div class="card" style="padding:20px 24px">
+        <h3 style="margin:0 0 16px">${t('rc_generate')}</h3>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+          <div style="flex:1;min-width:200px">
+            <select class="form-control" id="rc-student-sel">
+              <option value="">— ${t('rc_pick_student')} —</option>
+              ${students.map(s => `<option value="${s.id}">${htmlEsc(s.name)}</option>`).join('')}
+            </select>
+          </div>
+          <div style="padding-bottom:2px">
+            <button class="btn btn-primary" id="rc-gen-btn" style="white-space:nowrap">${t('rc_generate')}</button>
+          </div>
+        </div>
+        <p id="rc-gen-status" style="margin:10px 0 0;color:var(--muted);font-size:13px"></p>
+      </div>`;
+
+    document.getElementById('rc-gen-btn').onclick = async () => {
+      const sid = document.getElementById('rc-student-sel').value;
+      if (!sid) return;
+      const btn = document.getElementById('rc-gen-btn');
+      const status = document.getElementById('rc-gen-status');
+      btn.disabled = true; btn.textContent = t('rc_generating');
+      status.textContent = t('rc_generating');
+      try {
+        await api('POST', '/report-cards/generate', { course_id: parseInt(cid), student_id: parseInt(sid) });
+        toast(t('rc_generated'), 'success');
+        loadCourseCards();
+      } catch(e) {
+        toast(e.message, 'error');
+      } finally {
+        btn.disabled = false; btn.textContent = t('rc_generate');
+        status.textContent = '';
+      }
+    };
+
+    if (!cards.length) {
+      cardsPanel.innerHTML = `<div class="card"><p class="text-muted">${t('rc_no_cards')}</p></div>`;
+      return;
+    }
+
+    cardsPanel.innerHTML = cards.map(rc => `
+      <div class="card" style="margin-bottom:16px;padding:20px 24px" id="rc-card-${rc.id}">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <strong style="font-size:16px">${htmlEsc(rc.student_name)}</strong>
+            <span class="badge ${rc.is_published ? 'badge-success' : 'badge-secondary'}">
+              ${rc.is_published ? t('rc_published') : t('rc_draft')}
+            </span>
+            <span style="color:var(--muted);font-size:12px">${fmtDate(rc.updated_at)}</span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <button class="btn btn-sm" onclick="rcToggleEdit(${rc.id})" style="min-width:60px">${t('rc_edit')}</button>
+            ${rc.is_published
+              ? `<button class="btn btn-sm btn-gold" onclick="rcTogglePublish(${rc.id},false)" style="min-width:90px">${t('rc_unpublish')}</button>`
+              : `<button class="btn btn-sm btn-success" onclick="rcTogglePublish(${rc.id},true)" style="min-width:80px">${t('rc_publish')}</button>`}
+            <button class="btn btn-sm btn-danger" onclick="rcDelete(${rc.id})" style="min-width:64px">${t('rc_delete')}</button>
+          </div>
+        </div>
+        <div id="rc-view-${rc.id}">
+          <pre style="white-space:pre-wrap;font-family:inherit;line-height:1.75;color:var(--text);margin:0;background:var(--surface-2,var(--card));border:1px solid var(--border);padding:16px 18px;border-radius:8px;font-size:13px">${htmlEsc(rc.content)}</pre>
+        </div>
+        <div id="rc-edit-${rc.id}" style="display:none">
+          <textarea class="form-control" id="rc-ta-${rc.id}" style="min-height:300px;font-family:inherit;font-size:13px;line-height:1.75">${htmlEsc(rc.content)}</textarea>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="rcSaveEdit(${rc.id})">${t('rc_save')}</button>
+            <button class="btn btn-sm" onclick="rcToggleEdit(${rc.id})">${t('rc_cancel')}</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  document.getElementById('rc-load-btn').onclick = loadCourseCards;
+
+  // Expose helpers to inline onclick handlers
+  window.rcToggleEdit = (id) => {
+    const view = document.getElementById(`rc-view-${id}`);
+    const edit = document.getElementById(`rc-edit-${id}`);
+    if (edit.style.display === 'none') {
+      view.style.display = 'none'; edit.style.display = 'block';
+    } else {
+      view.style.display = 'block'; edit.style.display = 'none';
+    }
+  };
+
+  window.rcSaveEdit = async (id) => {
+    const content = document.getElementById(`rc-ta-${id}`).value.trim();
+    if (!content) return;
+    try {
+      await api('PUT', `/report-cards/${id}`, { content });
+      toast(t('rc_save'), 'success');
+      loadCourseCards();
+    } catch(e) { toast(e.message, 'error'); }
+  };
+
+  window.rcTogglePublish = async (id, publish) => {
+    try {
+      await api('POST', `/report-cards/${id}/${publish ? 'publish' : 'unpublish'}`);
+      toast(publish ? t('rc_published') : t('rc_draft'), 'success');
+      loadCourseCards();
+    } catch(e) { toast(e.message, 'error'); }
+  };
+
+  window.rcDelete = async (id) => {
+    if (!confirm(t('rc_delete') + '?')) return;
+    try {
+      await api('DELETE', `/report-cards/${id}`);
+      toast(t('rc_deleted'), 'success');
+      loadCourseCards();
+    } catch(e) { toast(e.message, 'error'); }
+  };
 }
 
 // ═══════════════════════════════════════════════════════════

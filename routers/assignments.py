@@ -271,8 +271,15 @@ async def submit_assignment(
         try:
             from routers.streaks import record_activity
             from routers.xp import award_xp
+            from routers.notifications import notify
             record_activity(db, current_user.id)
             award_xp(db, current_user.id, "submit_assignment", f"Resubmitted: {assignment.title}")
+            course = db.query(models.Course).filter(models.Course.id == assignment.course_id).first()
+            if course:
+                notify(db, course.teacher_id, "submission",
+                       f"{current_user.name} resubmitted an assignment",
+                       f'"{assignment.title}" in {course.title}',
+                       f"gradebook?course_id={course.id}&student_id={current_user.id}")
             db.commit()
         except Exception:
             pass
@@ -294,8 +301,15 @@ async def submit_assignment(
     try:
         from routers.streaks import record_activity
         from routers.xp import award_xp
+        from routers.notifications import notify
         record_activity(db, current_user.id)
         award_xp(db, current_user.id, "submit_assignment", f"Submitted: {assignment.title}")
+        course = db.query(models.Course).filter(models.Course.id == assignment.course_id).first()
+        if course:
+            notify(db, course.teacher_id, "submission",
+                   f"{current_user.name} submitted an assignment",
+                   f'"{assignment.title}" in {course.title}',
+                   f"gradebook?course_id={course.id}&student_id={current_user.id}")
         db.commit()
     except Exception:
         pass

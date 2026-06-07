@@ -38,6 +38,7 @@ from routers import (
     ai_tutor,
     recommendations,
     timetable,
+    report_cards,
 )
 
 Base.metadata.create_all(bind=engine)
@@ -127,6 +128,7 @@ app.include_router(code_sandbox.router,   prefix="/api/sandbox",        tags=["c
 app.include_router(ai_tutor.router,       prefix="/api/ai-tutor",       tags=["ai-tutor"])
 app.include_router(recommendations.router, prefix="/api/recommendations", tags=["recommendations"])
 app.include_router(timetable.router,      prefix="/api/timetable",      tags=["timetable"])
+app.include_router(report_cards.router,   prefix="/api/report-cards",   tags=["report-cards"])
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 

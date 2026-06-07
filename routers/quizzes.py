@@ -13,6 +13,7 @@ POST   /api/quizzes/{id}/start      Start an attempt (checks retake limit)
 POST   /api/quizzes/{id}/submit     Submit answers; MC/T-F auto-graded
 GET    /api/quizzes/{id}/attempts   All student attempts (teacher/admin)
 """
+import os
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session as DBSession
 from pydantic import BaseModel
@@ -486,12 +487,18 @@ def submit_quiz(
     quiz_obj = db.query(models.Quiz).filter(models.Quiz.id == quiz_id).first()
     total_possible = sum(qq.points for qq in quiz_obj.questions)
 
-    # Record XP and streak for quiz submission
+    # Record XP, streak, and notify teacher
     try:
         from routers.streaks import record_activity
         from routers.xp import award_xp
         record_activity(db, current_user.id)
         award_xp(db, current_user.id, "quiz_submission", f"Completed quiz: {quiz_obj.title}")
+        course = db.query(models.Course).filter(models.Course.id == quiz_obj.course_id).first()
+        if course:
+            push_notif(db, course.teacher_id, "submission",
+                       f"{current_user.name} submitted a quiz",
+                       f'"{quiz_obj.title}" in {course.title}',
+                       f"courses?id={course.id}")
         db.commit()
     except Exception:
         pass
@@ -634,7 +641,11 @@ def ai_generate_questions(
 ):
     """Generate quiz questions from course materials using Ollama."""
     import json
-    from services.ollama import chat as ollama_chat, is_available as ollama_available
+    from services.ollama import chat as ollama_chat, is_available as ollama_available, OLLAMA_MODEL
+
+    # Vision model to use when materials contain images.
+    # llava is a well-known vision model; fall back to env-configured model if not available.
+    VISION_MODEL = os.getenv("OLLAMA_VISION_MODEL", "llava")
 
     if not ollama_available():
         raise HTTPException(
@@ -656,66 +667,139 @@ def ai_generate_questions(
     if not materials:
         raise HTTPException(400, "No valid materials selected")
 
-    content_parts = []
+    import sys
+    import base64
+    from pathlib import Path
+
+    _IMAGE_MIMES = {"image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp"}
+    _IMAGE_EXTS  = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
+
+    content_parts: list[str] = []
+    image_b64s:    list[str] = []
+
     for m in materials:
         text = m.content or ""
         if m.material_type == "file" and m.file_path:
-            try:
-                from pathlib import Path
-                raw = Path(m.file_path).read_text(encoding="utf-8", errors="ignore")
-                text = raw[:8000]  # cap per-file to avoid token overflow
-            except Exception:
-                pass
-        if text:
+            fpath = Path(m.file_path)
+            mime  = (m.file_mime or "").lower()
+            ext   = fpath.suffix.lower()
+            is_image = mime in _IMAGE_MIMES or ext in _IMAGE_EXTS
+            if is_image:
+                try:
+                    image_b64s.append(base64.b64encode(fpath.read_bytes()).decode())
+                    content_parts.append(f"[Image material: {m.title}]")
+                except Exception as exc:
+                    print(f"[AI Generate] could not read image {fpath}: {exc}", file=sys.stderr)
+            else:
+                try:
+                    text = fpath.read_text(encoding="utf-8", errors="ignore")[:8000]
+                except Exception:
+                    pass
+        if text and not text.startswith("[Image"):
             content_parts.append(f"=== {m.title} ===\n{text[:6000]}")
 
-    if not content_parts:
-        raise HTTPException(400, "Selected materials have no readable text content")
+    if not content_parts and not image_b64s:
+        raise HTTPException(400, "Selected materials have no readable content")
 
-    combined = "\n\n".join(content_parts)[:20000]  # total cap
+    combined = "\n\n".join(content_parts)[:20000]
+    print(
+        f"[AI Generate] quiz_id={quiz_id} materials={len(materials)} "
+        f"text_chars={len(combined)} images={len(image_b64s)}",
+        file=sys.stderr,
+    )
+
+    system_prompt = (
+        "You are an expert educator. Your ONLY job is to read the provided course material "
+        "(which may include images of textbook pages, handwritten notes, or slides) "
+        "and write exam questions that directly reference specific facts, equations, "
+        "definitions, and examples visible in that material. "
+        "NEVER write generic questions like 'What is the value of x?' — always include the actual "
+        "equation or context from the material. NEVER use placeholder answer options like A, B, C, D or 1, 2, 3, 4. "
+        "Every question and every answer option must contain real, specific content from the material."
+    )
+
+    image_instruction = (
+        "The course material is provided as image(s) above. "
+        "Read every equation, definition, diagram label, and example visible in the images carefully."
+        if image_b64s else
+        "Read the course material text carefully."
+    )
 
     prompt_lines = [
-        "You are an expert educator creating an assessment based on the following course material.",
+        image_instruction,
         "",
-        "MATERIAL:",
-        combined,
+        *(["═══ COURSE MATERIAL TEXT ═══", combined, "═══ END ═══", ""] if combined.strip() and not combined.strip().startswith("[Image") else []),
+        f"Generate exactly these question counts based on the material:",
+        f"  • {data.num_mc} multiple-choice questions (4 answer options each, exactly one correct)",
+        f"  • {data.num_tf} true/false questions",
+        f"  • {data.num_short} short-answer questions",
+        f"  • {data.num_long} long-answer/essay questions",
         "",
-        "Generate the following questions based ONLY on the material above:",
-        f"- {data.num_mc} multiple-choice questions (4 options each, exactly one correct)",
-        f"- {data.num_tf} true/false questions",
-        f"- {data.num_short} short-answer questions (1-3 sentences expected)",
-        f"- {data.num_long} long-answer/essay questions (paragraph response expected)",
+        "MANDATORY RULES:",
+        "• Include the actual equation, value, or term from the material in each question.",
+        "• Multiple-choice options must be real specific answers — numbers, names, or phrases from the material.",
+        "• NEVER use 'A', 'B', 'C', 'D' or '1', '2', '3', '4' as option text.",
+        "• True/false statements must be a specific factual claim from the material.",
+        "• Do NOT invent facts not present in the material.",
         "",
-        "Return ONLY a valid JSON array. Each element must have this shape:",
-        '{"type":"multiple_choice","question":"...","points":2,"options":[{"text":"...","correct":true},{"text":"...","correct":false},...]}',
-        'For true_false: {"type":"true_false","question":"...","points":1,"correct":true}',
-        'For short_answer: {"type":"short_answer","question":"...","points":3}',
-        'For long_answer: {"type":"long_answer","question":"...","points":10}',
-        "",
-        "Do not include any explanation or markdown — output only the JSON array.",
+        "Output ONLY a valid JSON array — no markdown, no explanation, no extra text.",
+        "Each element must match one of these exact shapes:",
+        '{"type":"multiple_choice","question":"<complete question text>","points":2,"options":[{"text":"<specific answer>","correct":true},{"text":"<specific wrong answer>","correct":false},{"text":"<specific wrong answer>","correct":false},{"text":"<specific wrong answer>","correct":false}]}',
+        '{"type":"true_false","question":"<specific factual statement>","points":1,"correct":true}',
+        '{"type":"short_answer","question":"<complete question text>","points":3}',
+        '{"type":"long_answer","question":"<complete essay prompt>","points":10}',
     ]
+
+    model_to_use = VISION_MODEL if image_b64s else None  # None = use OLLAMA_MODEL default
+    print(f"[AI Generate] using model={model_to_use or OLLAMA_MODEL}", file=sys.stderr)
 
     raw = ollama_chat(
         [{"role": "user", "content": "\n".join(prompt_lines)}],
-        temperature=0.4,
-        max_tokens=4096,
+        system=system_prompt,
+        images=image_b64s or None,
+        model=model_to_use,
+        temperature=0.3,
+        max_tokens=8192,
     )
 
-    # Strip markdown fences
+    # Log raw response for debugging
+    print(f"[AI Generate] raw response (first 500 chars): {raw[:500]!r}", file=sys.stderr)
+
+    # Strip markdown fences (```json ... ``` or ``` ... ```)
     raw = raw.strip()
     if raw.startswith("```"):
-        raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
-        raw = raw.rsplit("```", 1)[0].strip()
+        # Remove opening fence line
+        first_newline = raw.find("\n")
+        raw = raw[first_newline + 1:] if first_newline != -1 else raw[3:]
+        # Remove closing fence
+        if raw.endswith("```"):
+            raw = raw[:-3].strip()
 
+    raw = raw.strip()
+
+    # Try direct parse first
+    questions_data = None
     try:
         questions_data = json.loads(raw)
     except json.JSONDecodeError:
-        # Try to extract JSON array from response
+        pass
+
+    # Fall back: find the outermost [ ... ] in the response
+    if questions_data is None:
         import re
-        m = re.search(r'\[.*\]', raw, re.DOTALL)
-        if not m:
-            raise HTTPException(500, "AI returned invalid JSON. Try again.")
-        questions_data = json.loads(m.group())
+        m = re.search(r'(\[[\s\S]*\])', raw)
+        if m:
+            try:
+                questions_data = json.loads(m.group(1))
+            except json.JSONDecodeError:
+                pass
+
+    if questions_data is None:
+        print(f"[AI Generate] FULL raw response: {raw!r}", file=sys.stderr)
+        raise HTTPException(500, f"AI returned invalid JSON. Raw (truncated): {raw[:300]}")
+
+    if not isinstance(questions_data, list):
+        raise HTTPException(500, "AI response was not a JSON array. Try again.")
 
     created = []
     for i, qd in enumerate(questions_data):

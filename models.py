@@ -1302,3 +1302,21 @@ class TimetableSlot(Base):
     recurring    = Column(Boolean, default=True)
 
     course = relationship("Course")
+
+
+# ── 26. Report Cards ──────────────────────────────────────────────────────────
+
+class ReportCard(Base):
+    __tablename__ = "report_cards"
+    id           = Column(Integer, primary_key=True)
+    student_id   = Column(Integer, ForeignKey("users.id"), nullable=False)
+    course_id    = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    teacher_id   = Column(Integer, ForeignKey("users.id"), nullable=False)
+    content      = Column(Text, nullable=False)
+    is_published = Column(Boolean, default=False, nullable=False)
+    created_at   = Column(DateTime, default=datetime.utcnow)
+    updated_at   = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    student = relationship("User", foreign_keys=[student_id])
+    teacher = relationship("User", foreign_keys=[teacher_id])
+    course  = relationship("Course")

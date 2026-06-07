@@ -275,6 +275,7 @@ def my_gradebook(
         for a in assignments:
             sub = sub_map.get(a.id)
             scores[a.id] = {
+                "id": a.id,
                 "title": a.title,
                 "score": sub.score if sub else None,
                 "max_score": a.max_score,

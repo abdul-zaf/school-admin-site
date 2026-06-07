@@ -149,7 +149,6 @@ a:hover { text-decoration: underline; }
   background:linear-gradient(135deg,#00d4ff,#0070cc);
   display:flex;align-items:center;justify-content:center;
   margin:0 auto 16px;
-  box-shadow:0 6px 24px rgba(0,212,255,0.35);
 }
 .seal-cap { width:44px;height:auto; }
 
@@ -228,7 +227,6 @@ a:hover { text-decoration: underline; }
   border-radius:9px;
   display:flex;align-items:center;justify-content:center;
   flex-shrink:0;
-  box-shadow:0 3px 10px rgba(0,212,255,0.25);
 }
 .brand-text { display:flex;flex-direction:column; }
 .brand-name { color:#fff;font-size:15px;font-weight:800;letter-spacing:-.3px;line-height:1.2; }
@@ -254,7 +252,6 @@ a:hover { text-decoration: underline; }
 }
 .nav-item:hover {
   background:var(--sb-hover);
-  color:#c0d0e0;
   text-decoration:none;
 }
 .nav-item.active {
@@ -369,7 +366,7 @@ a:hover { text-decoration: underline; }
   transition:background .15s,color .15s;
 }
 .notif-bell-wrapper:hover .notif-bell-btn,
-.notif-bell-btn:hover { background:rgba(0,212,255,0.07);color:var(--accent);border-color:rgba(0,212,255,0.2); }
+.notif-bell-btn:hover { background:rgba(255,255,255,0.07);border-color:var(--sb-border); }
 
 .notif-unread-badge {
   margin-left:auto;
@@ -469,7 +466,6 @@ a:hover { text-decoration: underline; }
   background:linear-gradient(135deg,#00d4ff,#0070cc);
   display:flex;align-items:center;justify-content:center;
   color:#050a15;font-weight:800;font-size:14px;flex-shrink:0;
-  box-shadow:0 2px 8px rgba(0,212,255,0.25);
 }
 .user-card-info { flex:1;min-width:0; }
 .user-name {
@@ -572,6 +568,41 @@ a:hover { text-decoration: underline; }
 .stat-number { font-size:34px;font-weight:900;color:var(--text);letter-spacing:-1px;line-height:1; }
 .stat-label  { font-size:11.5px;color:var(--muted);margin-top:5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px; }
 
+/* ── Grade distribution bar chart ───────────────────────── */
+.chart-bar-container {
+  display:grid;
+  grid-template-columns:32px 1fr 52px;
+  align-items:center;
+  gap:10px;
+  margin-bottom:10px;
+}
+.chart-bar-container:last-child { margin-bottom:0; }
+.chart-bar-letter {
+  font-size:13px;font-weight:700;color:var(--text);text-align:center;
+}
+.chart-bar-track {
+  height:24px;
+  background:var(--surface-2);
+  border-radius:6px;
+  overflow:hidden;
+  border:1px solid var(--border);
+}
+.chart-bar-fill {
+  height:100%;
+  border-radius:6px;
+  min-width:2px;
+  background:var(--indigo);
+  transition:width .4s ease;
+}
+.chart-bar-fill-A { background:linear-gradient(90deg,#10b981,#34d399); }
+.chart-bar-fill-B { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+.chart-bar-fill-C { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+.chart-bar-fill-D { background:linear-gradient(90deg,#f97316,#fb923c); }
+.chart-bar-fill-F { background:linear-gradient(90deg,#ef4444,#f87171); }
+.chart-bar-meta {
+  font-size:12px;color:var(--muted);font-weight:600;text-align:right;white-space:nowrap;
+}
+
 /* ══════════════════════════════════════════════════════════
    BUTTONS
    ══════════════════════════════════════════════════════════ */
@@ -591,15 +622,13 @@ a:hover { text-decoration: underline; }
 .btn:hover { background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.18); }
 .btn-primary {
   background:linear-gradient(135deg,#00d4ff,#0099cc);
-  color:#050a15;border-color:transparent;
-  box-shadow:0 2px 12px rgba(0,212,255,0.2);
+  color:#fff;border-color:transparent;
 }
 .btn-primary:hover {
-  background:linear-gradient(135deg,#22dcff,#00b8e8);
-  box-shadow:0 4px 18px rgba(0,212,255,0.35);
+  background:linear-gradient(135deg,#22dcff,#00b8e8);color:#fff;
 }
 .btn-danger  { background:rgba(248,113,113,0.15);color:var(--danger);border-color:rgba(248,113,113,0.3); }
-.btn-danger:hover  { background:rgba(248,113,113,0.25);box-shadow:0 3px 10px rgba(248,113,113,0.2); }
+.btn-danger:hover  { background:rgba(248,113,113,0.25); }
 .btn-success { background:rgba(52,211,153,0.15);color:var(--success);border-color:rgba(52,211,153,0.3); }
 .btn-success:hover { background:rgba(52,211,153,0.25); }
 .btn-gold    { background:rgba(251,191,36,0.15);color:var(--gold);border-color:rgba(251,191,36,0.3); }
@@ -629,7 +658,6 @@ a:hover { text-decoration: underline; }
 .form-control:focus {
   outline:none;
   border-color:var(--accent);
-  box-shadow:0 0 0 3px rgba(0,212,255,0.12);
 }
 .form-control::placeholder { color:var(--muted); }
 textarea.form-control { resize:vertical;min-height:80px; }
@@ -710,7 +738,7 @@ select.form-control option { background:var(--surface-2);color:var(--text); }
   color:var(--muted);transition:all .15s;white-space:nowrap;
 }
 .tab:hover  { background:var(--accent-dim);color:var(--accent); }
-.tab.active { background:var(--accent);color:#050a15;box-shadow:0 2px 8px rgba(0,212,255,0.25); }
+.tab.active { background:var(--accent);color:#050a15; }
 
 /* ── Table ─────────────────────────────────────────────── */
 .table { width:100%;border-collapse:collapse;font-size:13px; }
@@ -909,6 +937,13 @@ select.form-control option { background:var(--surface-2);color:var(--text); }
 .gradebook-table tbody td { color:var(--text-secondary); }
 .gradebook-table tbody td:first-child { color:var(--text);font-weight:500; }
 
+/* Clickable link inside table cells / th */
+.table-link {
+  color:inherit;text-decoration:none;cursor:pointer;
+  border-bottom:1px dashed var(--muted);
+}
+.table-link:hover { color:var(--indigo);border-bottom-color:var(--indigo); }
+
 /* Gradebook empty state */
 .gb-empty-state {
   display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -1032,7 +1067,7 @@ select.form-control option { background:var(--surface-2);color:var(--text); }
   text-align:center;transition:all .2s;color:var(--text);
 }
 .lang-btn:hover { border-color:var(--accent);color:var(--accent);background:var(--accent-dim); }
-.lang-btn.active { border-color:var(--accent);background:var(--accent-dim);color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,255,0.12); }
+.lang-btn.active { border-color:var(--accent);background:var(--accent-dim);color:var(--accent); }
 
 /* ══════════════════════════════════════════════════════════
    HELP BOARD
@@ -1056,7 +1091,7 @@ select.form-control option { background:var(--surface-2);color:var(--text); }
 .btn-vote:hover  { background:var(--accent-dim);border-color:var(--accent); }
 .vote-count { font-size:13px;font-weight:800;color:var(--muted); }
 .help-post-body { flex:1;cursor:pointer; }
-.help-post-body:hover .help-post-title strong { color:var(--accent); }
+.help-post-body:hover .help-post-title strong { }
 .help-post-title { display:flex;align-items:center;gap:8px;margin-bottom:4px; }
 .help-post-meta  { font-size:12px;color:var(--muted); }
 .help-answer { border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:10px;background:var(--surface-2); }
@@ -1417,7 +1452,7 @@ code          { background:var(--surface-2);color:var(--accent);padding:1px 6px;
   padding:9px 12px;font-size:14px;font-family:inherit;
   background:var(--bg);color:var(--text);overflow-y:auto;
 }
-.chat-input-row textarea:focus { outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,255,0.1); }
+.chat-input-row textarea:focus { outline:none;border-color:var(--accent); }
 .chat-lock-banner {
   margin:14px 20px 0;padding:11px 15px;
   background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);
@@ -1465,7 +1500,7 @@ code          { background:var(--surface-2);color:var(--accent);padding:1px 6px;
   border:1px solid var(--border);cursor:pointer;color:var(--text);
   transition:background .15s,border-color .15s;
 }
-.cal-nav-btn:hover { background:var(--accent-dim);border-color:rgba(0,212,255,0.3);color:var(--accent); }
+.cal-nav-btn:hover { background:var(--accent-dim);border-color:rgba(0,212,255,0.3); }
 .cal-weekdays { display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px; }
 .cal-wd {
   text-align:center;font-size:11px;font-weight:600;
@@ -1565,12 +1600,6 @@ code          { background:var(--surface-2);color:var(--accent);padding:1px 6px;
 }
 
 /* ══════════════════════════════════════════════════════════
-   DARK MODE LABEL — keep [data-theme="dark"] as no-op
-   (dark is already the default in :root)
-   ══════════════════════════════════════════════════════════ */
-[data-theme="dark"] { /* intentionally empty — dark is the default */ }
-
-/* ══════════════════════════════════════════════════════════
    LIGHT MODE OVERRIDES
    ══════════════════════════════════════════════════════════ */
 [data-theme="light"] {
@@ -1667,8 +1696,8 @@ code          { background:var(--surface-2);color:var(--accent);padding:1px 6px;
 /* ── Buttons ─────────────────────────────────────────────── */
 [data-theme="light"] .btn        { background:#fff;border-color:var(--border-mid);color:var(--text-secondary); }
 [data-theme="light"] .btn:hover  { background:#f5f4f1;border-color:var(--border-mid);color:var(--text); }
-[data-theme="light"] .btn-primary{ background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 2px 10px rgba(79,70,229,0.18); }
-[data-theme="light"] .btn-primary:hover { background:var(--accent-dark);box-shadow:0 4px 16px rgba(79,70,229,0.28); }
+[data-theme="light"] .btn-primary{ background:var(--accent);color:#fff;border-color:var(--accent); }
+[data-theme="light"] .btn-primary:hover { background:var(--accent-dark);color:#fff; }
 [data-theme="light"] .btn-danger { background:#fef2f2;color:#b91c1c;border-color:#fecaca; }
 [data-theme="light"] .btn-danger:hover { background:#fee2e2; }
 [data-theme="light"] .btn-success{ background:#f0fdf4;color:#15803d;border-color:#bbf7d0; }
@@ -1688,6 +1717,9 @@ code          { background:var(--surface-2);color:var(--accent);padding:1px 6px;
 [data-theme="light"] .stat-card-orange { background:linear-gradient(135deg,#fed7aa,#fff7ed);border-color:#fdba74; }
 [data-theme="light"] .stat-card-teal   { background:linear-gradient(135deg,#ccfbf1,#f0fdfa);border-color:#99f6e4; }
 [data-theme="light"] .stat-number      { color:var(--text); }
+
+/* ── Grade distribution bar chart (light) ────────────────── */
+[data-theme="light"] .chart-bar-track { background:#f1f5f9;border-color:#e2e8f0; }
 
 /* ── Welcome banner ──────────────────────────────────────── */
 [data-theme="light"] .welcome-banner {
@@ -1800,6 +1832,7 @@ code          { background:var(--surface-2);color:var(--accent);padding:1px 6px;
 [data-theme="light"] .gradebook-table tbody tr:hover { background:#f0ede8; }
 [data-theme="light"] .gradebook-table tbody td { color:var(--text-secondary); }
 [data-theme="light"] .gradebook-table tbody td:first-child { color:#1a1714;font-weight:600; }
+[data-theme="light"] .table-link:hover { color:var(--indigo); }
 [data-theme="light"] .grade-A { background:#dcfce7;color:#16a34a; }
 [data-theme="light"] .grade-B { background:#dbeafe;color:#1d4ed8; }
 [data-theme="light"] .grade-C { background:#fef9c3;color:#854d0e; }
@@ -1905,8 +1938,6 @@ code          { background:var(--surface-2);color:var(--accent);padding:1px 6px;
   font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;
   padding:2px 8px;border-radius:20px;
 }
-[data-theme="dark"] .exam-badge { background:rgba(248,113,113,0.12);color:#f87171;border-color:rgba(248,113,113,0.25); }
-
 /* Exams page */
 .exam-card {
   border:1px solid var(--border);
@@ -1924,10 +1955,6 @@ code          { background:var(--surface-2);color:var(--accent);padding:1px 6px;
 .exam-meta { display:flex;gap:10px;flex-wrap:wrap;margin-top:6px; }
 .exam-meta small { color:var(--muted);font-size:12px; }
 .exam-card-actions { display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0; }
-
-[data-theme="light"] .exam-topbar { background:#fff; }
-[data-theme="light"] .exam-card   { background:#fff; }
-[data-theme="light"] .exam-warning-banner { background:#fef2f2;border-color:#fecaca;color:#991b1b; }
 
 /* ══════════════════════════════════════════════════════════
    RTL OVERRIDES
@@ -1951,4 +1978,4 @@ code          { background:var(--surface-2);color:var(--accent);padding:1px 6px;
 [dir="rtl"] .material-item         { flex-direction:row-reverse; }
 [dir="rtl"] .help-post:not(.resolved) { border-left:none;border-right:4px solid var(--accent); }
 [dir="rtl"] .help-post.resolved      { border-left:none;border-right:4px solid var(--success); }
-[dir="rtl"] [data-theme="light"] .announcement-item { border-left:none;border-right:4px solid var(--accent); }
+[dir="rtl"] .announcement-item { border-left:none;border-right:4px solid var(--accent); }
