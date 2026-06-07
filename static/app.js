@@ -117,13 +117,13 @@ const i18n = {
     complete_to_unlock:'Complete these materials to unlock:',
     set_as_key:'Set as Key for Assessment',
     // AI quiz generation
-    ai_generate:'🤖 AI Generate', ai_generate_title:'Add Questions',
+    ai_generate:'AI Generate', ai_generate_title:'Add Questions',
     ai_generate_prompt:'Want AI to generate questions from your course materials?',
     ai_skip:'Skip — add manually',
     select_materials:'Select Materials', select_all:'Select All', deselect_all:'Deselect All',
     num_mc:'Multiple Choice', num_tf:'True / False', num_short:'Short Answer', num_long:'Long Answer',
     generating:'Generating…', ai_generated_ok:'Questions generated!',
-    tab_ai_gen:'🤖 AI Generate', tab_manual:'✏️ Manual',
+    tab_ai_gen:'AI Generate', tab_manual:'Manual',
     add_option:'+ Add Option', mark_correct:'Mark correct',
     long_answer:'Long Answer', long_manual:'Students write a full paragraph response. Teacher grades this.',
     // Teacher grading
@@ -290,13 +290,13 @@ const i18n = {
     complete_to_unlock:'ان مواد کو مکمل کریں:',
     set_as_key:'ٹیسٹ کے لیے چابی بنائیں',
     // AI quiz generation (Urdu)
-    ai_generate:'🤖 AI سے بنائیں', ai_generate_title:'سوالات شامل کریں',
+    ai_generate:'AI سے بنائیں', ai_generate_title:'سوالات شامل کریں',
     ai_generate_prompt:'کیا AI آپ کے کورس مواد سے سوالات بنائے؟',
     ai_skip:'چھوڑیں — خود شامل کریں',
     select_materials:'مواد منتخب کریں', select_all:'سب منتخب کریں', deselect_all:'سب ہٹائیں',
     num_mc:'کثیر انتخابی', num_tf:'صحیح / غلط', num_short:'مختصر جواب', num_long:'طویل جواب',
     generating:'تیار ہو رہا ہے…', ai_generated_ok:'سوالات تیار ہو گئے!',
-    tab_ai_gen:'🤖 AI سے بنائیں', tab_manual:'✏️ خود لکھیں',
+    tab_ai_gen:'AI سے بنائیں', tab_manual:'خود لکھیں',
     add_option:'+ آپشن شامل کریں', mark_correct:'درست نشان کریں',
     long_answer:'طویل جواب', long_manual:'طالب علم مکمل جواب لکھتا ہے۔ استاد اسے جانچتا ہے۔',
     // Teacher grading (Urdu)
