@@ -733,18 +733,18 @@ def ai_generate_questions(
                 continue
             else:
                 try:
-                    text = fpath.read_text(encoding="utf-8", errors="ignore")[:10000]
+                    text = fpath.read_text(encoding="utf-8", errors="ignore")[:3000]
                 except Exception:
                     pass
         if text and not text.startswith("[Image"):
             eqs = _extract_equations(text)
             all_equations.extend(eqs)
-            content_parts.append(f"=== {m.title} ===\n{text[:8000]}")
+            content_parts.append(f"=== {m.title} ===\n{text[:3000]}")
 
     if not content_parts and not image_b64s:
         raise HTTPException(400, "Selected materials have no readable content")
 
-    combined = "\n\n".join(content_parts)[:24000]
+    combined = "\n\n".join(content_parts)[:12000]
     print(
         f"[AI Generate] quiz_id={quiz_id} materials={len(materials)} "
         f"text_chars={len(combined)} images={len(image_b64s)} equations={len(all_equations)}",
@@ -818,7 +818,7 @@ def ai_generate_questions(
         images=image_b64s or None,
         model=model_to_use,
         temperature=0.3,
-        max_tokens=8192,
+        max_tokens=2048,
     )
 
     # Log raw response for debugging
