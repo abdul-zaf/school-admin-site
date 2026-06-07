@@ -1877,6 +1877,20 @@ code          { background:var(--surface-2);color:var(--accent);padding:1px 6px;
 [data-theme="light"] .course-item strong { color:#1a1714; }
 [data-theme="light"] .course-item small  { color:var(--text-tertiary); }
 
+/* ── Badge light-mode overrides ──────────────────────────── */
+[data-theme="light"] .badge-info    { background:#e0f2fe;color:#0369a1;border-color:#7dd3fc; }
+[data-theme="light"] .badge-success { background:#dcfce7;color:#15803d;border-color:#86efac; }
+[data-theme="light"] .badge-warning { background:#fef9c3;color:#a16207;border-color:#fde047; }
+[data-theme="light"] .badge-danger  { background:#fee2e2;color:#b91c1c;border-color:#fca5a5; }
+[data-theme="light"] .badge-purple  { background:#ede9fe;color:#6d28d9;border-color:#c4b5fd; }
+[data-theme="light"] .badge-admin   { background:#fef9c3;color:#a16207;border-color:#fde047; }
+[data-theme="light"] .badge-teacher { background:#ede9fe;color:#6d28d9;border-color:#c4b5fd; }
+[data-theme="light"] .badge-student { background:#dcfce7;color:#15803d;border-color:#86efac; }
+[data-theme="light"] .badge-parent  { background:#e0f2fe;color:#0369a1;border-color:#7dd3fc; }
+[data-theme="light"] .badge-secondary { background:#f1f5f9;color:#475569;border-color:#cbd5e1; }
+[data-theme="light"] .mat-type-badge { border:none; }
+[data-theme="light"] .mat-key-badge  { background:#fef9c3;color:#92400e;border-color:#fcd34d; }
+
 /* ══════════════════════════════════════════════════════════
    EXAM LOCK MODE  — hides sidebar, fills viewport
    ══════════════════════════════════════════════════════════ */
