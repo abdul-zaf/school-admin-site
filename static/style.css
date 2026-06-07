@@ -10,7 +10,7 @@
   /* Accent */
   --accent:        #00d4ff;
   --accent-dark:   #009bcc;
-  --accent-dim:    rgba(0,212,255,0.10);
+  --accent-dim:    rgba(0,212,255,0.22);
   --accent-glow:   rgba(0,212,255,0.18);
 
   /* Legacy compat – old code references these */
@@ -182,12 +182,12 @@ a:hover { text-decoration: underline; }
 }
 .login-badge {
   font-size:11px;
-  background:rgba(0,212,255,0.08);
-  color:var(--accent);
+  background:rgba(0,212,255,0.22);
+  color:#67e8f9;
   padding:3px 10px;
   border-radius:20px;
   font-weight:600;
-  border:1px solid rgba(0,212,255,0.15);
+  border:1px solid rgba(0,212,255,0.50);
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -476,8 +476,8 @@ a:hover { text-decoration: underline; }
   display:inline-block;font-size:10px;font-weight:700;
   letter-spacing:.4px;text-transform:uppercase;
   padding:1px 7px;border-radius:4px;
-  background:rgba(0,212,255,0.1);color:var(--accent);
-  border:1px solid rgba(0,212,255,0.2);
+  background:rgba(0,212,255,0.22);color:#67e8f9;
+  border:1px solid rgba(0,212,255,0.50);
   margin-top:2px;
 }
 
@@ -707,18 +707,18 @@ select.form-control option { background:var(--surface-2);color:var(--text); }
   padding:2px 9px;border-radius:20px;
   font-size:11px;font-weight:700;letter-spacing:.2px;white-space:nowrap;
 }
-.badge-admin   { background:rgba(251,191,36,0.15); color:#fbbf24; border:1px solid rgba(251,191,36,0.3); }
-.badge-teacher { background:rgba(168,85,247,0.15); color:#c084fc; border:1px solid rgba(168,85,247,0.3); }
-.badge-student { background:rgba(52,211,153,0.15); color:#34d399; border:1px solid rgba(52,211,153,0.3); }
-.badge-parent  { background:rgba(0,212,255,0.10);  color:#00d4ff; border:1px solid rgba(0,212,255,0.25); }
-.badge-info    { background:rgba(0,212,255,0.10);  color:#00d4ff; border:1px solid rgba(0,212,255,0.25); }
-.badge-success { background:rgba(52,211,153,0.15); color:#34d399; border:1px solid rgba(52,211,153,0.3); }
-.badge-warning { background:rgba(251,191,36,0.15); color:#fbbf24; border:1px solid rgba(251,191,36,0.3); }
-.badge-danger  { background:rgba(248,113,113,0.15);color:#f87171; border:1px solid rgba(248,113,113,0.3); }
-.badge-purple  { background:rgba(168,85,247,0.15); color:#c084fc; border:1px solid rgba(168,85,247,0.3); }
-.badge-virtual  { background:rgba(168,85,247,0.15);color:#c084fc; border:1px solid rgba(168,85,247,0.3); }
-.badge-physical { background:rgba(251,191,36,0.15);color:#fbbf24; border:1px solid rgba(251,191,36,0.3); }
-.badge-secondary{ background:rgba(255,255,255,0.07);color:var(--muted);border:1px solid var(--border); }
+.badge-admin   { background:rgba(251,191,36,0.28); color:#fde68a; border:1px solid rgba(251,191,36,0.55); }
+.badge-teacher { background:rgba(168,85,247,0.28); color:#d8b4fe; border:1px solid rgba(168,85,247,0.55); }
+.badge-student { background:rgba(52,211,153,0.28); color:#6ee7b7; border:1px solid rgba(52,211,153,0.55); }
+.badge-parent  { background:rgba(0,212,255,0.22);  color:#67e8f9; border:1px solid rgba(0,212,255,0.50); }
+.badge-info    { background:rgba(0,212,255,0.22);  color:#67e8f9; border:1px solid rgba(0,212,255,0.50); }
+.badge-success { background:rgba(52,211,153,0.28); color:#6ee7b7; border:1px solid rgba(52,211,153,0.55); }
+.badge-warning { background:rgba(251,191,36,0.28); color:#fde68a; border:1px solid rgba(251,191,36,0.55); }
+.badge-danger  { background:rgba(248,113,113,0.28);color:#fca5a5; border:1px solid rgba(248,113,113,0.55); }
+.badge-purple  { background:rgba(168,85,247,0.28); color:#d8b4fe; border:1px solid rgba(168,85,247,0.55); }
+.badge-virtual  { background:rgba(168,85,247,0.28);color:#d8b4fe; border:1px solid rgba(168,85,247,0.55); }
+.badge-physical { background:rgba(251,191,36,0.28);color:#fde68a; border:1px solid rgba(251,191,36,0.55); }
+.badge-secondary{ background:rgba(255,255,255,0.12);color:#94a3b8; border:1px solid rgba(255,255,255,0.22); }
 
 /* ══════════════════════════════════════════════════════════
    TABS
@@ -909,12 +909,12 @@ select.form-control option { background:var(--surface-2);color:var(--text); }
   min-width:52px;padding:3px 10px;
   border-radius:20px;font-size:12px;font-weight:700;letter-spacing:.3px;
 }
-.grade-A  { background:rgba(52,211,153,.15);color:#34d399; }
-.grade-B  { background:rgba(96,165,250,.15);color:#60a5fa; }
-.grade-C  { background:rgba(251,191,36,.15);color:#fbbf24; }
-.grade-D  { background:rgba(251,146,60,.15);color:#fb923c; }
-.grade-F  { background:rgba(248,113,113,.15);color:#f87171; }
-.grade-N  { background:rgba(148,163,184,.12);color:#94a3b8; }
+.grade-A  { background:rgba(52,211,153,.28);color:#6ee7b7; }
+.grade-B  { background:rgba(96,165,250,.28);color:#93c5fd; }
+.grade-C  { background:rgba(251,191,36,.28);color:#fde68a; }
+.grade-D  { background:rgba(251,146,60,.28);color:#fdba74; }
+.grade-F  { background:rgba(248,113,113,.28);color:#fca5a5; }
+.grade-N  { background:rgba(148,163,184,.20);color:#cbd5e1; }
 
 /* Gradebook table */
 .gradebook-table-wrapper { overflow-x:auto; }
@@ -1358,9 +1358,9 @@ code          { background:var(--surface-2);color:var(--accent);padding:1px 6px;
   font-size:.65rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
   padding:.1em .45em;border-radius:4px;white-space:nowrap;
 }
-.mat-type-text { background:rgba(0,212,255,0.1);color:var(--accent); }
-.mat-type-link { background:rgba(52,211,153,0.1);color:var(--success); }
-.mat-type-file { background:rgba(251,191,36,0.1);color:var(--gold); }
+.mat-type-text { background:rgba(0,212,255,0.22);color:#67e8f9; }
+.mat-type-link { background:rgba(52,211,153,0.25);color:#6ee7b7; }
+.mat-type-file { background:rgba(251,191,36,0.25);color:#fde68a; }
 
 .mat-content { margin:.2rem 0 .3rem;font-size:.9rem;color:var(--text); }
 .mat-link    { font-size:.85rem;color:var(--accent);word-break:break-all; }
@@ -1465,8 +1465,8 @@ code          { background:var(--surface-2);color:var(--accent);padding:1px 6px;
   border-radius:var(--radius);color:var(--gold);font-size:13px;
 }
 .chat-mode-pill     { font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600; }
-.chat-mode-study    { background:rgba(52,211,153,0.12);color:var(--success); }
-.chat-mode-assignment { background:rgba(168,85,247,0.12);color:#c084fc; }
+.chat-mode-study    { background:rgba(52,211,153,0.28);color:#6ee7b7; }
+.chat-mode-assignment { background:rgba(168,85,247,0.28);color:#d8b4fe; }
 .chat-thinking {
   display:flex;gap:4px;align-items:center;padding:10px 14px;
   background:var(--surface-2);border:1px solid var(--border);
@@ -1556,9 +1556,9 @@ code          { background:var(--surface-2);color:var(--accent);padding:1px 6px;
   font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;
   text-transform:capitalize;flex-shrink:0;margin-top:2px;
 }
-.cal-badge-assignment { background:var(--accent-dim);color:var(--accent); }
-.cal-badge-quiz       { background:rgba(251,191,36,0.1);color:var(--gold-dark); }
-.cal-badge-session    { background:rgba(52,211,153,0.1);color:var(--success); }
+.cal-badge-assignment { background:rgba(0,212,255,0.22);color:#67e8f9; }
+.cal-badge-quiz       { background:rgba(251,191,36,0.28);color:#fde68a; }
+.cal-badge-session    { background:rgba(52,211,153,0.28);color:#6ee7b7; }
 .cal-event-when { font-size:11px;font-weight:600;color:var(--muted);flex-shrink:0;margin-top:2px; }
 
 /* ══════════════════════════════════════════════════════════
