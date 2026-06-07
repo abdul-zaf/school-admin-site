@@ -772,7 +772,11 @@ def ai_generate_questions(
         "NEVER write generic questions like 'Solve for x' or 'What is the formula?' — "
         "always embed the actual equation from the material (e.g. 'Given F = ma, if m = 5 kg and a = 3 m/s², what is F?'). "
         "NEVER use placeholder answer options like A, B, C, D or 1, 2, 3, 4. "
-        "Every answer option must contain a real value, expression, or phrase from the material."
+        "Every answer option must contain a real value, expression, or phrase from the material. "
+        "NEVER ask about people's names, teacher names, student names, course names, school names, "
+        "dates of enrollment, administrative details, or anything not directly about the subject matter. "
+        "Every question must test understanding of a concept, fact, or calculation from the material — "
+        "not metadata about the course or who teaches it."
     )
 
     image_instruction = (
@@ -800,6 +804,8 @@ def ai_generate_questions(
         "• True/false statements must make a precise factual or mathematical claim from the material.",
         "• Short/long-answer questions must name the specific concept, equation, or scenario from the material.",
         "• Do NOT invent facts, values, or equations not present in the material.",
+        "• Do NOT ask about names of teachers, students, schools, or any administrative/metadata details.",
+        "• Every question must test subject knowledge only — concepts, calculations, definitions, or examples from the material.",
         "",
         "Output ONLY a valid JSON array — no markdown, no explanation, no extra text.",
         "Each element must match one of these exact shapes:",
