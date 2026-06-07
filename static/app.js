@@ -117,12 +117,14 @@ const i18n = {
     complete_to_unlock:'Complete these materials to unlock:',
     set_as_key:'Set as Key for Assessment',
     // AI quiz generation
-    ai_generate:'🤖 AI Generate', ai_generate_title:'AI Question Generator',
+    ai_generate:'🤖 AI Generate', ai_generate_title:'Add Questions',
     ai_generate_prompt:'Want AI to generate questions from your course materials?',
     ai_skip:'Skip — add manually',
     select_materials:'Select Materials', select_all:'Select All', deselect_all:'Deselect All',
     num_mc:'Multiple Choice', num_tf:'True / False', num_short:'Short Answer', num_long:'Long Answer',
     generating:'Generating…', ai_generated_ok:'Questions generated!',
+    tab_ai_gen:'🤖 AI Generate', tab_manual:'✏️ Manual',
+    add_option:'+ Add Option', mark_correct:'Mark correct',
     long_answer:'Long Answer', long_manual:'Students write a full paragraph response. Teacher grades this.',
     // Teacher grading
     grade_responses:'Grade Responses', grading_panel:'Grading Panel',
@@ -288,12 +290,14 @@ const i18n = {
     complete_to_unlock:'ان مواد کو مکمل کریں:',
     set_as_key:'ٹیسٹ کے لیے چابی بنائیں',
     // AI quiz generation (Urdu)
-    ai_generate:'🤖 AI سے بنائیں', ai_generate_title:'AI سوال ساز',
+    ai_generate:'🤖 AI سے بنائیں', ai_generate_title:'سوالات شامل کریں',
     ai_generate_prompt:'کیا AI آپ کے کورس مواد سے سوالات بنائے؟',
     ai_skip:'چھوڑیں — خود شامل کریں',
     select_materials:'مواد منتخب کریں', select_all:'سب منتخب کریں', deselect_all:'سب ہٹائیں',
     num_mc:'کثیر انتخابی', num_tf:'صحیح / غلط', num_short:'مختصر جواب', num_long:'طویل جواب',
     generating:'تیار ہو رہا ہے…', ai_generated_ok:'سوالات تیار ہو گئے!',
+    tab_ai_gen:'🤖 AI سے بنائیں', tab_manual:'✏️ خود لکھیں',
+    add_option:'+ آپشن شامل کریں', mark_correct:'درست نشان کریں',
     long_answer:'طویل جواب', long_manual:'طالب علم مکمل جواب لکھتا ہے۔ استاد اسے جانچتا ہے۔',
     // Teacher grading (Urdu)
     grade_responses:'جوابات جانچیں', grading_panel:'جانچ پینل',
@@ -2297,57 +2301,191 @@ async function deleteQuestion(questionId, quizId) {
   catch(err) { toast(err.message,'error'); }
 }
 
-// ── AI Question Generator ────────────────────────────────────────────────────
+// ── AI Question Generator (with Manual tab) ──────────────────────────────────
 async function openAIGenerateModal(quizId, courseId, autoOpen) {
   let materials = [];
   try { materials = await api('GET', `/courses/${courseId}/materials`); } catch(_) {}
 
-  const cancelBtn = autoOpen
-    ? `<button type="button" class="btn" onclick="closeModal();navigate('quiz-builder',{id:${quizId}})">${t('ai_skip')}</button>`
-    : `<button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>`;
+  const closeAction = autoOpen
+    ? `closeModal();navigate('quiz-builder',{id:${quizId}})`
+    : `closeModal()`;
 
   openModal(t('ai_generate_title'), `
     <div>
-      ${autoOpen ? `` : `<p style="color:var(--muted);font-size:13px;margin-bottom:12px">
-        Select which materials the AI should read to generate questions.</p>`}
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <button type="button" class="btn btn-sm" onclick="aiSelectAll(true)">${t('select_all')}</button>
-        <button type="button" class="btn btn-sm" onclick="aiSelectAll(false)">${t('deselect_all')}</button>
+      <!-- Tab bar -->
+      <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--border)">
+        <button type="button" id="tab-ai-btn"
+          style="padding:8px 18px;border:none;background:none;cursor:pointer;font-weight:600;font-size:13px;color:var(--accent);border-bottom:2px solid var(--accent);margin-bottom:-2px"
+          onclick="switchQTab('ai')">${t('tab_ai_gen')}</button>
+        <button type="button" id="tab-manual-btn"
+          style="padding:8px 18px;border:none;background:none;cursor:pointer;font-weight:600;font-size:13px;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px"
+          onclick="switchQTab('manual')">${t('tab_manual')}</button>
       </div>
-      <div id="ai-mat-list" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:8px;margin-bottom:14px">
-        ${materials.length ? materials.map(m=>`
-          <label style="display:flex;align-items:center;gap:8px;padding:5px 4px;cursor:pointer">
-            <input type="checkbox" class="ai-mat-cb" value="${m.id}" ${autoOpen?'checked':''} style="width:15px;height:15px">
-            <span style="font-size:13px">${htmlEsc(m.title)}</span>
-            <span class="badge badge-info" style="font-size:10px">${m.material_type||'text'}</span>
-          </label>`).join('') : `<p class="text-muted" style="font-size:13px">No materials in this course yet.</p>`}
+
+      <!-- AI tab -->
+      <div id="tab-ai-panel">
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <button type="button" class="btn btn-sm" onclick="aiSelectAll(true)">${t('select_all')}</button>
+          <button type="button" class="btn btn-sm" onclick="aiSelectAll(false)">${t('deselect_all')}</button>
+        </div>
+        <div id="ai-mat-list" style="max-height:180px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:8px;margin-bottom:14px">
+          ${materials.length ? materials.map(m=>`
+            <label style="display:flex;align-items:center;gap:8px;padding:5px 4px;cursor:pointer">
+              <input type="checkbox" class="ai-mat-cb" value="${m.id}" ${autoOpen?'checked':''} style="width:15px;height:15px">
+              <span style="font-size:13px">${htmlEsc(m.title)}</span>
+              <span class="badge badge-info" style="font-size:10px">${m.material_type||'text'}</span>
+            </label>`).join('') : `<p class="text-muted" style="font-size:13px">No materials in this course yet.</p>`}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          <div class="form-group" style="margin:0">
+            <label style="font-size:12px">${t('num_mc')}</label>
+            <input id="ai-num-mc" type="number" class="form-control" value="5" min="0" max="20">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label style="font-size:12px">${t('num_tf')}</label>
+            <input id="ai-num-tf" type="number" class="form-control" value="3" min="0" max="20">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label style="font-size:12px">${t('num_short')}</label>
+            <input id="ai-num-short" type="number" class="form-control" value="2" min="0" max="10">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label style="font-size:12px">${t('num_long')}</label>
+            <input id="ai-num-long" type="number" class="form-control" value="1" min="0" max="5">
+          </div>
+        </div>
+        <p id="ai-gen-hint" style="display:none;color:var(--muted);font-size:12px;margin-bottom:8px">
+          ⏳ This may take a few minutes — please wait…
+        </p>
+        <div class="form-actions">
+          <button type="button" class="btn" onclick="${closeAction}">${t('cancel')}</button>
+          <button type="button" class="btn btn-primary" id="ai-gen-btn" onclick="runAIGenerate(${quizId})">${t('ai_generate')}</button>
+        </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-        <div class="form-group" style="margin:0">
-          <label style="font-size:12px">${t('num_mc')}</label>
-          <input id="ai-num-mc" type="number" class="form-control" value="5" min="0" max="20">
+
+      <!-- Manual tab -->
+      <div id="tab-manual-panel" style="display:none">
+        <div class="form-group">
+          <label>${t('question_type')} *</label>
+          <select id="mq-type" class="form-control" onchange="updateManualQUI()">
+            <option value="multiple_choice">${t('multiple_choice')}</option>
+            <option value="true_false">${t('true_false')}</option>
+            <option value="short_answer">${t('short_answer')}</option>
+            <option value="long_answer">${t('long_answer')}</option>
+          </select>
         </div>
-        <div class="form-group" style="margin:0">
-          <label style="font-size:12px">${t('num_tf')}</label>
-          <input id="ai-num-tf" type="number" class="form-control" value="3" min="0" max="20">
+        <div class="form-group">
+          <label>${t('question_text')} *</label>
+          <textarea id="mq-text" class="form-control" rows="3"></textarea>
         </div>
-        <div class="form-group" style="margin:0">
-          <label style="font-size:12px">${t('num_short')}</label>
-          <input id="ai-num-short" type="number" class="form-control" value="2" min="0" max="10">
+        <div class="form-group">
+          <label>${t('points')}</label>
+          <input id="mq-pts" type="number" class="form-control" value="1" min="0.5" step="0.5">
         </div>
-        <div class="form-group" style="margin:0">
-          <label style="font-size:12px">${t('num_long')}</label>
-          <input id="ai-num-long" type="number" class="form-control" value="1" min="0" max="5">
+        <div id="mq-options-area"></div>
+        <div class="form-actions">
+          <button type="button" class="btn" onclick="${closeAction}">${t('cancel')}</button>
+          <button type="button" class="btn btn-primary" onclick="submitManualQuestion(${quizId})">${t('add')}</button>
         </div>
-      </div>
-      <p id="ai-gen-hint" style="display:none;color:var(--muted);font-size:12px;margin-bottom:8px">
-        ⏳ This can take up to a minute — please wait…
-      </p>
-      <div class="form-actions">
-        ${cancelBtn}
-        <button type="button" class="btn btn-primary" id="ai-gen-btn" onclick="runAIGenerate(${quizId})">${t('ai_generate')}</button>
       </div>
     </div>`);
+
+  // Reset option counter and initialise manual options UI after DOM is ready
+  window._mqOptCount = 4;
+  setTimeout(updateManualQUI, 0);
+}
+
+function switchQTab(tab) {
+  const isAI = tab === 'ai';
+  document.getElementById('tab-ai-panel').style.display  = isAI ? '' : 'none';
+  document.getElementById('tab-manual-panel').style.display = isAI ? 'none' : '';
+  const aiBtn  = document.getElementById('tab-ai-btn');
+  const manBtn = document.getElementById('tab-manual-btn');
+  if (aiBtn)  { aiBtn.style.color  = isAI ? 'var(--accent)' : 'var(--muted)';  aiBtn.style.borderBottomColor  = isAI ? 'var(--accent)' : 'transparent'; }
+  if (manBtn) { manBtn.style.color = isAI ? 'var(--muted)'  : 'var(--accent)'; manBtn.style.borderBottomColor = isAI ? 'transparent' : 'var(--accent)'; }
+}
+
+function updateManualQUI() {
+  const type = document.getElementById('mq-type')?.value;
+  const area = document.getElementById('mq-options-area');
+  if (!area) return;
+  if (type === 'short_answer') {
+    area.innerHTML = `<p class="text-muted" style="font-size:13px;padding:6px 0">${t('short_manual')}</p>`;
+  } else if (type === 'long_answer') {
+    area.innerHTML = `<p class="text-muted" style="font-size:13px;padding:6px 0">${t('long_manual')}</p>`;
+  } else if (type === 'true_false') {
+    area.innerHTML = `
+      <div class="form-group"><label>${t('correct_answer')}</label>
+        <div class="tf-options">
+          <label><input type="radio" name="mq-tf" value="0" checked> True</label>
+          <label><input type="radio" name="mq-tf" value="1"> False</label>
+        </div>
+      </div>`;
+  } else {
+    // Multiple choice — start with 4 options, allow adding more
+    area.innerHTML = `
+      <div class="form-group">
+        <label style="margin-bottom:6px">${t('options')} <small class="text-muted">(select correct)</small></label>
+        <div id="mq-mc-opts">
+          ${[0,1,2,3].map(i=>`
+            <div class="mc-option" id="mq-opt-row-${i}">
+              <input type="radio" name="mq-mc-correct" value="${i}">
+              <input type="text" id="mq-mc-opt-${i}" class="form-control" placeholder="${t('options')} ${i+1}">
+            </div>`).join('')}
+        </div>
+        <button type="button" class="btn btn-sm" style="margin-top:6px" onclick="addManualMCOption()">${t('add_option')}</button>
+      </div>`;
+  }
+}
+
+function addManualMCOption() {
+  const container = document.getElementById('mq-mc-opts');
+  if (!container) return;
+  window._mqOptCount = (window._mqOptCount || 4);
+  const i = window._mqOptCount++;
+  const div = document.createElement('div');
+  div.className = 'mc-option';
+  div.id = `mq-opt-row-${i}`;
+  div.innerHTML = `
+    <input type="radio" name="mq-mc-correct" value="${i}">
+    <input type="text" id="mq-mc-opt-${i}" class="form-control" placeholder="${t('options')} ${i+1}">`;
+  container.appendChild(div);
+}
+
+async function submitManualQuestion(quizId) {
+  const type = document.getElementById('mq-type').value;
+  const text = (document.getElementById('mq-text')?.value || '').trim();
+  const pts  = parseFloat(document.getElementById('mq-pts')?.value) || 1;
+  if (!text) { toast(t('question_text') + ' required', 'error'); return; }
+
+  let options = [];
+  if (type === 'true_false') {
+    const correct = document.querySelector('input[name="mq-tf"]:checked')?.value || '0';
+    options = [
+      { option_text: 'True',  is_correct: correct === '0' },
+      { option_text: 'False', is_correct: correct === '1' },
+    ];
+  } else if (type === 'multiple_choice') {
+    const correct = document.querySelector('input[name="mq-mc-correct"]:checked')?.value;
+    // Collect all rendered option rows
+    const rows = document.querySelectorAll('#mq-mc-opts .mc-option');
+    rows.forEach((row, idx) => {
+      const input = row.querySelector('input[type="text"]');
+      const val   = input?.value.trim();
+      if (val) options.push({ option_text: val, is_correct: String(idx) === correct });
+    });
+    if (options.length < 2) { toast('Add at least 2 options', 'error'); return; }
+    if (correct === undefined || correct === null || !options.some(o => o.is_correct)) {
+      toast('Select the correct option', 'error'); return;
+    }
+  }
+
+  try {
+    await api('POST', `/quizzes/${quizId}/questions`, { question_text: text, question_type: type, points: pts, options });
+    closeModal();
+    toast(t('add') + '!');
+    navigate('quiz-builder', { id: quizId });
+  } catch(err) { toast(err.message, 'error'); }
 }
 
 function aiSelectAll(checked) {

@@ -82,7 +82,7 @@ def chat(
     payload = {
         "model": model or OLLAMA_MODEL,
         "messages": m,
-        "stream": False,
+        "stream": True,  # streaming keeps the TCP connection alive, preventing idle-timeout kills
         "options": options,
     }
     body = json.dumps(payload).encode()
@@ -94,8 +94,21 @@ def chat(
     )
     try:
         with urllib.request.urlopen(req, timeout=OLLAMA_TIMEOUT) as resp:
-            data = json.loads(resp.read().decode())
-            return data["message"]["content"]
+            content_parts = []
+            for raw_line in resp:
+                line = raw_line.decode("utf-8").strip()
+                if not line:
+                    continue
+                try:
+                    chunk = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                delta = chunk.get("message", {}).get("content", "")
+                if delta:
+                    content_parts.append(delta)
+                if chunk.get("done"):
+                    break
+            return "".join(content_parts)
     except urllib.error.HTTPError as exc:
         raise RuntimeError(f"Ollama HTTP {exc.code}: {exc.read().decode(errors='replace')}") from exc
     except Exception as exc:
