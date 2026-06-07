@@ -836,12 +836,78 @@ def ai_generate_questions(
 
     raw = raw.strip()
 
+    def _repair_json(s: str) -> str:
+        """Fix AI JSON that omits closing } on option objects.
+
+        The model produces lines like:
+            {"text": "6 + 4 = 10",      <- should be {"text":"6 + 4 = 10"},
+            {"text": "3 - 5 = 8",       <- same
+        i.e. each option object is missing its closing } and the comma
+        is stuck inside the object rather than between objects.
+        Strategy: walk line-by-line and track brace depth; if a line
+        opens a { but doesn't close it, and the next non-empty line
+        opens another { or is ], auto-close the current object.
+        """
+        lines = s.splitlines()
+        out = []
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            stripped = line.rstrip()
+            # Count unmatched braces on this line (ignoring strings)
+            # Simple heuristic: count { and } outside quoted strings
+            depth = 0
+            in_str = False
+            esc = False
+            for ch in stripped:
+                if esc:
+                    esc = False
+                    continue
+                if ch == '\\' and in_str:
+                    esc = True
+                    continue
+                if ch == '"':
+                    in_str = not in_str
+                    continue
+                if not in_str:
+                    if ch == '{':
+                        depth += 1
+                    elif ch == '}':
+                        depth -= 1
+
+            # If line has net open brace(s), peek at the next non-empty line
+            if depth > 0:
+                # Find next non-empty line
+                j = i + 1
+                while j < len(lines) and not lines[j].strip():
+                    j += 1
+                next_stripped = lines[j].strip() if j < len(lines) else ''
+                # If next line starts a new object or closes an array, auto-close
+                if next_stripped.startswith('{') or next_stripped.startswith(']'):
+                    # Remove trailing comma from this line if present, add }
+                    if stripped.endswith(','):
+                        stripped = stripped[:-1] + '},'
+                    else:
+                        stripped = stripped + '}'
+                    line = line[:len(line) - len(line.rstrip())] + stripped
+
+            out.append(line)
+            i += 1
+        return '\n'.join(out)
+
     # Try direct parse first
     questions_data = None
     try:
         questions_data = json.loads(raw)
     except json.JSONDecodeError:
         pass
+
+    # Try repairing common AI JSON mistakes
+    if questions_data is None:
+        try:
+            questions_data = json.loads(_repair_json(raw))
+        except json.JSONDecodeError:
+            pass
 
     # Fall back: find the outermost [ ... ] in the response
     if questions_data is None:
@@ -851,7 +917,11 @@ def ai_generate_questions(
             try:
                 questions_data = json.loads(m.group(1))
             except json.JSONDecodeError:
-                pass
+                # Try repair on the extracted block too
+                try:
+                    questions_data = json.loads(_repair_json(m.group(1)))
+                except json.JSONDecodeError:
+                    pass
 
     if questions_data is None:
         print(f"[AI Generate] FULL raw response: {raw!r}", file=sys.stderr)
