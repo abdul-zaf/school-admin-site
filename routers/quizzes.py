@@ -667,6 +667,7 @@ def ai_generate_questions(
     if not materials:
         raise HTTPException(400, "No valid materials selected")
 
+    import re as _re
     import sys
     import base64
     from pathlib import Path
@@ -674,11 +675,50 @@ def ai_generate_questions(
     _IMAGE_MIMES = {"image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp"}
     _IMAGE_EXTS  = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
 
+    def _extract_equations(text: str) -> list[str]:
+        """Pull out lines/segments that look like mathematical equations or formulas."""
+        eq_lines = []
+        # Whole lines that contain =, ≠, ≤, ≥, ±, math operators, or common formula patterns
+        eq_pattern = _re.compile(
+            r'(?:'
+            r'[A-Za-z0-9_α-ωΑ-Ω]+\s*[=≠≤≥<>]\s*[^\n]{1,120}'   # x = ..., F = ma
+            r'|[A-Za-zα-ω]+\^[0-9]'                                          # x^2, v^2
+            r'|√[^\s]+'                                                                  # √something
+            r'|\d+\s*[×÷\*/]\s*\d+'                                                     # 3 × 4
+            r'|\bintegral\b|\bderivative\b|\blimit\b|\bsum\b'                            # calculus words
+            r'|\b(?:sin|cos|tan|log|ln|exp)\s*[\(\[]'                                   # trig/log fns
+            r')'
+        )
+        for line in text.splitlines():
+            stripped = line.strip()
+            if stripped and eq_pattern.search(stripped):
+                eq_lines.append(stripped)
+        # Also pull inline patterns like "F = ma" from prose
+        inline = _re.findall(
+            r'\b[A-Za-z_]{1,4}\s*=\s*[A-Za-z0-9_\+\-\*/\^\(\)\s\.]{2,40}(?=[\.,;\n]|$)',
+            text
+        )
+        eq_lines.extend(inline)
+        # Deduplicate while preserving order
+        seen: set[str] = set()
+        result = []
+        for e in eq_lines:
+            key = e.strip()
+            if key and key not in seen:
+                seen.add(key)
+                result.append(key)
+        return result[:60]  # cap to avoid bloating prompt
+
     content_parts: list[str] = []
     image_b64s:    list[str] = []
+    all_equations: list[str] = []
 
     for m in materials:
         text = m.content or ""
+        if m.material_type == "link":
+            # URL-only materials have no extractable text; note it for transparency
+            content_parts.append(f"=== {m.title} ===\n[External link — no text content available]")
+            continue
         if m.material_type == "file" and m.file_path:
             fpath = Path(m.file_path)
             mime  = (m.file_mime or "").lower()
@@ -690,64 +730,83 @@ def ai_generate_questions(
                     content_parts.append(f"[Image material: {m.title}]")
                 except Exception as exc:
                     print(f"[AI Generate] could not read image {fpath}: {exc}", file=sys.stderr)
+                continue
             else:
                 try:
-                    text = fpath.read_text(encoding="utf-8", errors="ignore")[:8000]
+                    text = fpath.read_text(encoding="utf-8", errors="ignore")[:10000]
                 except Exception:
                     pass
         if text and not text.startswith("[Image"):
-            content_parts.append(f"=== {m.title} ===\n{text[:6000]}")
+            eqs = _extract_equations(text)
+            all_equations.extend(eqs)
+            content_parts.append(f"=== {m.title} ===\n{text[:8000]}")
 
     if not content_parts and not image_b64s:
         raise HTTPException(400, "Selected materials have no readable content")
 
-    combined = "\n\n".join(content_parts)[:20000]
+    combined = "\n\n".join(content_parts)[:24000]
     print(
         f"[AI Generate] quiz_id={quiz_id} materials={len(materials)} "
-        f"text_chars={len(combined)} images={len(image_b64s)}",
+        f"text_chars={len(combined)} images={len(image_b64s)} equations={len(all_equations)}",
         file=sys.stderr,
     )
 
+    # Build a deduplicated equation reference block
+    unique_eqs = list(dict.fromkeys(e.strip() for e in all_equations if e.strip()))
+    eq_block = ""
+    if unique_eqs:
+        eq_block = (
+            "═══ EQUATIONS / FORMULAS EXTRACTED FROM MATERIAL ═══\n"
+            + "\n".join(f"  • {e}" for e in unique_eqs[:50])
+            + "\n═══ END EQUATIONS ═══"
+        )
+
     system_prompt = (
-        "You are an expert educator. Your ONLY job is to read the provided course material "
-        "(which may include images of textbook pages, handwritten notes, or slides) "
-        "and write exam questions that directly reference specific facts, equations, "
-        "definitions, and examples visible in that material. "
-        "NEVER write generic questions like 'What is the value of x?' — always include the actual "
-        "equation or context from the material. NEVER use placeholder answer options like A, B, C, D or 1, 2, 3, 4. "
-        "Every question and every answer option must contain real, specific content from the material."
+        "You are an expert educator writing exam questions. "
+        "You are given course material text and, separately, a list of every equation and formula "
+        "found in that material. "
+        "Your ONLY job is to write questions that test the specific facts, equations, definitions, "
+        "and examples from the provided material. "
+        "EQUATIONS: every equation or formula listed MUST appear verbatim inside at least one question "
+        "or answer option — copy the exact symbols, variables, and notation. "
+        "NEVER write generic questions like 'Solve for x' or 'What is the formula?' — "
+        "always embed the actual equation from the material (e.g. 'Given F = ma, if m = 5 kg and a = 3 m/s², what is F?'). "
+        "NEVER use placeholder answer options like A, B, C, D or 1, 2, 3, 4. "
+        "Every answer option must contain a real value, expression, or phrase from the material."
     )
 
     image_instruction = (
         "The course material is provided as image(s) above. "
-        "Read every equation, definition, diagram label, and example visible in the images carefully."
+        "Read every equation, definition, diagram label, and example visible in the images carefully. "
+        "Copy equations exactly as they appear."
         if image_b64s else
-        "Read the course material text carefully."
+        "Read the course material text and the extracted equation list carefully."
     )
 
     prompt_lines = [
         image_instruction,
         "",
-        *(["═══ COURSE MATERIAL TEXT ═══", combined, "═══ END ═══", ""] if combined.strip() and not combined.strip().startswith("[Image") else []),
-        f"Generate exactly these question counts based on the material:",
+        *(["═══ COURSE MATERIAL TEXT ═══", combined, "═══ END MATERIAL ═══", ""] if combined.strip() and not combined.strip().startswith("[Image") else []),
+        *([eq_block, ""] if eq_block else []),
+        f"Generate exactly these question counts based solely on the material above:",
         f"  • {data.num_mc} multiple-choice questions (4 answer options each, exactly one correct)",
         f"  • {data.num_tf} true/false questions",
         f"  • {data.num_short} short-answer questions",
         f"  • {data.num_long} long-answer/essay questions",
         "",
         "MANDATORY RULES:",
-        "• Include the actual equation, value, or term from the material in each question.",
-        "• Multiple-choice options must be real specific answers — numbers, names, or phrases from the material.",
-        "• NEVER use 'A', 'B', 'C', 'D' or '1', '2', '3', '4' as option text.",
-        "• True/false statements must be a specific factual claim from the material.",
-        "• Do NOT invent facts not present in the material.",
+        "• Equations/formulas: embed them verbatim in the question text (e.g. 'Using v² = u² + 2as, find v when...').",
+        "• Multiple-choice options must be real, specific values/expressions — never generic labels.",
+        "• True/false statements must make a precise factual or mathematical claim from the material.",
+        "• Short/long-answer questions must name the specific concept, equation, or scenario from the material.",
+        "• Do NOT invent facts, values, or equations not present in the material.",
         "",
         "Output ONLY a valid JSON array — no markdown, no explanation, no extra text.",
         "Each element must match one of these exact shapes:",
-        '{"type":"multiple_choice","question":"<complete question text>","points":2,"options":[{"text":"<specific answer>","correct":true},{"text":"<specific wrong answer>","correct":false},{"text":"<specific wrong answer>","correct":false},{"text":"<specific wrong answer>","correct":false}]}',
-        '{"type":"true_false","question":"<specific factual statement>","points":1,"correct":true}',
-        '{"type":"short_answer","question":"<complete question text>","points":3}',
-        '{"type":"long_answer","question":"<complete essay prompt>","points":10}',
+        '{"type":"multiple_choice","question":"<full question including equation>","points":2,"options":[{"text":"<specific value or expression>","correct":true},{"text":"<wrong value>","correct":false},{"text":"<wrong value>","correct":false},{"text":"<wrong value>","correct":false}]}',
+        '{"type":"true_false","question":"<precise factual claim from material>","points":1,"correct":true}',
+        '{"type":"short_answer","question":"<full question referencing specific content>","points":3}',
+        '{"type":"long_answer","question":"<essay prompt referencing specific concepts>","points":10}',
     ]
 
     model_to_use = VISION_MODEL if image_b64s else None  # None = use OLLAMA_MODEL default

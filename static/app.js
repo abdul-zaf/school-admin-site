@@ -2308,8 +2308,7 @@ async function openAIGenerateModal(quizId, courseId, autoOpen) {
 
   openModal(t('ai_generate_title'), `
     <div>
-      ${autoOpen ? `<p style="color:var(--info);font-size:13px;margin-bottom:12px;font-weight:600">
-        ✨ ${t('ai_generate_prompt')}</p>` : `<p style="color:var(--muted);font-size:13px;margin-bottom:12px">
+      ${autoOpen ? `` : `<p style="color:var(--muted);font-size:13px;margin-bottom:12px">
         Select which materials the AI should read to generate questions.</p>`}
       <div style="display:flex;gap:8px;margin-bottom:8px">
         <button type="button" class="btn btn-sm" onclick="aiSelectAll(true)">${t('select_all')}</button>
