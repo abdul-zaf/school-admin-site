@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 import models
 import security
 from database import get_db
+from routers.notifications import notify
 from services.ollama import chat as ollama_chat, OLLAMA_MODEL
 
 router = APIRouter()
@@ -311,6 +312,12 @@ def publish_report_card(
     security.require_course_access(rc.course_id, current_user, db)
     rc.is_published = True
     rc.updated_at   = datetime.utcnow()
+    notify(
+        db, rc.student_id, "report_card",
+        "📄 Your report card has been published",
+        f"{rc.course.title}" if rc.course else "",
+        link=f"report_cards",
+    )
     db.commit()
     return {"ok": True, "is_published": True}
 

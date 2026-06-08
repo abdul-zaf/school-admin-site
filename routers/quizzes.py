@@ -801,6 +801,7 @@ def ai_generate_questions(
         "MANDATORY RULES:",
         "• Equations/formulas: embed them verbatim in the question text (e.g. 'Using v² = u² + 2as, find v when...').",
         "• Multiple-choice options must be real, specific values/expressions — never generic labels.",
+        "• For math/science questions, all numerical answer options MUST be whole integers (e.g. 10, 25, 100) — never decimals like 10.0 or 2.5 unless the material explicitly uses decimals.",
         "• True/false statements must make a precise factual or mathematical claim from the material.",
         "• Short/long-answer questions must name the specific concept, equation, or scenario from the material.",
         "• Do NOT invent facts, values, or equations not present in the material.",
@@ -954,9 +955,17 @@ def ai_generate_questions(
 
         if qtype == "multiple_choice":
             for opt in qd.get("options", []):
+                raw_text = str(opt.get("text", "")).strip()
+                # Remove trailing .0 from whole-number decimals (e.g. "10.0" → "10")
+                try:
+                    fval = float(raw_text)
+                    if fval == int(fval):
+                        raw_text = str(int(fval))
+                except (ValueError, OverflowError):
+                    pass
                 db.add(models.QuizOption(
                     question_id=qq.id,
-                    option_text=opt.get("text", ""),
+                    option_text=raw_text,
                     is_correct=bool(opt.get("correct", False)),
                 ))
         elif qtype == "true_false":

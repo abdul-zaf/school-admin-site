@@ -418,6 +418,8 @@ function ddpSync(id) {
   document.getElementById(id + '-preview').textContent = combined ? fmtDateTimeLocal(combined) : t('dp_no_due');
 }
 
+function fmtPts(n) { return Number.isInteger(n) ? n : parseFloat(n) % 1 === 0 ? parseInt(n) : n; }
+
 function fmtDateTimeLocal(iso) {
   if (!iso) return '';
   const d = new Date(iso.includes('T') ? iso : iso.replace(' ', 'T'));
@@ -541,7 +543,7 @@ function loading(el) {
 // Navigation
 // ═══════════════════════════════════════════════════════════
 const NAV_KEYS = {
-  admin:   ['dashboard','courses','users','announcements','gradebook','analytics','calendar','settings'],
+  admin:   ['dashboard','courses','users','announcements','gradebook','attendance','report_cards','analytics','calendar','messages','settings'],
   teacher: ['dashboard','courses','announcements','gradebook','attendance','report_cards','analytics','calendar','messages','settings'],
   student: ['dashboard','courses','announcements','gradebook','report_cards','calendar','messages','ai_tutor','settings'],
   parent:  ['dashboard','settings'],
@@ -1420,7 +1422,7 @@ function quizCard(q, canManage, courseId) {
   const inProgress = q.my_attempt && !q.my_attempt.submitted_at;
   const isLocked   = !canManage && q.is_locked;
   const scoreLabel = attempted
-    ? `${t('score')}: ${q.my_attempt.score!=null ? q.my_attempt.score : '?'}/${q.total_points}`
+    ? `${t('score')}: ${q.my_attempt.score!=null ? fmtPts(q.my_attempt.score) : '?'}/${fmtPts(q.total_points)}`
     : (inProgress ? t('attempted') : t('not_attempted'));
   const attemptBadgeCls = attempted ? 'badge-success' : (inProgress ? 'badge-warning' : 'badge-secondary');
 
@@ -2201,7 +2203,7 @@ function questionBuilderCard(q, idx, quizId) {
     <div class="question-card">
       <div class="question-card-header">
         <div>
-          <span class="text-muted" style="font-size:11px;text-transform:uppercase">${t('q_num')} ${idx+1} &bull; ${typeLabel[q.question_type]||q.question_type} &bull; ${q.points} ${t('pts')}</span>
+          <span class="text-muted" style="font-size:11px;text-transform:uppercase">${t('q_num')} ${idx+1} &bull; ${typeLabel[q.question_type]||q.question_type} &bull; ${fmtPts(q.points)} ${t('pts')}</span>
           <strong style="display:block;margin-top:2px">${htmlEsc(q.question_text)}</strong>
         </div>
         <button class="btn btn-sm btn-danger" onclick="deleteQuestion(${q.id},${quizId})">${t('delete')}</button>
@@ -2616,7 +2618,7 @@ async function renderQuizTake(quizId, el) {
       </div>
       ${quiz.questions.map((q,i) => `
         <div class="quiz-question-block">
-          <div class="quiz-q-num">${t('q_num')} ${i+1} ${t('of')} ${quiz.question_count} &bull; ${q.points} ${t('pts')}</div>
+          <div class="quiz-q-num">${t('q_num')} ${i+1} ${t('of')} ${quiz.question_count} &bull; ${fmtPts(q.points)} ${t('pts')}</div>
           <div class="quiz-q-text">${htmlEsc(q.question_text)}</div>
           ${q.question_type === 'short_answer' ? `
             <textarea class="form-control" id="sa-${q.id}" rows="4" placeholder="…"></textarea>` :
@@ -2834,7 +2836,7 @@ async function renderExamTake(examId, el) {
         </div>
         ${quiz.questions.map((q, i) => `
           <div class="quiz-question-block">
-            <div class="quiz-q-num">${t('q_num')} ${i+1} ${t('of')} ${quiz.question_count} &bull; ${q.points} ${t('pts')}</div>
+            <div class="quiz-q-num">${t('q_num')} ${i+1} ${t('of')} ${quiz.question_count} &bull; ${fmtPts(q.points)} ${t('pts')}</div>
             <div class="quiz-q-text">${htmlEsc(q.question_text)}</div>
             ${q.question_type === 'short_answer' ? `
               <textarea class="form-control" id="sa-${q.id}" rows="4" placeholder="…"></textarea>` : `
@@ -3101,7 +3103,7 @@ function renderQuizResults(quiz, el) {
       ${attempt?.score != null
         ? `<div class="stat-card" style="min-width:120px;text-align:center">
             <div class="stat-number">${attempt.score}</div>
-            <div class="stat-label">${t('your_score')} / ${quiz.total_points}</div>
+            <div class="stat-label">${t('your_score')} / ${fmtPts(quiz.total_points)}</div>
            </div>`
         : `<span class="badge badge-warning">⏳ ${t('pending_teacher_grade')}</span>`}
     </div>
@@ -3111,14 +3113,14 @@ function renderQuizResults(quiz, el) {
       const myText = myAns?.text_answer;
       return `
         <div class="quiz-question-block">
-          <div class="quiz-q-num">${t('q_num')} ${i+1} &bull; ${q.points} ${t('pts')}</div>
+          <div class="quiz-q-num">${t('q_num')} ${i+1} &bull; ${fmtPts(q.points)} ${t('pts')}</div>
           <div class="quiz-q-text">${htmlEsc(q.question_text)}</div>
           ${(q.question_type === 'short_answer' || q.question_type === 'long_answer') ? `
             <div class="alert alert-success" style="margin-top:8px">
               <strong>${t('your_answer')}:</strong> ${htmlEsc(myText || '—')}
             </div>
             ${myAns?.teacher_score != null
-              ? `<p style="font-size:13px;color:var(--success)">✓ ${myAns.teacher_score} / ${q.points} pts${myAns.teacher_feedback ? ` — ${htmlEsc(myAns.teacher_feedback)}` : ''}</p>`
+              ? `<p style="font-size:13px;color:var(--success)">✓ ${fmtPts(myAns.teacher_score)} / ${fmtPts(q.points)} pts${myAns.teacher_feedback ? ` — ${htmlEsc(myAns.teacher_feedback)}` : ''}</p>`
               : `<p class="text-muted" style="font-size:12px">⏳ ${t('pending_teacher_grade')}</p>`}` : `
             <div class="quiz-options" style="pointer-events:none">
               ${q.options.map(o => {
