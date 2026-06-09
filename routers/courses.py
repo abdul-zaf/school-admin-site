@@ -622,10 +622,12 @@ def _ai_generate_assignment_for_material(material_id: int, course_id: int) -> No
             "3–5 specific task prompts or questions the student must answer, "
             "and grading criteria (what earns full marks). "
             "Base everything strictly on the provided material — do not invent topics not covered. "
-            "Output ONLY a JSON object with these keys: "
+            "Do NOT include due date placeholders like '[insert date]' or 'due on X' — omit dates entirely. "
+            "Do NOT include notes about late submissions or administrative policies. "
+            "Output ONLY a valid JSON object with exactly two keys: "
             '{"title": "...", "description": "..."} '
-            "where `description` contains the full assignment text (objective, tasks, grading criteria) "
-            "as plain text with newlines. Do not include any text outside the JSON object."
+            "where `description` is a plain-text string using \\n for newlines. "
+            "Do not include any text, markdown, or explanation outside the JSON object."
         )
 
         user_prompt = (
@@ -656,6 +658,14 @@ def _ai_generate_assignment_for_material(material_id: int, course_id: int) -> No
                 description = parsed.get("description", description)
             except json.JSONDecodeError:
                 pass
+
+        # Clean up description: strip whitespace, remove placeholder date text
+        description = description.strip()
+        description = _re.sub(r'\[insert date[^\]]*\]', '[date TBD]', description, flags=_re.IGNORECASE)
+        # If parsing failed and raw JSON leaked into description, strip it out
+        description = _re.sub(r'^\s*\{.*?"description"\s*:\s*"', '', description, flags=_re.DOTALL)
+        description = _re.sub(r'"\s*\}\s*$', '', description, flags=_re.DOTALL)
+        description = description.strip().strip('"').strip()
 
         # Create assignment
         assignment = models.Assignment(
