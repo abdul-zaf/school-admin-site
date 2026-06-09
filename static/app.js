@@ -1767,6 +1767,43 @@ function openNewAssignmentModal(courseId) {
     });
 }
 
+async function openEditAssignmentModal(assignmentId, courseId) {
+  let a;
+  try { a = await api('GET', `/assignments/${assignmentId}`); } catch(err) { toast(err.message, 'error'); return; }
+  openModal('Edit Assignment', `
+    <form id="modal-form">
+      <div class="form-group"><label>${t('title_label')} *</label>
+        <input name="title" class="form-control" value="${htmlEsc(a.title)}" required></div>
+      <div class="form-group"><label>${t('instructions')}</label>
+        <textarea name="description" class="form-control" rows="6">${htmlEsc(a.description || '')}</textarea></div>
+      <div class="form-group"><label>${t('max_score')}</label>
+        <input name="max_score" type="number" class="form-control" value="${a.max_score}" min="1"></div>
+      <div class="form-group"><label>${t('due_date')}</label>
+        ${dueDatePicker('edit-asgn-due', a.due_date ? fmtDateTimeLocal(a.due_date) : '')}</div>
+      <div class="form-actions">
+        <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
+        <button type="submit" class="btn btn-primary">${t('save')}</button>
+      </div>
+    </form>`,
+    async (fd) => {
+      try {
+        await api('PUT', `/assignments/${assignmentId}`, {
+          title: fd.get('title'),
+          description: fd.get('description') || null,
+          due_date: fd.get('due_date') || null,
+          max_score: parseFloat(fd.get('max_score')) || 100,
+          late_penalty_per_day: a.late_penalty_per_day || 0,
+          max_late_days: a.max_late_days || null,
+          allow_resubmission: a.allow_resubmission || false,
+          max_submissions: a.max_submissions || 1,
+        });
+        closeModal();
+        toast('Assignment updated!');
+        navigate('assignment', { id: assignmentId });
+      } catch(err) { toast(err.message, 'error'); }
+    });
+}
+
 async function renderAssignmentDetail(assignmentId, el) {
   loading(el);
   try {
@@ -1778,9 +1815,10 @@ async function renderAssignmentDetail(assignmentId, el) {
           <button class="btn btn-sm" onclick="navigate('course',{id:${a.course_id}})" style="margin-bottom:8px">${t('back')}</button>
           <h2>${htmlEsc(a.title)}</h2>
         </div>
-        <div style="text-align:right">
-          ${a.due_date ? `<small class="text-muted">${t('due_date')}: ${fmtDateTime(a.due_date)}</small><br>` : ''}
+        <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          ${a.due_date ? `<small class="text-muted">${t('due_date')}: ${fmtDateTime(a.due_date)}</small>` : ''}
           <small class="text-muted">${t('max_score')}: ${a.max_score} ${t('pts')}</small>
+          ${canGrade ? `<button class="btn btn-sm btn-secondary" onclick="openEditAssignmentModal(${a.id},${a.course_id})">✏ Edit Assignment</button>` : ''}
         </div>
       </div>
       ${a.description ? `<div class="card"><div class="card-header"><h3>${t('instructions')}</h3></div>

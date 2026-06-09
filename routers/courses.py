@@ -20,13 +20,14 @@ import os
 import uuid
 import mimetypes
 from pathlib import Path
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File as FFile, Form
+import sys
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, File as FFile, Form
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
-from datetime import date
-from database import get_db
+from datetime import date, datetime
+from database import get_db, SessionLocal
 import models
 import security
 from services.knowledge_base import index_material, remove_material_index
@@ -583,14 +584,119 @@ def delete_material(
     return {"ok": True}
 
 
+def _ai_generate_assignment_for_material(material_id: int, course_id: int) -> None:
+    """Background task: generate an AI assignment from a completed material and notify students."""
+    db = SessionLocal()
+    try:
+        from services.ollama import chat as ollama_chat, is_available as ollama_available
+        from routers.notifications import notify
+
+        if not ollama_available():
+            print(f"[AI Assignment] Ollama not available — skipping for material {material_id}", file=sys.stderr)
+            return
+
+        m = db.query(models.Material).filter(models.Material.id == material_id).first()
+        course = db.query(models.Course).filter(models.Course.id == course_id).first()
+        if not m or not course:
+            return
+
+        # Build material content
+        text = m.content or ""
+        if m.material_type == "file" and m.file_path:
+            from pathlib import Path as _Path
+            fpath = _Path(m.file_path)
+            if fpath.exists():
+                try:
+                    text = fpath.read_text(encoding="utf-8", errors="ignore")[:4000]
+                except Exception:
+                    pass
+        if not text.strip():
+            print(f"[AI Assignment] No text content for material {material_id} — skipping", file=sys.stderr)
+            return
+
+        system_prompt = (
+            "You are an experienced teacher creating a written assignment based on course material. "
+            "Your task is to produce a single, well-structured assignment that tests the student's "
+            "understanding of the provided material. "
+            "The assignment must include: a clear title, a concise objective statement, "
+            "3–5 specific task prompts or questions the student must answer, "
+            "and grading criteria (what earns full marks). "
+            "Base everything strictly on the provided material — do not invent topics not covered. "
+            "Output ONLY a JSON object with these keys: "
+            '{"title": "...", "description": "..."} '
+            "where `description` contains the full assignment text (objective, tasks, grading criteria) "
+            "as plain text with newlines. Do not include any text outside the JSON object."
+        )
+
+        user_prompt = (
+            f"Create an assignment based on the following course material titled \"{m.title}\":\n\n"
+            f"{text[:4000]}"
+        )
+
+        try:
+            raw = ollama_chat(
+                [{"role": "user", "content": user_prompt}],
+                system=system_prompt,
+                temperature=0.4,
+                max_tokens=1024,
+            )
+        except Exception as exc:
+            print(f"[AI Assignment] Ollama error: {exc}", file=sys.stderr)
+            return
+
+        # Parse JSON from response
+        import json, re as _re
+        title = f"Assignment: {m.title}"
+        description = raw.strip()
+        match = _re.search(r'\{.*\}', raw, _re.DOTALL)
+        if match:
+            try:
+                parsed = json.loads(match.group(0))
+                title = parsed.get("title", title)
+                description = parsed.get("description", description)
+            except json.JSONDecodeError:
+                pass
+
+        # Create assignment
+        assignment = models.Assignment(
+            course_id=course_id,
+            title=title,
+            description=description,
+            max_score=100.0,
+        )
+        db.add(assignment)
+        db.flush()
+
+        # Notify all enrolled students
+        enrollments = db.query(models.Enrollment).filter(
+            models.Enrollment.course_id == course_id
+        ).all()
+        for enr in enrollments:
+            notify(
+                db, enr.student_id, "assignment",
+                f"📋 New assignment: {title}",
+                f"{course.title} — generated from \"{m.title}\"",
+                link=f"assignment:{assignment.id}",
+            )
+
+        db.commit()
+        print(f"[AI Assignment] Created assignment '{title}' for course {course_id}", file=sys.stderr)
+    except Exception as exc:
+        print(f"[AI Assignment] Unexpected error: {exc}", file=sys.stderr)
+    finally:
+        db.close()
+
+
 @router.post("/{course_id}/materials/{material_id}/complete")
 def complete_material(
     course_id: int,
     material_id: int,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(security.get_current_user),
 ):
-    """Mark a material as completed by the current student (idempotent)."""
+    """Mark a material as completed by the current student (idempotent).
+    On first completion, triggers AI assignment generation in the background."""
     m = db.query(models.Material).filter(
         models.Material.id == material_id, models.Material.course_id == course_id
     ).first()
@@ -606,6 +712,8 @@ def complete_material(
             student_id=current_user.id,
         ))
         db.commit()
+        # Fire AI assignment generation once (first completion of this material by this student)
+        background_tasks.add_task(_ai_generate_assignment_for_material, material_id, course_id)
     return {"ok": True}
 
 

@@ -47,6 +47,17 @@ class AssignmentCreate(BaseModel):
     max_submissions: int = 1
 
 
+class AssignmentEdit(BaseModel):
+    title: str
+    description: Optional[str] = None
+    due_date: Optional[datetime] = None
+    max_score: float = 100.0
+    late_penalty_per_day: float = 0.0
+    max_late_days: Optional[int] = None
+    allow_resubmission: bool = False
+    max_submissions: int = 1
+
+
 class GradeSubmission(BaseModel):
     score: float
     feedback: Optional[str] = None
@@ -182,9 +193,43 @@ def get_assignment(
         "description": a.description,
         "due_date": str(a.due_date) if a.due_date else None,
         "max_score": a.max_score,
+        "late_penalty_per_day": a.late_penalty_per_day,
+        "max_late_days": a.max_late_days,
+        "allow_resubmission": a.allow_resubmission,
+        "max_submissions": a.max_submissions,
         "created_at": str(a.created_at),
         "submissions": submissions,
         "my_submission": my_sub,
+    }
+
+
+@router.put("/{assignment_id}")
+def edit_assignment(
+    assignment_id: int,
+    data: AssignmentEdit,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("admin", "teacher")),
+):
+    a = db.query(models.Assignment).filter(models.Assignment.id == assignment_id).first()
+    if not a:
+        raise HTTPException(404, "Assignment not found")
+    security.require_course_access(a.course_id, current_user, db)
+    a.title = data.title
+    a.description = data.description
+    a.due_date = data.due_date
+    a.max_score = data.max_score
+    a.late_penalty_per_day = data.late_penalty_per_day
+    a.max_late_days = data.max_late_days
+    a.allow_resubmission = data.allow_resubmission
+    a.max_submissions = data.max_submissions
+    db.commit()
+    db.refresh(a)
+    return {
+        "id": a.id,
+        "title": a.title,
+        "description": a.description,
+        "due_date": str(a.due_date) if a.due_date else None,
+        "max_score": a.max_score,
     }
 
 
