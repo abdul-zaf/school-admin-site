@@ -1804,6 +1804,15 @@ async function openEditAssignmentModal(assignmentId, courseId) {
     });
 }
 
+async function deleteAssignment(assignmentId, courseId) {
+  if (!confirm('Delete this assignment? This will also remove all student submissions and cannot be undone.')) return;
+  try {
+    await api('DELETE', `/assignments/${assignmentId}`);
+    toast('Assignment deleted.');
+    navigate('course', { id: courseId });
+  } catch(err) { toast(err.message, 'error'); }
+}
+
 async function renderAssignmentDetail(assignmentId, el) {
   loading(el);
   try {
@@ -1818,7 +1827,10 @@ async function renderAssignmentDetail(assignmentId, el) {
         <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
           ${a.due_date ? `<small class="text-muted">${t('due_date')}: ${fmtDateTime(a.due_date)}</small>` : ''}
           <small class="text-muted">${t('max_score')}: ${a.max_score} ${t('pts')}</small>
-          ${canGrade ? `<button class="btn btn-sm btn-secondary" onclick="openEditAssignmentModal(${a.id},${a.course_id})">✏ Edit Assignment</button>` : ''}
+          ${canGrade ? `<div style="display:flex;gap:6px">
+            <button class="btn btn-sm btn-secondary" onclick="openEditAssignmentModal(${a.id},${a.course_id})">✏ Edit Assignment</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteAssignment(${a.id},${a.course_id})">🗑 Delete</button>
+          </div>` : ''}
         </div>
       </div>
       ${a.description ? `<div class="card"><div class="card-header"><h3>${t('instructions')}</h3></div>
