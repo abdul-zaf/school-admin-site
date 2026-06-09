@@ -584,8 +584,8 @@ def delete_material(
     return {"ok": True}
 
 
-def _ai_generate_assignment_for_material(material_id: int, course_id: int) -> None:
-    """Background task: generate an AI assignment from a completed material and notify students."""
+def _ai_generate_assignment_for_material(material_id: int, course_id: int, student_id: int) -> None:
+    """Background task: generate an AI assignment from a completed material and notify the completing student."""
     db = SessionLocal()
     try:
         from services.ollama import chat as ollama_chat, is_available as ollama_available
@@ -686,17 +686,13 @@ def _ai_generate_assignment_for_material(material_id: int, course_id: int) -> No
         db.add(assignment)
         db.flush()
 
-        # Notify all enrolled students
-        enrollments = db.query(models.Enrollment).filter(
-            models.Enrollment.course_id == course_id
-        ).all()
-        for enr in enrollments:
-            notify(
-                db, enr.student_id, "assignment",
-                f"📋 New assignment: {title}",
-                f"{course.title} — generated from \"{m.title}\"",
-                link=f"assignment:{assignment.id}",
-            )
+        # Notify only the student who completed the material
+        notify(
+            db, student_id, "assignment",
+            f"📋 New assignment: {title}",
+            f"{course.title} — generated from \"{m.title}\"",
+            link=f"assignment:{assignment.id}",
+        )
 
         db.commit()
         print(f"[AI Assignment] Created assignment '{title}' for course {course_id}", file=sys.stderr)
@@ -732,7 +728,7 @@ def complete_material(
         ))
         db.commit()
         # Fire AI assignment generation once (first completion of this material by this student)
-        background_tasks.add_task(_ai_generate_assignment_for_material, material_id, course_id)
+        background_tasks.add_task(_ai_generate_assignment_for_material, material_id, course_id, current_user.id)
     return {"ok": True}
 
 
