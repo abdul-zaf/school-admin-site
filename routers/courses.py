@@ -618,6 +618,8 @@ def _ai_generate_assignment_for_material(material_id: int, course_id: int) -> No
             "You are an experienced teacher creating a written assignment based on course material. "
             "Your task is to produce a single, well-structured assignment that tests the student's "
             "understanding of the provided material. "
+            "The assignment MUST be appropriate for the course subject provided — all questions and tasks "
+            "must relate directly to that subject area and the specific material content. "
             "The assignment must include: a clear title, a concise objective statement, "
             "3–5 specific task prompts or questions the student must answer, "
             "and grading criteria (what earns full marks). "
@@ -630,7 +632,14 @@ def _ai_generate_assignment_for_material(material_id: int, course_id: int) -> No
             "Do not include any text, markdown, or explanation outside the JSON object."
         )
 
+        course_context = f"Course: {course.title}"
+        if course.subject:
+            course_context += f" (Subject: {course.subject})"
+        if course.description:
+            course_context += f"\nCourse description: {course.description}"
+
         user_prompt = (
+            f"{course_context}\n\n"
             f"Create an assignment based on the following course material titled \"{m.title}\":\n\n"
             f"{text[:4000]}"
         )
