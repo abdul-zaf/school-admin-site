@@ -136,6 +136,9 @@ def course_gradebook(
     categories = db.query(models.GradeCategory).filter(models.GradeCategory.course_id == course_id).all()
     enrollments = db.query(models.Enrollment).filter(models.Enrollment.course_id == course_id).all()
 
+    # Materials for this course (key materials and all)
+    materials = db.query(models.Material).filter(models.Material.course_id == course_id).all()
+
     result = []
     for enr in enrollments:
         student = enr.student
@@ -156,12 +159,20 @@ def course_gradebook(
                 "graded": sub and sub.score is not None,
             }
 
+        # Material completions for this student
+        comps = db.query(models.MaterialCompletion).filter(
+            models.MaterialCompletion.student_id == student.id,
+            models.MaterialCompletion.material_id.in_([m.id for m in materials]),
+        ).all()
+        completed_material_ids = {c.material_id for c in comps}
+
         grade_info = compute_weighted_grade(student.id, assignments, sub_map, categories)
         result.append({
             "student_id": student.id,
             "student_name": student.name,
             "student_email": student.email,
             "scores": scores,
+            "completed_material_ids": list(completed_material_ids),
             **grade_info,
         })
 
@@ -172,6 +183,10 @@ def course_gradebook(
             {"id": a.id, "title": a.title, "max_score": a.max_score,
              "is_extra_credit": a.is_extra_credit, "category_id": a.grade_category_id}
             for a in assignments
+        ],
+        "materials": [
+            {"id": m.id, "title": m.title}
+            for m in materials
         ],
         "students": result,
     }

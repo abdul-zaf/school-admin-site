@@ -3615,7 +3615,53 @@ function renderGradebookStudent(gb, studentId) {
           </tbody>
         </table>
       </div>`}
-    </div>`;
+    </div>
+
+    ${gb.materials && gb.materials.length ? `
+    <div class="card" style="padding:0;margin-top:18px">
+      <div class="card-header" style="padding:14px 20px">
+        <h3>Material Completions</h3>
+        <small class="text-muted">${student.completed_material_ids ? student.completed_material_ids.length : 0} / ${gb.materials.length} completed</small>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table class="gradebook-table" style="width:100%">
+          <thead>
+            <tr>
+              <th style="padding:10px 18px">Material</th>
+              <th style="padding:10px 12px;text-align:center">Status</th>
+              <th style="padding:10px 12px;text-align:center">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${gb.materials.map(m => {
+              const done = student.completed_material_ids && student.completed_material_ids.includes(m.id);
+              return `<tr>
+                <td style="padding:12px 18px;font-weight:500">${htmlEsc(m.title)}</td>
+                <td style="padding:12px;text-align:center">
+                  ${done
+                    ? '<span class="badge badge-success">Completed</span>'
+                    : '<span class="badge" style="background:var(--border);color:var(--muted)">Not completed</span>'}
+                </td>
+                <td style="padding:12px;text-align:center">
+                  ${done
+                    ? `<button class="btn btn-sm btn-danger" onclick="unmarkMaterialComplete(${gb.course_id},${m.id},${student.student_id})">Unmark</button>`
+                    : '<span class="text-muted">—</span>'}
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>` : ''}`;
+}
+
+async function unmarkMaterialComplete(courseId, materialId, studentId) {
+  if (!confirm('Remove this completion record? The student will need to mark it complete again.')) return;
+  try {
+    await api('DELETE', `/courses/${courseId}/materials/${materialId}/complete/${studentId}`);
+    toast('Completion removed.');
+    navigate('gradebook', {course_id: courseId, student_id: studentId});
+  } catch(err) { toast(err.message, 'error'); }
 }
 
 // ═══════════════════════════════════════════════════════════

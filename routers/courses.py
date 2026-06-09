@@ -727,6 +727,27 @@ def complete_material(
     return {"ok": True}
 
 
+@router.delete("/{course_id}/materials/{material_id}/complete/{student_id}")
+def unmark_material_complete(
+    course_id: int,
+    material_id: int,
+    student_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("admin", "teacher")),
+):
+    """Teacher/admin: remove a student's material completion record."""
+    security.require_course_access(course_id, current_user, db)
+    rec = db.query(models.MaterialCompletion).filter(
+        models.MaterialCompletion.material_id == material_id,
+        models.MaterialCompletion.student_id == student_id,
+    ).first()
+    if not rec:
+        raise HTTPException(404, "Completion record not found")
+    db.delete(rec)
+    db.commit()
+    return {"ok": True}
+
+
 # Attendance
 
 @router.post("/{course_id}/attendance")
