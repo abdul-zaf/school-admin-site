@@ -730,6 +730,37 @@ def complete_material(
         db.commit()
         # Fire AI assignment generation once (first completion of this material by this student)
         background_tasks.add_task(_ai_generate_assignment_for_material, material_id, course_id, current_user.id)
+
+        # Check if the student has now completed ALL materials in the course
+        all_mat_ids = {
+            row.id for row in db.query(models.Material.id)
+            .filter(models.Material.course_id == course_id).all()
+        }
+        done_ids = {
+            row.material_id for row in db.query(models.MaterialCompletion.material_id)
+            .filter(
+                models.MaterialCompletion.student_id == current_user.id,
+                models.MaterialCompletion.material_id.in_(list(all_mat_ids)),
+            ).all()
+        }
+        if all_mat_ids and all_mat_ids.issubset(done_ids):
+            # Notify the student about every published exam locked behind all-materials
+            from routers.notifications import notify as _notify
+            exams = db.query(models.Quiz).filter(
+                models.Quiz.course_id == course_id,
+                models.Quiz.unlock_all_materials == True,
+                models.Quiz.is_published == True,
+            ).all()
+            course_obj = db.query(models.Course).filter(models.Course.id == course_id).first()
+            course_title = course_obj.title if course_obj else "your course"
+            for exam in exams:
+                _notify(
+                    db, current_user.id, "quiz",
+                    f"🎓 Exam unlocked: {exam.title}",
+                    f"{course_title} — you have completed all materials",
+                    link=f"quiz:{exam.id}",
+                )
+            db.commit()
     return {"ok": True}
 
 

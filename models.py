@@ -197,6 +197,8 @@ class Quiz(Base):
     is_published = Column(Boolean, default=False, nullable=False)
     max_attempts = Column(Integer, nullable=True)  # None = unlimited retakes
     is_exam      = Column(Boolean, default=False, nullable=False)
+    # v14: visible to students only after they complete ALL course materials
+    unlock_all_materials = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     course = relationship("Course", back_populates="quizzes")

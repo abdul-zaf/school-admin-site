@@ -87,6 +87,8 @@ def apply_migrations():
         "ALTER TABLE quiz_answers ADD COLUMN teacher_feedback TEXT",
         # v13: material-gated assignment
         "ALTER TABLE assignments ADD COLUMN unlock_material_id INTEGER REFERENCES materials(id)",
+        # v14: all-materials-gated exam
+        "ALTER TABLE quizzes ADD COLUMN unlock_all_materials BOOLEAN NOT NULL DEFAULT 0",
     ]
 
     if _is_sqlite:
@@ -145,5 +147,7 @@ def apply_migrations():
                 "ALTER TABLE quiz_answers ADD COLUMN IF NOT EXISTS teacher_feedback TEXT",
                 # v13: material-gated assignment
                 "ALTER TABLE assignments ADD COLUMN IF NOT EXISTS unlock_material_id INTEGER REFERENCES materials(id)",
+                # v14: all-materials-gated exam
+                "ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS unlock_all_materials BOOLEAN NOT NULL DEFAULT FALSE",
             ]:
                 conn.execute(text(ddl))

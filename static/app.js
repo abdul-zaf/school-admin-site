@@ -101,6 +101,8 @@ const i18n = {
     exam_submit_confirm:'Are you sure you want to submit? You cannot go back.',
     exam_time_up:'Time is up — your exam has been submitted automatically.',
     is_exam:'Mark as Exam (locked environment)',
+    unlock_after_all_materials:'Unlock only after student completes ALL course materials',
+    exam_locked_all_materials:'Complete all course materials to unlock this exam',
     // Leaderboard
 
     your_rank:'Your Rank', rank:'Rank', top_students:'Top Students',
@@ -274,6 +276,8 @@ const i18n = {
     exam_submit_confirm:'کیا آپ واقعی جمع کرنا چاہتے ہیں؟ واپس نہیں جا سکتے۔',
     exam_time_up:'وقت ختم — آپ کا امتحان خودبخود جمع ہو گیا۔',
     is_exam:'امتحان کے طور پر نشان زد کریں (بند ماحول)',
+    unlock_after_all_materials:'تمام کورس مواد مکمل کرنے کے بعد ہی امتحان کھلے گا',
+    exam_locked_all_materials:'یہ امتحان کھولنے کے لیے تمام کورس مواد مکمل کریں',
     // Leaderboard (Urdu)
 
     your_rank:'آپ کی پوزیشن', rank:'پوزیشن', top_students:'اعلیٰ طلبا',
@@ -1496,6 +1500,7 @@ function quizCard(q, canManage, courseId) {
             ? `<button class="btn btn-sm" onclick="navigate('exam-take',{id:${q.id}})">${t('quiz_results')}</button>`
             : `<button class="btn btn-sm" onclick="navigate('quiz-take',{id:${q.id}})">${t('quiz_results')}</button>`) : ''}
         ${canManage ? `
+          ${q.unlock_all_materials ? `<span class="badge badge-info" style="font-size:11px">🔒 ${t('unlock_after_all_materials')}</span>` : ''}
           <button class="btn btn-sm ${q.is_published ? 'btn-warning' : 'btn-success'}"
             onclick="togglePublishQuiz(${q.id},${q.is_published},${courseId})">
             ${q.is_published ? t('unpublish_quiz') : t('publish_quiz')}
@@ -2116,13 +2121,14 @@ async function renderQuizBuilder(quizId, el) {
       ? `<span class="badge badge-success">✓ ${t('quiz_published')}</span>`
       : `<span class="badge badge-warning">✏️ ${t('quiz_draft')}</span>`;
     const examBadge = quiz.is_exam ? `<span class="exam-badge">EXAM</span>` : '';
+    const unlockBadge = quiz.unlock_all_materials ? `<span class="badge badge-info" style="font-size:11px">🔒 ${t('unlock_after_all_materials')}</span>` : '';
     el.innerHTML = `
       <div class="page-header">
         <div>
           <button class="btn btn-sm" onclick="navigate('course',{id:${quiz.course_id}})" style="margin-bottom:8px">${t('back')}</button>
           <h2>${t('quiz_builder')}: ${htmlEsc(quiz.title)}</h2>
           <div style="display:flex;gap:8px;margin-top:6px;align-items:center;flex-wrap:wrap">
-            ${pubBadge}${examBadge}
+            ${pubBadge}${examBadge}${unlockBadge}
             <small class="text-muted">${quiz.question_count} ${t('question_text')}(s) &bull; ${quiz.total_points} ${t('pts')}${quiz.time_limit ? ` &bull; ${quiz.time_limit} ${t('minutes')}` : ''}</small>
           </div>
         </div>
@@ -2210,6 +2216,12 @@ async function openEditQuizModal(quizId) {
           📝 ${t('is_exam')}
         </label>
       </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:10px;padding:10px 0">
+        <input type="checkbox" name="unlock_all_materials" id="chk-unlock-all" value="1"${quiz.unlock_all_materials?' checked':''} style="width:18px;height:18px;accent-color:var(--info);flex-shrink:0">
+        <label for="chk-unlock-all" style="font-size:13px;font-weight:600;color:var(--text);cursor:pointer;margin:0">
+          🔒 ${t('unlock_after_all_materials')}
+        </label>
+      </div>
       <div class="form-actions">
         <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
         <button type="submit" class="btn btn-primary">${t('save')}</button>
@@ -2226,6 +2238,7 @@ async function openEditQuizModal(quizId) {
           due_date: fd.get('due_date') || null,
           max_attempts: ma,
           is_exam: !!fd.get('is_exam'),
+          unlock_all_materials: !!fd.get('unlock_all_materials'),
         });
         closeModal();
         toast(t('quiz_edit_saved'));

@@ -37,6 +37,7 @@ class QuizCreate(BaseModel):
     shuffle: bool = False
     max_attempts: Optional[int] = None   # None = unlimited
     is_exam: bool = False
+    unlock_all_materials: bool = False
 
 
 class QuizUpdate(BaseModel):
@@ -47,6 +48,7 @@ class QuizUpdate(BaseModel):
     shuffle: Optional[bool] = None
     max_attempts: Optional[int] = None   # 0 = clear limit (unlimited)
     is_exam: Optional[bool] = None
+    unlock_all_materials: Optional[bool] = None
 
 
 class PublishToggle(BaseModel):
@@ -89,6 +91,7 @@ def serialise_quiz(q: models.Quiz, hide_correct: bool = True, my_attempt=None):
         "is_published": q.is_published,
         "max_attempts": q.max_attempts,
         "is_exam": q.is_exam,
+        "unlock_all_materials": q.unlock_all_materials,
         "created_at": str(q.created_at),
         "question_count": len(q.questions),
         "total_points": sum(qq.points for qq in q.questions),
@@ -127,13 +130,13 @@ def list_quizzes(
     # Build per-student unlock state: which quiz ids are still locked
     locked_quiz_ids: set = set()
     lock_requirements: dict = {}  # quiz_id -> list of required material titles
+    all_materials_completed: bool = False  # True when student has finished every material
     if current_user.role == "student":
-        # All key-materials in this course
+        # ── Per-material unlock (unlock_quiz_id on Material) ─────────────────
         key_mats = db.query(models.Material).filter(
             models.Material.course_id == course_id,
             models.Material.unlock_quiz_id.isnot(None),
         ).all()
-        # Student's completions for those materials
         if key_mats:
             completed_ids = {
                 c.material_id for c in db.query(models.MaterialCompletion).filter(
@@ -141,21 +144,41 @@ def list_quizzes(
                     models.MaterialCompletion.material_id.in_([m.id for m in key_mats]),
                 ).all()
             }
-            # Group by quiz
             from collections import defaultdict
             required: dict = defaultdict(list)
             for m in key_mats:
                 required[m.unlock_quiz_id].append(m)
-            for quiz_id, mats in required.items():
+            for qid, mats in required.items():
                 missing = [m for m in mats if m.id not in completed_ids]
                 if missing:
-                    locked_quiz_ids.add(quiz_id)
-                    lock_requirements[quiz_id] = [m.title for m in missing]
+                    locked_quiz_ids.add(qid)
+                    lock_requirements[qid] = [m.title for m in missing]
+
+        # ── All-materials unlock (unlock_all_materials on Quiz) ───────────────
+        all_mats = db.query(models.Material).filter(
+            models.Material.course_id == course_id,
+        ).all()
+        if all_mats:
+            all_mat_ids = {m.id for m in all_mats}
+            done_ids = {
+                c.material_id for c in db.query(models.MaterialCompletion).filter(
+                    models.MaterialCompletion.student_id == current_user.id,
+                    models.MaterialCompletion.material_id.in_(list(all_mat_ids)),
+                ).all()
+            }
+            all_materials_completed = all_mat_ids.issubset(done_ids)
+        else:
+            # No materials in course → treat as "all done" so the exam is visible
+            all_materials_completed = True
 
     result = []
     for q in quizzes:
         # Students only see published quizzes
         if current_user.role == "student" and not q.is_published:
+            continue
+
+        # Hide all-materials-gated exams from students who haven't finished all materials
+        if current_user.role == "student" and q.unlock_all_materials and not all_materials_completed:
             continue
 
         my_attempt = None
@@ -178,6 +201,8 @@ def list_quizzes(
             "due_date": str(q.due_date) if q.due_date else None,
             "is_published":  q.is_published,
             "max_attempts":  q.max_attempts,
+            "is_exam": q.is_exam,
+            "unlock_all_materials": q.unlock_all_materials,
             "question_count": len(q.questions),
             "total_points":  sum(qq.points for qq in q.questions),
             "attempt_count": len(q.attempts) if current_user.role in ("admin", "teacher") else None,
@@ -208,6 +233,7 @@ def create_quiz(
         shuffle=data.shuffle,
         max_attempts=data.max_attempts,
         is_exam=data.is_exam,
+        unlock_all_materials=data.unlock_all_materials,
         is_published=False,  # always starts as draft
     )
     db.add(q)
@@ -228,6 +254,22 @@ def get_quiz(
         raise HTTPException(404, "Quiz not found")
 
     is_teacher = current_user.role in ("admin", "teacher")
+
+    # Gate: student accessing an all-materials-gated exam without completing all materials
+    if current_user.role == "student" and q.unlock_all_materials:
+        all_mats = db.query(models.Material).filter(
+            models.Material.course_id == q.course_id,
+        ).all()
+        if all_mats:
+            all_mat_ids = {m.id for m in all_mats}
+            done_ids = {
+                c.material_id for c in db.query(models.MaterialCompletion).filter(
+                    models.MaterialCompletion.student_id == current_user.id,
+                    models.MaterialCompletion.material_id.in_(list(all_mat_ids)),
+                ).all()
+            }
+            if not all_mat_ids.issubset(done_ids):
+                raise HTTPException(404, "Quiz not found")
 
     my_attempt = None
     hide_correct = not is_teacher
@@ -286,10 +328,12 @@ def update_quiz(
         q.max_attempts = None if data.max_attempts == 0 else data.max_attempts
     if data.is_exam is not None:
         q.is_exam = data.is_exam
+    if data.unlock_all_materials is not None:
+        q.unlock_all_materials = data.unlock_all_materials
 
     db.commit()
     db.refresh(q)
-    return {"id": q.id, "title": q.title, "is_published": q.is_published, "is_exam": q.is_exam}
+    return {"id": q.id, "title": q.title, "is_published": q.is_published, "is_exam": q.is_exam, "unlock_all_materials": q.unlock_all_materials}
 
 
 @router.patch("/{quiz_id}/publish")
