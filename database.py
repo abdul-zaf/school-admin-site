@@ -85,6 +85,8 @@ def apply_migrations():
         # v12: teacher grading columns on quiz answers
         "ALTER TABLE quiz_answers ADD COLUMN teacher_score REAL",
         "ALTER TABLE quiz_answers ADD COLUMN teacher_feedback TEXT",
+        # v13: material-gated assignment
+        "ALTER TABLE assignments ADD COLUMN unlock_material_id INTEGER REFERENCES materials(id)",
     ]
 
     if _is_sqlite:
@@ -141,5 +143,7 @@ def apply_migrations():
                 # v12: teacher grading columns on quiz answers
                 "ALTER TABLE quiz_answers ADD COLUMN IF NOT EXISTS teacher_score FLOAT",
                 "ALTER TABLE quiz_answers ADD COLUMN IF NOT EXISTS teacher_feedback TEXT",
+                # v13: material-gated assignment
+                "ALTER TABLE assignments ADD COLUMN IF NOT EXISTS unlock_material_id INTEGER REFERENCES materials(id)",
             ]:
                 conn.execute(text(ddl))

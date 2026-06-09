@@ -682,6 +682,7 @@ def _ai_generate_assignment_for_material(material_id: int, course_id: int, stude
             title=title,
             description=description,
             max_score=100.0,
+            unlock_material_id=material_id,
         )
         db.add(assignment)
         db.flush()

@@ -111,6 +111,8 @@ class Assignment(Base):
     max_late_days = Column(Integer, nullable=True)
     allow_resubmission = Column(Boolean, default=False)
     max_submissions = Column(Integer, default=1)
+    # v13: material-gated assignment — only visible to students who completed this material
+    unlock_material_id = Column(Integer, ForeignKey("materials.id"), nullable=True)
 
     course = relationship("Course", back_populates="assignments")
     submissions = relationship("Submission", back_populates="assignment", cascade="all, delete")

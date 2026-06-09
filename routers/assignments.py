@@ -70,8 +70,22 @@ def list_assignments(
     current_user: models.User = Depends(security.get_current_user),
 ):
     assignments = db.query(models.Assignment).filter(models.Assignment.course_id == course_id).all()
+
+    # For students, build the set of completed material ids once
+    completed_material_ids: set = set()
+    if current_user.role == "student":
+        comps = db.query(models.MaterialCompletion).filter(
+            models.MaterialCompletion.student_id == current_user.id,
+        ).all()
+        completed_material_ids = {c.material_id for c in comps}
+
     result = []
     for a in assignments:
+        # Hide material-gated assignments from students who haven't completed the material
+        if current_user.role == "student" and a.unlock_material_id:
+            if a.unlock_material_id not in completed_material_ids:
+                continue
+
         my_sub = None
         if current_user.role == "student":
             s = db.query(models.Submission).filter(
@@ -148,6 +162,15 @@ def get_assignment(
     a = db.query(models.Assignment).filter(models.Assignment.id == assignment_id).first()
     if not a:
         raise HTTPException(404, "Assignment not found")
+
+    # Students cannot access material-gated assignments until they complete the material
+    if current_user.role == "student" and a.unlock_material_id:
+        completed = db.query(models.MaterialCompletion).filter(
+            models.MaterialCompletion.student_id == current_user.id,
+            models.MaterialCompletion.material_id == a.unlock_material_id,
+        ).first()
+        if not completed:
+            raise HTTPException(404, "Assignment not found")
 
     submissions = []
     if current_user.role in ("admin", "teacher"):
