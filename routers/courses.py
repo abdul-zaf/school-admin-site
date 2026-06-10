@@ -36,6 +36,7 @@ from services.knowledge_base import index_material, remove_material_index
 _UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "./uploads/materials"))
 _MAX_MB = int(os.getenv("MAX_UPLOAD_MB", "200"))
 
+
 def _ensure_upload_dir() -> Path:
     _UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     return _UPLOAD_DIR
@@ -559,6 +560,7 @@ def serve_material_file(
     )
 
 
+
 @router.delete("/{course_id}/materials/{material_id}")
 def delete_material(
     course_id: int,
@@ -572,7 +574,7 @@ def delete_material(
     ).first()
     if not m:
         raise HTTPException(404, "Material not found")
-    # Remove uploaded file from disk if present
+    # Remove uploaded file and any converted slides from disk
     if m.file_path:
         try:
             Path(m.file_path).unlink(missing_ok=True)
@@ -614,6 +616,17 @@ def _ai_generate_assignment_for_material(material_id: int, course_id: int, stude
             print(f"[AI Assignment] No text content for material {material_id} — skipping", file=sys.stderr)
             return
 
+        # Detect if this is an Urdu-language course
+        urdu_keywords = {"urdu", "اردو"}
+        course_fields = " ".join(filter(None, [course.title, course.subject, course.description])).lower()
+        is_urdu_course = any(kw in course_fields for kw in urdu_keywords)
+
+        urdu_instruction = (
+            "IMPORTANT: This is an Urdu language course. "
+            "You MUST write the entire assignment — title, objective, all questions, and grading criteria — "
+            "in Urdu script (اردو). Do not use English for any part of the assignment content. "
+        ) if is_urdu_course else ""
+
         system_prompt = (
             "You are an experienced teacher creating a written assignment based on course material. "
             "Your task is to produce a single, well-structured assignment that tests the student's "
@@ -626,6 +639,7 @@ def _ai_generate_assignment_for_material(material_id: int, course_id: int, stude
             "Base everything strictly on the provided material — do not invent topics not covered. "
             "Do NOT include due date placeholders like '[insert date]' or 'due on X' — omit dates entirely. "
             "Do NOT include notes about late submissions or administrative policies. "
+            f"{urdu_instruction}"
             "Output ONLY a valid JSON object with exactly two keys: "
             '{"title": "...", "description": "..."} '
             "where `description` is a plain-text string using \\n for newlines. "
@@ -731,6 +745,24 @@ def complete_material(
         # Fire AI assignment generation once (first completion of this material by this student)
         background_tasks.add_task(_ai_generate_assignment_for_material, material_id, course_id, current_user.id)
 
+        # Notify student if this material unlocks a unit quiz
+        from routers.notifications import notify as _notify
+        course_obj = db.query(models.Course).filter(models.Course.id == course_id).first()
+        course_title = course_obj.title if course_obj else "your course"
+        if m.unlock_quiz_id:
+            unlocked_quiz = db.query(models.Quiz).filter(
+                models.Quiz.id == m.unlock_quiz_id,
+                models.Quiz.is_published == True,
+            ).first()
+            if unlocked_quiz:
+                _notify(
+                    db, current_user.id, "quiz",
+                    f"📝 Quiz unlocked: {unlocked_quiz.title}",
+                    f"{course_title} — complete \"{m.title}\" done",
+                    link=f"quiz:{unlocked_quiz.id}",
+                )
+                db.commit()
+
         # Check if the student has now completed ALL materials in the course
         all_mat_ids = {
             row.id for row in db.query(models.Material.id)
@@ -745,14 +777,11 @@ def complete_material(
         }
         if all_mat_ids and all_mat_ids.issubset(done_ids):
             # Notify the student about every published exam locked behind all-materials
-            from routers.notifications import notify as _notify
             exams = db.query(models.Quiz).filter(
                 models.Quiz.course_id == course_id,
                 models.Quiz.unlock_all_materials == True,
                 models.Quiz.is_published == True,
             ).all()
-            course_obj = db.query(models.Course).filter(models.Course.id == course_id).first()
-            course_title = course_obj.title if course_obj else "your course"
             for exam in exams:
                 _notify(
                     db, current_user.id, "quiz",

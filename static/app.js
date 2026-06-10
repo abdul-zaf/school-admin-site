@@ -32,7 +32,7 @@ const i18n = {
     url_label:'URL (optional)', no_materials:'No materials yet.',
     upload_file:'Upload File', link_text:'Link / Text',
     file_upload_hint:'Any file type (PDF, video, image, document…) — max 200 MB',
-    download:'Download', view_file:'View',
+    download:'Download', view_file:'View', view_slides:'View Slides',
     // Assignments
     assignments:'Assignments', new_assignment:'+ New Assignment',
     instructions:'Instructions', due_date:'Due', max_score:'Max Score',
@@ -215,7 +215,7 @@ const i18n = {
     url_label:'لنک (اختیاری)', no_materials:'ابھی کوئی مواد نہیں۔',
     upload_file:'فائل اپ لوڈ کریں', link_text:'لنک / متن',
     file_upload_hint:'کوئی بھی فائل (پی ڈی ایف، ویڈیو، تصویر...) — زیادہ سے زیادہ 200 ایم بی',
-    download:'ڈاؤن لوڈ', view_file:'دیکھیں',
+    download:'ڈاؤن لوڈ', view_file:'دیکھیں', view_slides:'سلائیڈز دیکھیں',
     // Assignments
     assignments:'اسائنمنٹس', new_assignment:'+ نیا اسائنمنٹ',
     instructions:'ہدایات', due_date:'آخری تاریخ', max_score:'زیادہ سے زیادہ',
@@ -528,16 +528,24 @@ function toast(msg, type = 'success') {
   setTimeout(() => el.remove(), 3200);
 }
 
-function openModal(title, html, onSubmit) {
+function openModal(title, html, onSubmitOrOpts) {
   document.getElementById('modal-title').textContent = title;
   document.getElementById('modal-body').innerHTML = html;
+  const modalEl = document.querySelector('.modal');
+  const isOpts = onSubmitOrOpts && typeof onSubmitOrOpts === 'object';
+  if (modalEl) modalEl.classList.toggle('modal-wide', !!(isOpts && onSubmitOrOpts.wide));
   document.getElementById('modal-overlay').classList.remove('hidden');
+  const onSubmit = !isOpts ? onSubmitOrOpts : null;
   if (onSubmit) {
     const form = document.getElementById('modal-form');
     if (form) form.onsubmit = async (e) => { e.preventDefault(); await onSubmit(new FormData(form)); };
   }
 }
-function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
+function closeModal() {
+  document.getElementById('modal-overlay').classList.add('hidden');
+  const modalEl = document.querySelector('.modal');
+  if (modalEl) modalEl.classList.remove('modal-wide');
+}
 
 function loading(el) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div><p>${t('loading')}</p></div>`;
@@ -1265,7 +1273,8 @@ async function renderCourseDetail(courseId, el) {
               let body = '';
               if (mtype === 'file') {
                 const sz = formatFileSize(m.file_size);
-                const btnLabel = isViewable ? `👁 ${t('view_file')}` : `⬇ ${t('download')}`;
+                const isPdf = m.file_mime === 'application/pdf';
+                const btnLabel = isPdf ? `📄 ${t('view_file')}` : (isViewable ? `👁 ${t('view_file')}` : `⬇ ${t('download')}`);
                 body = `
                   <div class="mat-file-info">
                     <span class="mat-filename">${htmlEsc(m.file_name || '')}</span>
@@ -1424,37 +1433,13 @@ function showTab(name, btn) {
 function quizCard(q, canManage, courseId) {
   const attempted  = q.my_attempt && q.my_attempt.submitted_at;
   const inProgress = q.my_attempt && !q.my_attempt.submitted_at;
-  const isLocked   = !canManage && q.is_locked;
   const scoreLabel = attempted
     ? `${t('score')}: ${q.my_attempt.score!=null ? fmtPts(q.my_attempt.score) : '?'}/${fmtPts(q.total_points)}`
     : (inProgress ? t('attempted') : t('not_attempted'));
   const attemptBadgeCls = attempted ? 'badge-success' : (inProgress ? 'badge-warning' : 'badge-secondary');
 
-  // Students: flag published-but-not-attempted as urgent (unless locked)
-  const isUrgent = !canManage && q.is_published && !attempted && !inProgress && !isLocked;
-
-  if (isLocked) {
-    return `
-    <div class="quiz-card quiz-locked">
-      <div class="quiz-card-body">
-        <div class="quiz-title-row">
-          <strong>${htmlEsc(q.title)}</strong>
-          ${q.is_exam ? `<span class="exam-badge">EXAM</span>` : ''}
-          <span class="badge badge-secondary">🔒 ${t('assessment_locked')}</span>
-        </div>
-        ${q.description ? `<p class="text-muted" style="margin-top:4px;font-size:13px">${htmlEsc(q.description)}</p>` : ''}
-        <div class="quiz-meta">
-          <small>${q.question_count} ${t('question_text')}(s) &bull; ${q.total_points} ${t('pts')}</small>
-          ${q.time_limit ? `<small>⏱ ${q.time_limit} ${t('minutes')}</small>` : ''}
-          ${q.due_date ? `<small>📅 ${t('due_date')}: ${fmtDate(q.due_date)}</small>` : ''}
-        </div>
-        <div class="quiz-lock-notice">
-          <span>🔑 ${t('complete_to_unlock')}</span>
-          <ul>${(q.lock_requires||[]).map(r=>`<li>${htmlEsc(r)}</li>`).join('')}</ul>
-        </div>
-      </div>
-    </div>`;
-  }
+  // Students: flag published-but-not-attempted as urgent
+  const isUrgent = !canManage && q.is_published && !attempted && !inProgress;
 
   return `
     <div class="quiz-card${isUrgent ? ' quiz-urgent' : ''}">
@@ -1573,6 +1558,7 @@ function switchMatMode(mode, btn) {
   document.getElementById('modal-form').dataset.mode = mode;
 }
 
+
 function viewMaterialFile(event, el) {
   event.preventDefault();
   // Values come from data-* attributes to avoid double-quote conflicts
@@ -1611,8 +1597,15 @@ function viewMaterialFile(event, el) {
         </a>
       </div>`
     );
-  } else if (isPdf || isImage) {
-    // PDFs and images open natively in a new browser tab
+  } else if (isPdf) {
+    openModal(`📄 ${htmlEsc(fileName || 'Document')}`,
+      `<div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:4px 0">
+        <iframe src="${fileUrl}" style="width:100%;height:70vh;border:none;border-radius:6px;background:#f5f5f5"></iframe>
+        <a class="btn btn-sm btn-primary" href="${fileUrl}" download="${htmlEsc(fileName||'document.pdf')}">⬇ Download PDF</a>
+      </div>`,
+      {wide: true}
+    );
+  } else if (isImage) {
     window.open(fileUrl, '_blank');
   } else {
     // Everything else: force download via a hidden <a>

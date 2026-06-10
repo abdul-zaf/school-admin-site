@@ -181,6 +181,10 @@ def list_quizzes(
         if current_user.role == "student" and q.unlock_all_materials and not all_materials_completed:
             continue
 
+        # Hide per-material-gated quizzes from students who haven't completed the required material
+        if current_user.role == "student" and q.id in locked_quiz_ids:
+            continue
+
         my_attempt = None
         if current_user.role == "student":
             a = db.query(models.QuizAttempt).filter(
@@ -255,21 +259,35 @@ def get_quiz(
 
     is_teacher = current_user.role in ("admin", "teacher")
 
-    # Gate: student accessing an all-materials-gated exam without completing all materials
-    if current_user.role == "student" and q.unlock_all_materials:
-        all_mats = db.query(models.Material).filter(
+    if current_user.role == "student":
+        # Gate: per-material-gated quiz — locked until the student completes the required material
+        gate_mat = db.query(models.Material).filter(
             models.Material.course_id == q.course_id,
-        ).all()
-        if all_mats:
-            all_mat_ids = {m.id for m in all_mats}
-            done_ids = {
-                c.material_id for c in db.query(models.MaterialCompletion).filter(
-                    models.MaterialCompletion.student_id == current_user.id,
-                    models.MaterialCompletion.material_id.in_(list(all_mat_ids)),
-                ).all()
-            }
-            if not all_mat_ids.issubset(done_ids):
+            models.Material.unlock_quiz_id == q.id,
+        ).first()
+        if gate_mat:
+            completed = db.query(models.MaterialCompletion).filter(
+                models.MaterialCompletion.student_id == current_user.id,
+                models.MaterialCompletion.material_id == gate_mat.id,
+            ).first()
+            if not completed:
                 raise HTTPException(404, "Quiz not found")
+
+        # Gate: all-materials-gated exam — locked until the student finishes every material
+        if q.unlock_all_materials:
+            all_mats = db.query(models.Material).filter(
+                models.Material.course_id == q.course_id,
+            ).all()
+            if all_mats:
+                all_mat_ids = {m.id for m in all_mats}
+                done_ids = {
+                    c.material_id for c in db.query(models.MaterialCompletion).filter(
+                        models.MaterialCompletion.student_id == current_user.id,
+                        models.MaterialCompletion.material_id.in_(list(all_mat_ids)),
+                    ).all()
+                }
+                if not all_mat_ids.issubset(done_ids):
+                    raise HTTPException(404, "Quiz not found")
 
     my_attempt = None
     hide_correct = not is_teacher

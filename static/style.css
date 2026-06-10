@@ -1210,6 +1210,7 @@ select.form-control option { background:var(--surface-2);color:var(--text); }
   max-height:90vh;overflow-y:auto;
   box-shadow:var(--shadow-lg),0 0 0 1px rgba(0,212,255,0.07);
 }
+.modal.modal-wide { max-width:860px; }
 .modal-header {
   display:flex;align-items:center;justify-content:space-between;
   padding:16px 22px;
