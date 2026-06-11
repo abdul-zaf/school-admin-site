@@ -70,7 +70,7 @@ def _wrap(body_inner: str) -> str:
     <html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
       <div style="background:linear-gradient(135deg,#1e1b4b,#4f46e5);
                   padding:24px;border-radius:12px 12px 0 0;text-align:center">
-        <h1 style="color:#fff;margin:0;font-size:24px">🎓 EduPortal</h1>
+        <h1 style="color:#fff;margin:0;font-size:24px">EduPortal</h1>
       </div>
       <div style="background:#fff;padding:28px;border:1px solid #e0e7ff;
                   border-top:none;border-radius:0 0 12px 12px">

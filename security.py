@@ -137,17 +137,23 @@ def require_role(*roles):
 # ── Course-ownership guard ────────────────────────────────────────────────────
 def require_course_access(course_id: int, current_user: models.User, db: Session) -> models.Course:
     """
-    Return the course if the caller is an admin or the course's own teacher.
+    Return the course if the caller is an admin, the course owner, or a co-teacher.
     Raises 404 if the course doesn't exist, 403 if access is denied.
-    Used in material/assignment/quiz/session routes to enforce ownership.
     """
     course = db.query(models.Course).filter(models.Course.id == course_id).first()
     if not course:
         raise HTTPException(404, "Course not found")
     if current_user.role == "admin":
         return course
-    if current_user.role == "teacher" and course.teacher_id == current_user.id:
-        return course
+    if current_user.role == "teacher":
+        if course.teacher_id == current_user.id:
+            return course
+        is_co = db.query(models.CourseTeacher).filter(
+            models.CourseTeacher.course_id == course_id,
+            models.CourseTeacher.teacher_id == current_user.id,
+        ).first()
+        if is_co:
+            return course
     raise HTTPException(403, "You don't have permission to manage this course")
 
 

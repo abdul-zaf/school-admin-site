@@ -1249,7 +1249,7 @@ code          { background:var(--surface-2);color:var(--accent);padding:1px 6px;
   position:relative;overflow:hidden;
 }
 .welcome-banner::after {
-  content:'🎓';
+  content:'';
   position:absolute;right:24px;top:50%;
   transform:translateY(-50%);
   font-size:60px;opacity:.1;pointer-events:none;

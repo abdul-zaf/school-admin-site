@@ -34,7 +34,7 @@ const i18n = {
     file_upload_hint:'Any file type (PDF, video, image, document…) — max 200 MB',
     download:'Download', view_file:'View', view_slides:'View Slides',
     // Assignments
-    assignments:'Assignments', new_assignment:'+ New Assignment',
+    assignments:'Assignments', new_assignment:'+ New Assignment', manual:'Manual', ai_generate:'AI Generate',
     instructions:'Instructions', due_date:'Due', max_score:'Max Score',
     pts:'pts', submit_assignment:'Submit Assignment',
     your_submission:'Your Submission', resubmit:'Resubmit',
@@ -103,6 +103,8 @@ const i18n = {
     is_exam:'Mark as Exam (locked environment)',
     unlock_after_all_materials:'Unlock only after student completes ALL course materials',
     exam_locked_all_materials:'Complete all course materials to unlock this exam',
+    // Co-teachers
+    co_teachers:'Co-Teachers', add_co_teacher:'Add Teacher', no_co_teachers:'No co-teachers assigned yet.',
     // Leaderboard
 
     your_rank:'Your Rank', rank:'Rank', top_students:'Top Students',
@@ -115,9 +117,6 @@ const i18n = {
     edit_quiz:'Edit Details', quiz_edit_saved:'Assessment updated!',
     // Material completion / unlock
     mark_complete:'Mark as Complete', completed:'Completed',
-    assessment_locked:'Assessment Locked', unlock_key:'Key Material',
-    complete_to_unlock:'Complete these materials to unlock:',
-    set_as_key:'Set as Key for Assessment',
     // AI quiz generation
     ai_generate:'AI Generate', ai_generate_title:'Add Questions',
     ai_generate_prompt:'Want AI to generate questions from your course materials?',
@@ -133,7 +132,7 @@ const i18n = {
     student_answer:'Student Answer', your_score:'Score', feedback_optional:'Feedback (optional)',
     save_grades:'Save Grades', grades_saved:'Grades saved!', needs_grading:'Needs Grading',
     pending_teacher_grade:'Awaiting teacher grading',
-    urgent_quizzes:'⚡ Urgent: Assessments',
+    urgent_quizzes:' Urgent: Assessments',
     no_urgent:'No pending assessments — you\'re all caught up!',
     start_now:'Start Now', resume_quiz:'Resume',
     urgent:'Urgent',
@@ -145,7 +144,7 @@ const i18n = {
     pending_grading:'Awaiting teacher grading',
     // Post-submit assignment check
     outstanding_assignments:'Outstanding Assignments',
-    no_outstanding:'No outstanding assignments! Well done! 🎉',
+    no_outstanding:'No outstanding assignments! Well done! ',
     outstanding_msg:'You still have assignments to complete:',
     go_to_assignment:'Go to Assignment',
     well_done:'Well done!',
@@ -159,7 +158,7 @@ const i18n = {
     chat_placeholder:'Ask a question…',
     chat_empty:'Ask me anything about your course materials!',
     chat_hint_note:'I\'m in hint-only mode — I\'ll guide you without giving away answers.',
-    chat_locked:'🔒 AI Tutor is locked while an assessment is in progress. Submit or finish the assessment first.',
+    chat_locked:' AI Tutor is locked while an assessment is in progress. Submit or finish the assessment first.',
     chat_attach:'Attach file',
     no_chat_sessions:'No chat sessions yet. Click + New Chat to get started.',
     // Due date picker
@@ -217,7 +216,7 @@ const i18n = {
     file_upload_hint:'کوئی بھی فائل (پی ڈی ایف، ویڈیو، تصویر...) — زیادہ سے زیادہ 200 ایم بی',
     download:'ڈاؤن لوڈ', view_file:'دیکھیں', view_slides:'سلائیڈز دیکھیں',
     // Assignments
-    assignments:'اسائنمنٹس', new_assignment:'+ نیا اسائنمنٹ',
+    assignments:'اسائنمنٹس', new_assignment:'+ نیا اسائنمنٹ', manual:'دستی', ai_generate:'AI سے بنائیں',
     instructions:'ہدایات', due_date:'آخری تاریخ', max_score:'زیادہ سے زیادہ',
     pts:'نمبر', submit_assignment:'اسائنمنٹ جمع کریں',
     your_submission:'آپ کی جمع شدہ کاپی', resubmit:'دوبارہ جمع کریں',
@@ -278,6 +277,8 @@ const i18n = {
     is_exam:'امتحان کے طور پر نشان زد کریں (بند ماحول)',
     unlock_after_all_materials:'تمام کورس مواد مکمل کرنے کے بعد ہی امتحان کھلے گا',
     exam_locked_all_materials:'یہ امتحان کھولنے کے لیے تمام کورس مواد مکمل کریں',
+    // Co-teachers (Urdu)
+    co_teachers:'معاون اساتذہ', add_co_teacher:'استاد شامل کریں', no_co_teachers:'ابھی کوئی معاون استاد مقرر نہیں۔',
     // Leaderboard (Urdu)
 
     your_rank:'آپ کی پوزیشن', rank:'پوزیشن', top_students:'اعلیٰ طلبا',
@@ -290,9 +291,6 @@ const i18n = {
     edit_quiz:'تفصیل ترمیم', quiz_edit_saved:'کوئز اپڈیٹ ہو گئی!',
     // Material completion / unlock (Urdu)
     mark_complete:'مکمل کریں', completed:'مکمل',
-    assessment_locked:'ٹیسٹ مقفل ہے', unlock_key:'کلیدی مواد',
-    complete_to_unlock:'ان مواد کو مکمل کریں:',
-    set_as_key:'ٹیسٹ کے لیے چابی بنائیں',
     // AI quiz generation (Urdu)
     ai_generate:'AI سے بنائیں', ai_generate_title:'سوالات شامل کریں',
     ai_generate_prompt:'کیا AI آپ کے کورس مواد سے سوالات بنائے؟',
@@ -308,19 +306,19 @@ const i18n = {
     student_answer:'طالب علم کا جواب', your_score:'نمبر', feedback_optional:'رائے (اختیاری)',
     save_grades:'نمبر محفوظ کریں', grades_saved:'نمبر محفوظ!', needs_grading:'جانچ درکار',
     pending_teacher_grade:'استاد کی جانچ کا انتظار',
-    urgent_quizzes:'⚡ ضروری: کوئز اور ٹیسٹ',
+    urgent_quizzes:' ضروری: کوئز اور ٹیسٹ',
     no_urgent:'کوئی زیر التواء کوئز نہیں — آپ نے سب مکمل کر لیے!',
     start_now:'ابھی شروع کریں', resume_quiz:'جاری رکھیں',
     urgent:'ضروری',
     // Post-quiz results (Urdu)
     quiz_score_result:'آپ کا نتیجہ',
     outstanding_quizzes:'باقی کوئز اور ٹیسٹ',
-    no_outstanding_quizzes:'کوئی کوئز یا ٹیسٹ باقی نہیں! 🎉 شاباش!',
+    no_outstanding_quizzes:'کوئی کوئز یا ٹیسٹ باقی نہیں!  شاباش!',
     outstanding_quizzes_msg:'آپ کے ابھی یہ کوئز / ٹیسٹ باقی ہیں:',
     pending_grading:'استاد کی جانب سے گریڈنگ کا انتظار ہے',
     // Post-submit assignment check (Urdu)
     outstanding_assignments:'باقی اسائنمنٹس',
-    no_outstanding:'کوئی اسائنمنٹ باقی نہیں! شاباش! 🎉',
+    no_outstanding:'کوئی اسائنمنٹ باقی نہیں! شاباش! ',
     outstanding_msg:'آپ کے ابھی یہ اسائنمنٹس مکمل کرنے ہیں:',
     go_to_assignment:'اسائنمنٹ دیکھیں',
     well_done:'شاباش!',
@@ -547,6 +545,29 @@ function closeModal() {
   if (modalEl) modalEl.classList.remove('modal-wide');
 }
 
+// In-app confirm dialog — replaces browser confirm()
+// Returns a Promise<boolean>; resolves true on OK, false on Cancel.
+function showConfirm(message, { title = 'Confirm', okLabel = 'Confirm', okClass = 'btn-danger' } = {}) {
+  return new Promise(resolve => {
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-message').textContent = message;
+    const okBtn = document.getElementById('confirm-ok-btn');
+    const cancelBtn = document.getElementById('confirm-cancel-btn');
+    okBtn.className = `btn ${okClass}`;
+    okBtn.textContent = okLabel;
+    const overlay = document.getElementById('confirm-overlay');
+    overlay.classList.remove('hidden');
+    function cleanup(result) {
+      overlay.classList.add('hidden');
+      okBtn.onclick = null;
+      cancelBtn.onclick = null;
+      resolve(result);
+    }
+    okBtn.onclick = () => cleanup(true);
+    cancelBtn.onclick = () => cleanup(false);
+  });
+}
+
 function loading(el) {
   el.innerHTML = `<div class="loading"><div class="spinner"></div><p>${t('loading')}</p></div>`;
 }
@@ -556,7 +577,7 @@ function loading(el) {
 // ═══════════════════════════════════════════════════════════
 const NAV_KEYS = {
   admin:   ['dashboard','courses','users','announcements','gradebook','attendance','report_cards','analytics','calendar','messages','settings'],
-  teacher: ['dashboard','courses','announcements','gradebook','attendance','report_cards','analytics','calendar','messages','settings'],
+  teacher: ['dashboard','courses','users','announcements','gradebook','attendance','report_cards','analytics','calendar','messages','settings'],
   student: ['dashboard','courses','announcements','gradebook','report_cards','calendar','messages','ai_tutor','settings'],
   parent:  ['dashboard','settings'],
 };
@@ -569,11 +590,11 @@ const NAV_I18N = {
   attendance:'nav_attendance', report_cards:'nav_report_cards',
 };
 const NAV_ICONS = {
-  dashboard:'🏠', courses:'📚', users:'👥', announcements:'📢',
-  gradebook:'📊', analytics:'📈', calendar:'📅',
-  messages:'✉️',
-  settings:'⚙️', ai_tutor:'🤖',
-  attendance:'📋', report_cards:'📄',
+  dashboard:'', courses:'', users:'', announcements:'',
+  gradebook:'', analytics:'', calendar:'',
+  messages:'',
+  settings:'', ai_tutor:'',
+  attendance:'', report_cards:'',
 };
 
 // ── Subject → accent colour (used on course cards) ─────────────────────────
@@ -808,14 +829,14 @@ function hideNotifPanel() {
 
 function _notifIcon(title) {
   const s = (title || '').toLowerCase();
-  if (/quiz|test|exam/.test(s))       return '📝';
-  if (/assignment|submit/.test(s))    return '📋';
-  if (/grade|score|mark/.test(s))     return '⭐';
-  if (/message|inbox/.test(s))        return '✉️';
-  if (/announce|notice/.test(s))      return '📢';
-  if (/enroll|course/.test(s))        return '📚';
-  if (/badge|award/.test(s))          return '🏅';
-  return '🔔';
+  if (/quiz|test|exam/.test(s))       return '';
+  if (/assignment|submit/.test(s))    return '';
+  if (/grade|score|mark/.test(s))     return '';
+  if (/message|inbox/.test(s))        return '';
+  if (/announce|notice/.test(s))      return '';
+  if (/enroll|course/.test(s))        return '';
+  if (/badge|award/.test(s))          return '';
+  return '';
 }
 
 function _relTime(iso) {
@@ -834,11 +855,11 @@ async function loadNotifPanel() {
   if (!panel) return;
   panel.innerHTML = `
     <div class="notif-panel-header">
-      <span class="notif-panel-title">🔔 Notifications</span>
+      <span class="notif-panel-title"> Notifications</span>
       <button class="notif-mark-all" onclick="markAllNotifsRead()">Mark all read</button>
     </div>
     <div class="notif-list"><div class="notif-empty-state">
-      <span class="notif-empty-icon">🔔</span><p>Loading…</p>
+      <span class="notif-empty-icon"></span><p>Loading…</p>
     </div></div>`;
   try {
     const notifs = await api('GET', '/notifications/?limit=15');
@@ -846,7 +867,7 @@ async function loadNotifPanel() {
     if (!list) return;
     if (!notifs?.length) {
       list.innerHTML = `<div class="notif-empty-state">
-        <span class="notif-empty-icon">🎉</span>
+        <span class="notif-empty-icon"></span>
         <p>You're all caught up!</p>
       </div>`;
       return;
@@ -869,7 +890,7 @@ async function loadNotifPanel() {
   } catch(e) {
     const list = panel.querySelector('.notif-list');
     if (list) list.innerHTML = `<div class="notif-empty-state">
-      <span class="notif-empty-icon">⚠️</span><p>Could not load notifications</p>
+      <span class="notif-empty-icon"></span><p>Could not load notifications</p>
     </div>`;
   }
 }
@@ -888,7 +909,7 @@ async function markAllNotifsRead() {
     refreshNotifCount();
     const list = document.querySelector('#notif-panel .notif-list');
     if (list) list.innerHTML = `<div class="notif-empty-state">
-      <span class="notif-empty-icon">🎉</span>
+      <span class="notif-empty-icon"></span>
       <p>You're all caught up!</p>
     </div>`;
   } catch(e) { /* silent */ }
@@ -995,10 +1016,10 @@ function renderSettings(el) {
         <p class="text-muted">${t('language_desc')}</p>
         <div class="lang-buttons">
           <button class="lang-btn${state.lang==='en'?' active':''}" onclick="setLanguage('en')">
-            🇬🇧&nbsp; English
+            &nbsp; English
           </button>
           <button class="lang-btn${state.lang==='ur'?' active':''}" onclick="setLanguage('ur')">
-            🇵🇰&nbsp; اردو
+            &nbsp; اردو
           </button>
         </div>
       </div>
@@ -1038,12 +1059,22 @@ async function renderDashboard(el) {
           <p>${t('nav_dashboard')} — EduPortal School Management</p>
         </div>
         <div class="stats-grid">
-          <div class="stat-card stat-card-blue"   data-icon="🎓"><div class="stat-number">${users.filter(u=>u.role==='student').length}</div><div class="stat-label">${t('students')}</div></div>
-          <div class="stat-card stat-card-purple" data-icon="🧑‍🏫"><div class="stat-number">${users.filter(u=>u.role==='teacher').length}</div><div class="stat-label">${t('teachers')}</div></div>
-          <div class="stat-card stat-card-green"  data-icon="📚"><div class="stat-number">${courses.length}</div><div class="stat-label">${t('courses')}</div></div>
-          <div class="stat-card stat-card-gold"   data-icon="📢"><div class="stat-number">${anns.length}</div><div class="stat-label">${t('announcements')}</div></div>
+          <div class="stat-card stat-card-blue"   data-icon=""><div class="stat-number">${users.filter(u=>u.role==='student').length}</div><div class="stat-label">${t('students')}</div></div>
+          <div class="stat-card stat-card-purple" data-icon=""><div class="stat-number">${users.filter(u=>u.role==='teacher').length}</div><div class="stat-label">${t('teachers')}</div></div>
+          <div class="stat-card stat-card-green"  data-icon=""><div class="stat-number">${courses.length}</div><div class="stat-label">${t('courses')}</div></div>
+          <div class="stat-card stat-card-gold"   data-icon=""><div class="stat-number">${anns.length}</div><div class="stat-label">${t('announcements')}</div></div>
         </div>
-        <div class="card"><div class="card-header ch-gold"><h3>📢 ${t('announcements')}</h3>
+        <div class="card"><div class="card-header ch-green"><h3> ${t('courses')}</h3>
+          <button class="btn btn-sm btn-primary" onclick="openNewCourseModal()">${t('new_course')}</button></div>
+          <div class="card-body">
+            ${courses.length ? courses.map(c=>`
+              <div class="course-item" onclick="navigate('course',{id:${c.id}})">
+                <div><strong>${htmlEsc(c.title)}</strong><small>${htmlEsc(c.subject||'')} ${c.grade_level?'· '+htmlEsc(c.grade_level):''}${c.section_number?' · §'+htmlEsc(c.section_number):''}</small></div>
+                <span class="badge badge-info">${c.student_count} ${t('student_count')}</span>
+              </div>`).join('') : `<p class="text-muted">${t('no_courses')}</p>`}
+          </div>
+        </div>
+        <div class="card"><div class="card-header ch-gold"><h3> ${t('announcements')}</h3>
           <button class="btn btn-sm btn-primary" onclick="navigate('announcements')">${t('nav_announcements')}</button></div>
           <div class="card-body">
             ${anns.length ? anns.slice(0,4).map(a=>`
@@ -1055,20 +1086,19 @@ async function renderDashboard(el) {
 
     } else if (role === 'teacher') {
       const [courses] = await Promise.all([api('GET','/courses/')]);
-      const mine = courses.filter(c => c.teacher_id === state.user.id);
       el.innerHTML = `
         <div class="welcome-banner">
           <h2>${t('welcome')}, ${state.user.name}</h2>
-          <p>🧑‍🏫 ${t('teachers')} Dashboard — EduPortal</p>
+          <p> ${t('teachers')} Dashboard — EduPortal</p>
         </div>
         <div class="stats-grid">
-          <div class="stat-card stat-card-blue"  data-icon="📚"><div class="stat-number">${mine.length}</div><div class="stat-label">${t('my_courses')}</div></div>
-          <div class="stat-card stat-card-green" data-icon="🎓"><div class="stat-number">${mine.reduce((s,c)=>s+c.student_count,0)}</div><div class="stat-label">${t('total_students')}</div></div>
+          <div class="stat-card stat-card-blue"  data-icon=""><div class="stat-number">${courses.length}</div><div class="stat-label">${t('courses')}</div></div>
+          <div class="stat-card stat-card-green" data-icon=""><div class="stat-number">${courses.reduce((s,c)=>s+c.student_count,0)}</div><div class="stat-label">${t('total_students')}</div></div>
         </div>
-        <div class="card"><div class="card-header ch-green"><h3>📚 ${t('my_courses')}</h3>
+        <div class="card"><div class="card-header ch-green"><h3> ${t('courses')}</h3>
           <button class="btn btn-sm btn-primary" onclick="openNewCourseModal()">${t('new_course')}</button></div>
           <div class="card-body">
-            ${mine.length ? mine.map(c=>`
+            ${courses.length ? courses.map(c=>`
               <div class="course-item" onclick="navigate('course',{id:${c.id}})">
                 <div><strong>${htmlEsc(c.title)}</strong><small>${htmlEsc(c.subject||'')} ${c.grade_level?'· '+htmlEsc(c.grade_level):''}${c.section_number?' · §'+htmlEsc(c.section_number):''}</small></div>
                 <span class="badge badge-info">${c.student_count} ${t('student_count')}</span>
@@ -1082,11 +1112,11 @@ async function renderDashboard(el) {
       el.innerHTML = `
         <div class="welcome-banner">
           <h2>${t('welcome')}, ${state.user.name}</h2>
-          <p>🎓 ${t('students')} Dashboard — EduPortal</p>
+          <p> ${t('students')} Dashboard — EduPortal</p>
         </div>
         <div class="stats-grid">
-          <div class="stat-card stat-card-green"  data-icon="📚"><div class="stat-number">${enrolled.length}</div><div class="stat-label">${t('enrolled_courses')}</div></div>
-          <div class="stat-card stat-card-teal"   data-icon="🔍"><div class="stat-number">${courses.length-enrolled.length}</div><div class="stat-label">${t('available_courses')}</div></div>
+          <div class="stat-card stat-card-green"  data-icon=""><div class="stat-number">${enrolled.length}</div><div class="stat-label">${t('enrolled_courses')}</div></div>
+          <div class="stat-card stat-card-teal"   data-icon=""><div class="stat-number">${courses.length-enrolled.length}</div><div class="stat-label">${t('available_courses')}</div></div>
         </div>
         <!-- Urgent quizzes panel (populated async below) -->
         <div class="card" id="urgent-quizzes-card">
@@ -1095,7 +1125,7 @@ async function renderDashboard(el) {
             <div class="loading"><div class="spinner"></div></div>
           </div>
         </div>
-        <div class="card"><div class="card-header ch-green"><h3>📚 ${t('my_courses')}</h3>
+        <div class="card"><div class="card-header ch-green"><h3> ${t('my_courses')}</h3>
           <button class="btn btn-sm btn-primary" onclick="navigate('courses')">${t('browse_courses')}</button></div>
           <div class="card-body">
             ${enrolled.length ? enrolled.map(c=>`
@@ -1134,7 +1164,7 @@ async function renderCourses(el) {
 
 function courseCard(c) {
   const role = state.user.role;
-  const canManage = role === 'admin' || (role === 'teacher' && c.teacher_id === state.user.id);
+  const canManage = role === 'admin' || role === 'teacher';
   const accent = subjectAccent(c.subject, c.title);
   return `
     <div class="course-card" style="--accent:${accent}" onclick="navigate('course',{id:${c.id}})">
@@ -1147,8 +1177,8 @@ function courseCard(c) {
         ${c.subject ? `<p style="color:${accent};font-weight:600;font-size:12px">${htmlEsc(c.subject)}</p>` : ''}
         ${c.description ? `<p>${htmlEsc(c.description).substring(0,90)}${c.description.length>90?'…':''}</p>` : ''}
         <div class="course-meta">
-          <small>🧑‍🏫 ${htmlEsc(c.teacher_name||'?')}</small>
-          <small>👥 ${c.student_count} ${t('student_count')}</small>
+          <small> ${htmlEsc(c.teacher_name||'?')}</small>
+          <small> ${c.student_count} ${t('student_count')}</small>
         </div>
       </div>
       <div class="course-card-footer" onclick="event.stopPropagation()">
@@ -1197,12 +1227,12 @@ async function enrollCourse(id) {
   catch(err) { toast(err.message,'error'); }
 }
 async function unenrollCourse(id) {
-  if (!confirm(t('unenroll')+'?')) return;
+  if (!await showConfirm(t('unenroll')+'?')) return;
   try { await api('DELETE',`/courses/${id}/enroll`); toast(t('unenroll')); navigate('courses'); }
   catch(err) { toast(err.message,'error'); }
 }
 async function deleteCourse(id) {
-  if (!confirm(t('delete')+'?')) return;
+  if (!await showConfirm(t('delete')+'?')) return;
   try { await api('DELETE',`/courses/${id}`); invalidateCoursesFlyoutCache(); toast(t('delete')); navigate('courses'); }
   catch(err) { toast(err.message,'error'); }
 }
@@ -1222,7 +1252,7 @@ async function renderCourseDetail(courseId, el) {
       api('GET',`/quizzes/course/${courseId}`),
     ]);
     const role = state.user.role;
-    const canManage = role==='admin' || (role==='teacher' && course.teacher_id===state.user.id);
+    const canManage = role==='admin' || role==='teacher';
     const now = new Date();
 
     el.innerHTML = `
@@ -1252,6 +1282,7 @@ async function renderCourseDetail(courseId, el) {
         <button class="tab" onclick="showTab('helpboard',this);renderHelpBoardTab(${courseId}).then(h=>document.getElementById('tab-helpboard').innerHTML=h)">${t('help_board')}</button>
         <button class="tab" onclick="showTab('studygroups',this);renderStudyGroupsTab(${courseId},${canManage}).then(h=>document.getElementById('tab-studygroups').innerHTML=h)">${t('study_groups')}</button>
         ${canManage ? `<button class="tab" onclick="showTab('students',this)">${t('students')} (${course.students.length})</button>` : ''}
+        ${canManage ? `<button class="tab" onclick="showTab('coteachers',this);renderCoTeachersTab(${courseId},document.getElementById('tab-coteachers'),${JSON.stringify(course.co_teachers||[])})">${t('co_teachers')} (${(course.co_teachers||[]).length})</button>` : ''}
         ${canManage ? `<button class="tab" onclick="showTab('anns',this)">${t('announcements')}</button>` : ''}
       </div>
 
@@ -1261,9 +1292,10 @@ async function renderCourseDetail(courseId, el) {
           <div class="card-header"><h3>${t('course_materials')}</h3>
             ${canManage ? `<button class="btn btn-sm btn-primary" onclick="openAddMaterialModal(${courseId})">${t('add_material')}</button>` : ''}</div>
           <div class="card-body">
+            ${(() => { window._matData = {}; materials.forEach(m => { window._matData[m.id] = m; }); return ''; })()}
             ${materials.length ? materials.map(m => {
               const mtype = m.material_type || (m.url ? 'link' : 'text');
-              const icon = mtype === 'file' ? fileMimeIcon(m.file_mime) : (mtype === 'link' ? '🔗' : '📝');
+              const icon = mtype === 'file' ? fileMimeIcon(m.file_mime) : (mtype === 'link' ? '' : '');
               const badge = `<span class="mat-type-badge mat-type-${mtype}">${mtype}</span>`;
               const isViewable = m.file_mime && (
                 m.file_mime.startsWith('image/') || m.file_mime.startsWith('video/') ||
@@ -1274,7 +1306,7 @@ async function renderCourseDetail(courseId, el) {
               if (mtype === 'file') {
                 const sz = formatFileSize(m.file_size);
                 const isPdf = m.file_mime === 'application/pdf';
-                const btnLabel = isPdf ? `📄 ${t('view_file')}` : (isViewable ? `👁 ${t('view_file')}` : `⬇ ${t('download')}`);
+                const btnLabel = isPdf ? ` ${t('view_file')}` : (isViewable ? ` ${t('view_file')}` : ` ${t('download')}`);
                 body = `
                   <div class="mat-file-info">
                     <span class="mat-filename">${htmlEsc(m.file_name || '')}</span>
@@ -1290,27 +1322,41 @@ async function renderCourseDetail(courseId, el) {
                     >${btnLabel}</a>
                   </div>`;
               } else if (mtype === 'link') {
-                body = (m.content ? `<p class="mat-content">${htmlEsc(m.content)}</p>` : '') +
-                       `<a class="link mat-link" href="${htmlEsc(m.url)}" target="_blank" rel="noopener">${htmlEsc(m.url)}</a>`;
+                const linkAutoComplete = (role === 'student' && !m.completed)
+                  ? ` onclick="completeMaterial(${courseId},${m.id})"` : '';
+                const ytId = getYouTubeId(m.url);
+                if (ytId) {
+                  const ytIframeId = `yt-player-${m.id}`;
+                  const needsTracking = (role === 'student' && !m.completed);
+                  body = (m.content ? `<p class="mat-content">${htmlEsc(m.content)}</p>` : '') +
+                    `<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:8px;margin-top:8px">
+                      <iframe id="${ytIframeId}"
+                        src="https://www.youtube.com/embed/${ytId}?enablejsapi=1"
+                        style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:8px"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen>
+                      </iframe>
+                    </div>` +
+                    (needsTracking ? `<script>attachYTPlayer('${ytIframeId}',${courseId},${m.id})<\/script>` : '');
+                } else {
+                  body = (m.content ? `<p class="mat-content">${htmlEsc(m.content)}</p>` : '') +
+                         `<a class="link mat-link" href="${htmlEsc(m.url)}" target="_blank" rel="noopener"${linkAutoComplete}>${htmlEsc(m.url)}</a>`;
+                }
               } else {
                 body = m.content ? `<p class="mat-content">${htmlEsc(m.content)}</p>` : '';
               }
-              const keyBadge = m.unlock_quiz_id
-                ? `<span class="badge badge-warning mat-key-badge">🔑 ${t('unlock_key')}</span>` : '';
               const completedBadge = (role === 'student' && m.completed)
-                ? `<span class="badge badge-success">✓ ${t('completed')}</span>` : '';
-              const completeBtn = (role === 'student' && !m.completed)
-                ? `<button class="btn btn-sm btn-success" onclick="completeMaterial(${courseId},${m.id},this)">✓ ${t('mark_complete')}</button>` : '';
+                ? `<span class="badge badge-success" id="mat-done-${m.id}"> ${t('completed')}</span>` : '';
               return `
-                <div class="material-item" id="mat-item-${m.id}">
+                <div class="material-item" id="mat-item-${m.id}" data-cid="${courseId}" data-mid="${m.id}" data-completed="${m.completed ? '1' : '0'}">
                   <div class="material-icon">${icon}</div>
                   <div class="material-body">
-                    <div class="material-title"><strong>${htmlEsc(m.title)}</strong>${badge}${keyBadge}${completedBadge}</div>
+                    <div class="material-title"><strong>${htmlEsc(m.title)}</strong>${badge}${completedBadge}</div>
                     ${body}
                     <small class="text-muted">${fmtDate(m.created_at)}</small>
                   </div>
                   <div style="display:flex;gap:6px;align-items:center">
-                    ${completeBtn}
+                    ${canManage ? `<button class="btn btn-sm btn-secondary" onclick="openEditMaterialModal(${courseId},${m.id},window._matData[${m.id}])"> Edit</button>` : ''}
                     ${canManage ? `<button class="btn btn-sm btn-danger" onclick="deleteMaterial(${courseId},${m.id})">${t('delete')}</button>` : ''}
                   </div>
                 </div>`;
@@ -1326,8 +1372,8 @@ async function renderCourseDetail(courseId, el) {
             ${canManage ? `<button class="btn btn-sm btn-primary" onclick="openNewAssignmentModal(${courseId})">${t('new_assignment')}</button>` : ''}</div>
           <div class="card-body">
             ${assignments.length ? assignments.map(a=>`
-              <div class="list-item clickable" onclick="navigate('assignment',{id:${a.id}})">
-                <div>
+              <div class="list-item" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <div class="clickable" style="flex:1;min-width:0" onclick="navigate('assignment',{id:${a.id}})">
                   <strong>${htmlEsc(a.title)}</strong>
                   <div class="assignment-meta">
                     ${a.due_date ? `<small>${t('due_date')}: ${fmtDate(a.due_date)}</small>` : ''}
@@ -1339,6 +1385,7 @@ async function renderCourseDetail(courseId, el) {
                         ${a.my_submission.score!=null?`${t('score')}: ${a.my_submission.score}/${a.max_score}`:t('submitted_assignment')}</span>`
                     : (role==='student'?`<span class="badge badge-danger">${t('not_submitted')}</span>`:'')}
                 </div>
+                ${canManage ? `<button class="btn btn-sm btn-danger" style="flex-shrink:0" onclick="event.stopPropagation();deleteAssignment(${a.id},${courseId})">Delete</button>` : ''}
               </div>`).join('') : `<p class="text-muted">${t('no_submissions')}</p>`}
           </div>
         </div>
@@ -1402,6 +1449,7 @@ async function renderCourseDetail(courseId, el) {
           </div>
         </div>
       </div>
+      <div id="tab-coteachers" class="hidden"></div>
       <div id="tab-anns" class="hidden">
         <div class="card">
           <div class="card-header"><h3>${t('course_announcements')}</h3>
@@ -1418,6 +1466,14 @@ async function renderCourseDetail(courseId, el) {
         </div>
       </div>` : ''}
     `;
+    // Auto-mark text-type materials complete for students (they're immediately visible)
+    if (state.user && state.user.role === 'student') {
+      materials.forEach(m => {
+        if (!m.completed && (m.material_type === 'text' || (!m.material_type && !m.url && !m.file_name))) {
+          completeMaterial(courseId, m.id);
+        }
+      });
+    }
   } catch(err) { el.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
 }
 
@@ -1427,6 +1483,106 @@ function showTab(name, btn) {
   const tabEl = document.getElementById(`tab-${name}`);
   if (tabEl) tabEl.classList.remove('hidden');
   btn.classList.add('active');
+}
+
+// ── Co-teacher management tab ──
+async function renderCoTeachersTab(courseId, el, initialList) {
+  const isOwnerOrAdmin = state.user.role === 'admin' ||
+    (state.user.role === 'teacher');  // all teachers can manage if they're on this course
+
+  let coTeachers = initialList || [];
+
+  function draw() {
+    el.innerHTML = `
+      <div class="card">
+        <div class="card-header">
+          <h3>${t('co_teachers')}</h3>
+          <button class="btn btn-sm btn-primary" onclick="openAddCoTeacherModal(${courseId})">${t('add_co_teacher')}</button>
+        </div>
+        <div class="card-body">
+          ${coTeachers.length ? `
+            <table class="table">
+              <thead><tr><th>${t('full_name')}</th><th>${t('email')}</th><th></th></tr></thead>
+              <tbody>${coTeachers.map(ct => `
+                <tr>
+                  <td>${htmlEsc(ct.name)}</td>
+                  <td>${htmlEsc(ct.email)}</td>
+                  <td><button class="btn btn-sm btn-danger" onclick="removeCoTeacher(${courseId},${ct.id},this)">${t('delete')}</button></td>
+                </tr>`).join('')}
+              </tbody>
+            </table>` : `<p class="text-muted">${t('no_co_teachers')}</p>`}
+        </div>
+      </div>`;
+  }
+
+  draw();
+
+  window._coTeacherState = window._coTeacherState || {};
+  window._coTeacherState[courseId] = { coTeachers, draw: () => draw() };
+}
+
+async function openAddCoTeacherModal(courseId) {
+  let teachers = [];
+  try {
+    teachers = await api('GET', '/users/?role=teacher');
+  } catch(e) { teachers = []; }
+
+  // Fetch current co-teachers to exclude them
+  let current = [];
+  try { current = await api('GET', `/courses/${courseId}/teachers`); } catch(e) {}
+  const currentIds = new Set(current.map(t => t.id));
+
+  // Also get course owner to exclude
+  let course;
+  try { course = await api('GET', `/courses/${courseId}`); } catch(e) {}
+  const ownerId = course ? course.teacher_id : null;
+
+  const available = teachers.filter(t => !currentIds.has(t.id) && t.id !== ownerId);
+
+  openModal(`
+    <h3>${t('add_co_teacher')}</h3>
+    <div class="form-group">
+      <label>${t('teacher')}</label>
+      <select id="co-teacher-select" class="form-control">
+        <option value="">— Select —</option>
+        ${available.map(t => `<option value="${t.id}">${htmlEsc(t.name)} (${htmlEsc(t.email)})</option>`).join('')}
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-primary" onclick="confirmAddCoTeacher(${courseId})">${t('add_co_teacher')}</button>
+      <button class="btn" onclick="closeModal()">${t('cancel')}</button>
+    </div>`);
+}
+
+async function confirmAddCoTeacher(courseId) {
+  const sel = document.getElementById('co-teacher-select');
+  const teacherId = sel ? parseInt(sel.value) : 0;
+  if (!teacherId) return;
+  try {
+    await api('POST', `/courses/${courseId}/teachers/${teacherId}`);
+    closeModal();
+    // Refresh tab
+    const el = document.getElementById('tab-coteachers');
+    if (el) {
+      const updated = await api('GET', `/courses/${courseId}/teachers`);
+      if (window._coTeacherState && window._coTeacherState[courseId]) {
+        window._coTeacherState[courseId].coTeachers = updated;
+        window._coTeacherState[courseId].draw();
+      }
+    }
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function removeCoTeacher(courseId, teacherId, btn) {
+  if (!await showConfirm('Remove this teacher from the course?')) return;
+  try {
+    await api('DELETE', `/courses/${courseId}/teachers/${teacherId}`);
+    if (window._coTeacherState && window._coTeacherState[courseId]) {
+      window._coTeacherState[courseId].coTeachers =
+        window._coTeacherState[courseId].coTeachers.filter(t => t.id !== teacherId);
+      window._coTeacherState[courseId].draw();
+    }
+  } catch(e) { toast(e.message, 'error'); }
 }
 
 // ── Quiz card (in course detail list) ──
@@ -1447,25 +1603,25 @@ function quizCard(q, canManage, courseId) {
         <div class="quiz-title-row">
           <strong>${htmlEsc(q.title)}</strong>
           ${q.is_exam ? `<span class="exam-badge">EXAM</span>` : ''}
-          ${isUrgent ? `<span class="badge badge-danger">⚡ ${t('urgent')}</span>` : ''}
+          ${isUrgent ? `<span class="badge badge-danger"> ${t('urgent')}</span>` : ''}
           ${canManage
             ? (q.is_published
-              ? `<span class="badge badge-success">✓ ${t('quiz_published')}</span>`
-              : `<span class="badge badge-warning">✏️ ${t('quiz_draft')}</span>`)
+              ? `<span class="badge badge-success"> ${t('quiz_published')}</span>`
+              : `<span class="badge badge-warning"> ${t('quiz_draft')}</span>`)
             : ''}
         </div>
         ${q.description ? `<p class="text-muted" style="margin-top:4px;font-size:13px">${htmlEsc(q.description)}</p>` : ''}
         <div class="quiz-meta">
           <small>${q.question_count} ${t('question_text')}(s) &bull; ${q.total_points} ${t('pts')}</small>
-          ${q.time_limit ? `<small>⏱ ${q.time_limit} ${t('minutes')}</small>` : ''}
-          ${q.due_date ? `<small>📅 ${t('due_date')}: ${fmtDate(q.due_date)}</small>` : ''}
-          ${canManage && q.attempt_count!=null ? `<small>👥 ${q.attempt_count} ${t('attempt_count')}</small>` : ''}
-          ${canManage && q.max_attempts ? `<small>🔁 ${t('max_attempts')}: ${q.max_attempts}</small>` : ''}
+          ${q.time_limit ? `<small> ${q.time_limit} ${t('minutes')}</small>` : ''}
+          ${q.due_date ? `<small> ${t('due_date')}: ${fmtDate(q.due_date)}</small>` : ''}
+          ${canManage && q.attempt_count!=null ? `<small> ${q.attempt_count} ${t('attempt_count')}</small>` : ''}
+          ${canManage && q.max_attempts ? `<small> ${t('max_attempts')}: ${q.max_attempts}</small>` : ''}
           ${!canManage && q.max_attempts ? (() => {
             const left = q.max_attempts - (q.attempts_used || 0);
             return left > 0
-              ? `<small style="color:var(--warning)">🔁 ${left} ${t('attempts_remaining')}</small>`
-              : `<small style="color:var(--danger)">🚫 ${t('no_attempts_left')}</small>`;
+              ? `<small style="color:var(--warning)"> ${left} ${t('attempts_remaining')}</small>`
+              : `<small style="color:var(--danger)"> ${t('no_attempts_left')}</small>`;
           })() : ''}
         </div>
       </div>
@@ -1474,18 +1630,18 @@ function quizCard(q, canManage, courseId) {
         ${!canManage && !attempted && !inProgress && q.question_count > 0
           && !(q.max_attempts && (q.attempts_used || 0) >= q.max_attempts)
           ? (q.is_exam
-            ? `<button class="btn btn-sm btn-primary" onclick="startExam(${q.id})">▶ ${t('start_quiz')}</button>`
-            : `<button class="btn btn-sm btn-primary" onclick="startQuiz(${q.id})">▶ ${t('start_quiz')}</button>`) : ''}
+            ? `<button class="btn btn-sm btn-primary" onclick="startExam(${q.id})"> ${t('start_quiz')}</button>`
+            : `<button class="btn btn-sm btn-primary" onclick="startQuiz(${q.id})"> ${t('start_quiz')}</button>`) : ''}
         ${!canManage && inProgress
           ? (q.is_exam
-            ? `<button class="btn btn-sm btn-warning" onclick="navigate('exam-take',{id:${q.id}})">▶ ${t('resume_quiz')}</button>`
-            : `<button class="btn btn-sm btn-warning" onclick="navigate('quiz-take',{id:${q.id}})">▶ ${t('resume_quiz')}</button>`) : ''}
+            ? `<button class="btn btn-sm btn-warning" onclick="navigate('exam-take',{id:${q.id}})"> ${t('resume_quiz')}</button>`
+            : `<button class="btn btn-sm btn-warning" onclick="navigate('quiz-take',{id:${q.id}})"> ${t('resume_quiz')}</button>`) : ''}
         ${!canManage && attempted
           ? (q.is_exam
             ? `<button class="btn btn-sm" onclick="navigate('exam-take',{id:${q.id}})">${t('quiz_results')}</button>`
             : `<button class="btn btn-sm" onclick="navigate('quiz-take',{id:${q.id}})">${t('quiz_results')}</button>`) : ''}
         ${canManage ? `
-          ${q.unlock_all_materials ? `<span class="badge badge-info" style="font-size:11px">🔒 ${t('unlock_after_all_materials')}</span>` : ''}
+          ${q.unlock_all_materials ? `<span class="badge badge-info" style="font-size:11px"> ${t('unlock_after_all_materials')}</span>` : ''}
           <button class="btn btn-sm ${q.is_published ? 'btn-warning' : 'btn-success'}"
             onclick="togglePublishQuiz(${q.id},${q.is_published},${courseId})">
             ${q.is_published ? t('unpublish_quiz') : t('publish_quiz')}
@@ -1500,7 +1656,7 @@ function quizCard(q, canManage, courseId) {
 // ── Session card ──
 function sessionCard(s, canManage) {
   const isVirtual = s.session_type === 'virtual';
-  const icon = isVirtual ? '💻' : '🏫';
+  const icon = isVirtual ? '' : '';
   const past = isPast(s.date);
   return `
     <div class="session-card">
@@ -1509,11 +1665,11 @@ function sessionCard(s, canManage) {
         <strong>${htmlEsc(s.title)}</strong>
         <div class="session-meta">
           <span class="badge badge-${s.session_type}">${t(s.session_type)}</span>
-          <small>📅 ${fmtDateTime(s.date)}</small>
-          <small>⏱ ${s.duration_minutes} ${t('mins')}</small>
+          <small> ${fmtDateTime(s.date)}</small>
+          <small> ${s.duration_minutes} ${t('mins')}</small>
           ${s.location ? (isVirtual
             ? `<a class="link" href="${htmlEsc(s.location)}" target="_blank" rel="noopener">${t('join')}</a>`
-            : `<small>📍 ${htmlEsc(s.location)}</small>`) : ''}
+            : `<small> ${htmlEsc(s.location)}</small>`) : ''}
         </div>
         ${s.notes ? `<p class="text-muted" style="font-size:12px;margin-top:4px">${htmlEsc(s.notes)}</p>` : ''}
       </div>
@@ -1529,17 +1685,80 @@ function sessionCard(s, canManage) {
 // Material helpers
 // ═══════════════════════════════════════════════════════════
 function fileMimeIcon(mime) {
-  if (!mime) return '📄';
-  if (mime.startsWith('image/')) return '🖼️';
-  if (mime.startsWith('video/')) return '🎬';
-  if (mime.startsWith('audio/')) return '🎵';
-  if (mime === 'application/pdf') return '📕';
-  if (mime.includes('word') || mime.includes('msword') || mime.includes('document')) return '📝';
-  if (mime.includes('excel') || mime.includes('spreadsheet') || mime.includes('sheet')) return '📊';
-  if (mime.includes('powerpoint') || mime.includes('presentation')) return '📊';
-  if (mime.includes('zip') || mime.includes('compressed') || mime.includes('archive') || mime.includes('tar')) return '🗜️';
-  if (mime.startsWith('text/')) return '📃';
-  return '📄';
+  if (!mime) return '';
+  if (mime.startsWith('image/')) return '';
+  if (mime.startsWith('video/')) return '';
+  if (mime.startsWith('audio/')) return '';
+  if (mime === 'application/pdf') return '';
+  if (mime.includes('word') || mime.includes('msword') || mime.includes('document')) return '';
+  if (mime.includes('excel') || mime.includes('spreadsheet') || mime.includes('sheet')) return '';
+  if (mime.includes('powerpoint') || mime.includes('presentation')) return '';
+  if (mime.includes('zip') || mime.includes('compressed') || mime.includes('archive') || mime.includes('tar')) return '';
+  if (mime.startsWith('text/')) return '';
+  return '';
+}
+
+function getYouTubeId(url) {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    if (u.hostname === 'youtu.be') return u.pathname.slice(1).split('?')[0] || null;
+    if (u.hostname.includes('youtube.com')) {
+      if (u.pathname.startsWith('/embed/')) return u.pathname.split('/')[2] || null;
+      return u.searchParams.get('v') || null;
+    }
+  } catch (_) {}
+  return null;
+}
+
+// YouTube IFrame API — loaded once, players registered after API ready
+window._ytApiLoaded = false;
+window._ytApiReady = false;
+window._ytPendingPlayers = []; // [{iframeId, courseId, matId}]
+
+window.onYouTubeIframeAPIReady = function() {
+  window._ytApiReady = true;
+  window._ytPendingPlayers.forEach(p => _initYTPlayer(p.iframeId, p.courseId, p.matId));
+  window._ytPendingPlayers = [];
+};
+
+function _loadYTApi() {
+  if (window._ytApiLoaded) return;
+  window._ytApiLoaded = true;
+  const s = document.createElement('script');
+  s.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(s);
+}
+
+function _initYTPlayer(iframeId, courseId, matId) {
+  let marked = false;
+  function markDone() {
+    if (marked) return;
+    marked = true;
+    completeMaterial(courseId, matId);
+  }
+  const player = new YT.Player(iframeId, {
+    events: {
+      onStateChange(e) {
+        if (e.data === YT.PlayerState.ENDED) { markDone(); return; }
+        // PAUSED (2): if seeked to within last 10 s, treat as done
+        if (e.data === 2) {
+          const dur = player.getDuration ? player.getDuration() : 0;
+          const cur = player.getCurrentTime ? player.getCurrentTime() : 0;
+          if (dur > 0 && (dur - cur) <= 10) markDone();
+        }
+      }
+    }
+  });
+}
+
+function attachYTPlayer(iframeId, courseId, matId) {
+  _loadYTApi();
+  if (window._ytApiReady) {
+    _initYTPlayer(iframeId, courseId, matId);
+  } else {
+    window._ytPendingPlayers.push({iframeId, courseId, matId});
+  }
 }
 
 function formatFileSize(bytes) {
@@ -1568,6 +1787,12 @@ function viewMaterialFile(event, el) {
   const fileName   = el.dataset.fname;
   const mime       = el.dataset.mime;
 
+  // Auto-mark complete for students when they open/view the material
+  if (state.user && state.user.role === 'student') {
+    const item = document.getElementById(`mat-item-${materialId}`);
+    if (item && item.dataset.completed === '0') completeMaterial(courseId, materialId);
+  }
+
   // Append the JWT as a query param so the browser can open/stream the URL
   // directly without needing a custom Authorization header.
   // This is essential for videos: the browser must stream via Range requests,
@@ -1582,7 +1807,7 @@ function viewMaterialFile(event, el) {
   if (isVideo || isAudio) {
     // Embed a native player in a modal so it streams without leaving the page
     const tag  = isVideo ? 'video' : 'audio';
-    const icon = isVideo ? '🎬' : '🎵';
+    const icon = isVideo ? '' : '';
     openModal(`${icon} ${fileName || 'Media'}`,
       `<div style="text-align:center;padding:8px 0">
         <${tag} controls
@@ -1593,18 +1818,34 @@ function viewMaterialFile(event, el) {
         </${tag}>
         <br><br>
         <a class="btn btn-sm btn-primary" href="${fileUrl}" download="${fileName||'download'}">
-          ⬇ Download
+           Download
         </a>
       </div>`
     );
   } else if (isPdf) {
-    openModal(`📄 ${htmlEsc(fileName || 'Document')}`,
+    // Fetch the PDF with auth headers and render via a blob URL so the iframe
+    // never tries to load from localhost directly (which browsers may refuse).
+    openModal(` ${htmlEsc(fileName || 'Document')}`,
       `<div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:4px 0">
-        <iframe src="${fileUrl}" style="width:100%;height:70vh;border:none;border-radius:6px;background:#f5f5f5"></iframe>
-        <a class="btn btn-sm btn-primary" href="${fileUrl}" download="${htmlEsc(fileName||'document.pdf')}">⬇ Download PDF</a>
+        <div id="pdf-frame-wrap" style="width:100%;height:70vh;border-radius:6px;background:#f5f5f5;display:flex;align-items:center;justify-content:center">
+          <span class="text-muted">Loading…</span>
+        </div>
+        <a class="btn btn-sm btn-primary" id="pdf-dl-link" href="#"> Download PDF</a>
       </div>`,
       {wide: true}
     );
+    fetch(`/api/courses/${courseId}/materials/${materialId}/file`, {
+      headers: { Authorization: `Bearer ${state.token}` }
+    }).then(r => r.blob()).then(blob => {
+      const url = URL.createObjectURL(blob);
+      const wrap = document.getElementById('pdf-frame-wrap');
+      if (wrap) wrap.innerHTML = `<iframe src="${url}" style="width:100%;height:70vh;border:none;border-radius:6px"></iframe>`;
+      const dl = document.getElementById('pdf-dl-link');
+      if (dl) { dl.href = url; dl.download = fileName || 'document.pdf'; }
+    }).catch(() => {
+      const wrap = document.getElementById('pdf-frame-wrap');
+      if (wrap) wrap.innerHTML = `<p class="text-muted">Could not load PDF.</p>`;
+    });
   } else if (isImage) {
     window.open(fileUrl, '_blank');
   } else {
@@ -1623,17 +1864,10 @@ function viewMaterialFile(event, el) {
 // Materials
 // ═══════════════════════════════════════════════════════════
 async function openAddMaterialModal(courseId) {
-  // Fetch published quizzes for the unlock key dropdown
-  let quizOptions = '<option value="">— None —</option>';
-  try {
-    const qs = await api('GET', `/quizzes/course/${courseId}`);
-    quizOptions += qs.map(q => `<option value="${q.id}">${htmlEsc(q.title)}</option>`).join('');
-  } catch(_) {}
-
   openModal(t('add_material'), `
     <div class="mat-mode-tabs">
-      <button type="button" class="mat-mode-tab active" onclick="switchMatMode('link',this)">🔗 ${t('link_text')}</button>
-      <button type="button" class="mat-mode-tab" onclick="switchMatMode('file',this)">📁 ${t('upload_file')}</button>
+      <button type="button" class="mat-mode-tab active" onclick="switchMatMode('link',this)"> ${t('link_text')}</button>
+      <button type="button" class="mat-mode-tab" onclick="switchMatMode('file',this)"> ${t('upload_file')}</button>
     </div>
     <form id="modal-form" data-mode="link">
       <!-- Link / Text section -->
@@ -1655,14 +1889,6 @@ async function openAddMaterialModal(courseId) {
           <small class="text-muted">${t('file_upload_hint')}</small>
         </div>
       </div>
-      <!-- Unlock key (shared between both modes) -->
-      <div class="form-group">
-        <label>🔑 ${t('set_as_key')}</label>
-        <select name="unlock_quiz_id" class="form-control">
-          ${quizOptions}
-        </select>
-        <small class="text-muted">Students must complete this material to unlock the selected assessment.</small>
-      </div>
       <div class="form-actions">
         <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
         <button type="submit" class="btn btn-primary">${t('add')}</button>
@@ -1671,14 +1897,13 @@ async function openAddMaterialModal(courseId) {
     async (fd) => {
       const form = document.getElementById('modal-form');
       const mode = form.dataset.mode;
-      const unlockQuizId = fd.get('unlock_quiz_id') ? parseInt(fd.get('unlock_quiz_id')) : null;
       if (mode !== 'file') {
         // Link / Text
         const title = (fd.get('title') || '').trim();
         if (!title) { toast(t('title_label') + ' is required', 'error'); return; }
         try {
           await api('POST', `/courses/${courseId}/materials`,
-            { title, content: fd.get('content') || null, url: fd.get('url') || null, unlock_quiz_id: unlockQuizId });
+            { title, content: fd.get('content') || null, url: fd.get('url') || null });
           closeModal(); toast(t('add') + '!'); navigate('course', { id: courseId });
         } catch(err) { toast(err.message, 'error'); }
       } else {
@@ -1690,7 +1915,6 @@ async function openAddMaterialModal(courseId) {
         const uploadFd = new FormData();
         uploadFd.append('title', fileTitle);
         uploadFd.append('file', file);
-        if (unlockQuizId) uploadFd.append('unlock_quiz_id', unlockQuizId);
         try {
           const resp = await fetch(`/api/courses/${courseId}/materials/upload`, {
             method: 'POST',
@@ -1705,35 +1929,65 @@ async function openAddMaterialModal(courseId) {
 }
 
 async function deleteMaterial(courseId, matId) {
-  if (!confirm(t('delete')+'?')) return;
+  if (!await showConfirm(t('delete')+'?')) return;
   try { await api('DELETE',`/courses/${courseId}/materials/${matId}`); toast(t('delete')); navigate('course',{id:courseId}); }
   catch(err) { toast(err.message,'error'); }
 }
 
-async function completeMaterial(courseId, matId, btn) {
+async function openEditMaterialModal(courseId, matId, mat) {
+  openModal(' Edit Material', `
+    <form id="edit-mat-form">
+      <div class="form-group"><label>${t('title_label')} *</label>
+        <input name="title" class="form-control" value="${htmlEsc(mat.title)}" required></div>
+      ${mat.material_type === 'link' ? `
+      <div class="form-group"><label>URL</label>
+        <input name="url" type="url" class="form-control" value="${htmlEsc(mat.url)}"></div>` : ''}
+      <div class="form-group"><label>${t('description') || 'Description'}</label>
+        <textarea name="content" class="form-control" rows="3">${htmlEsc(mat.content)}</textarea></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('edit-mat-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const payload = {
+      title: fd.get('title'),
+      content: fd.get('content') || null,
+      url: fd.get('url') || null,
+    };
+    try {
+      await api('PUT', `/courses/${courseId}/materials/${matId}`, payload);
+      toast('Material updated.');
+      closeModal();
+      navigate('course', { id: courseId });
+    } catch(err) { toast(err.message, 'error'); }
+  };
+}
+
+async function completeMaterial(courseId, matId) {
   try {
     await api('POST', `/courses/${courseId}/materials/${matId}/complete`);
-    // Update UI in-place — swap button for completed badge
     const item = document.getElementById(`mat-item-${matId}`);
     if (item) {
-      btn.outerHTML = `<span class="badge badge-success">✓ ${t('completed')}</span>`;
+      item.dataset.completed = '1';
       const titleRow = item.querySelector('.material-title');
-      if (titleRow) {
-        const keyBadge = titleRow.querySelector('.mat-key-badge');
+      if (titleRow && !document.getElementById(`mat-done-${matId}`)) {
         const span = document.createElement('span');
+        span.id = `mat-done-${matId}`;
         span.className = 'badge badge-success';
-        span.textContent = `✓ ${t('completed')}`;
-        if (keyBadge) titleRow.insertBefore(span, keyBadge.nextSibling);
-        else titleRow.appendChild(span);
+        span.textContent = ` ${t('completed')}`;
+        titleRow.appendChild(span);
       }
     }
-    toast(t('completed') + '!');
     // Re-fetch quizzes tab to reflect newly unlocked assessments
     const quizzesTab = document.getElementById('tab-quizzes');
     if (quizzesTab && !quizzesTab.classList.contains('hidden')) {
       navigate('course', { id: courseId });
     }
-  } catch(err) { toast(err.message, 'error'); }
+  } catch(_) {}
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1741,28 +1995,82 @@ async function completeMaterial(courseId, matId, btn) {
 // ═══════════════════════════════════════════════════════════
 function openNewAssignmentModal(courseId) {
   openModal(t('new_assignment'), `
+    <div class="tabs" style="margin-bottom:16px">
+      <button class="tab active" id="asgn-tab-manual" onclick="asgnSwitchTab('manual')">${t('manual')}</button>
+      <button class="tab" id="asgn-tab-ai" onclick="asgnSwitchTab('ai')"> ${t('ai_generate')}</button>
+    </div>
+
     <form id="modal-form">
-      <div class="form-group"><label>${t('title_label')} *</label>
-        <input name="title" class="form-control" required></div>
-      <div class="form-group"><label>${t('instructions')}</label>
-        <textarea name="description" class="form-control" rows="4"></textarea></div>
-      <div class="form-group"><label>${t('max_score')}</label>
-        <input name="max_score" type="number" class="form-control" value="100" min="1"></div>
-      <div class="form-group"><label>${t('due_date')}</label>
-        ${dueDatePicker('asgn-due', '')}</div>
+      <!-- Manual tab -->
+      <div id="asgn-pane-manual">
+        <div class="form-group"><label>${t('title_label')} *</label>
+          <input name="title" class="form-control" required></div>
+        <div class="form-group"><label>${t('instructions')}</label>
+          <textarea name="description" class="form-control" rows="4"></textarea></div>
+        <div class="form-group"><label>${t('max_score')}</label>
+          <input name="max_score" type="number" class="form-control" value="100" min="1"></div>
+        <div class="form-group"><label>${t('due_date')}</label>
+          ${dueDatePicker('asgn-due', '')}</div>
+      </div>
+
+      <!-- AI Generate tab -->
+      <div id="asgn-pane-ai" class="hidden">
+        <div class="form-group">
+          <label>Topic *<span class="text-muted" style="font-weight:normal;margin-left:6px">e.g. "Adding Fractions", "The Water Cycle"</span></label>
+          <input name="ai_topic" class="form-control" placeholder="Enter the topic to generate questions about">
+        </div>
+        <div class="form-group"><label>Number of questions</label>
+          <input name="ai_num_q" type="number" class="form-control" value="4" min="1" max="10"></div>
+        <div class="form-group"><label>${t('max_score')}</label>
+          <input name="ai_max_score" type="number" class="form-control" value="100" min="1"></div>
+        <div class="form-group"><label>${t('due_date')}</label>
+          ${dueDatePicker('asgn-ai-due', '')}</div>
+        <div id="asgn-ai-status" class="hidden" style="margin-bottom:8px">
+          <span class="text-muted"> Generating…</span>
+        </div>
+      </div>
+
       <div class="form-actions">
         <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
-        <button type="submit" class="btn btn-primary">${t('create')}</button>
+        <button type="submit" class="btn btn-primary" id="asgn-submit-btn">${t('create')}</button>
       </div>
     </form>`,
     async (fd) => {
-      try {
-        await api('POST',`/assignments/course/${courseId}`,
-          { title:fd.get('title'), description:fd.get('description')||null,
-            due_date:fd.get('due_date')||null, max_score:parseFloat(fd.get('max_score'))||100 });
-        closeModal(); toast(t('create')+'!'); navigate('course',{id:courseId});
-      } catch(err) { toast(err.message,'error'); }
+      const mode = document.getElementById('asgn-tab-ai').classList.contains('active') ? 'ai' : 'manual';
+      if (mode === 'ai') {
+        const topic = (fd.get('ai_topic') || '').trim();
+        if (!topic) { toast('Please enter a topic.', 'error'); return; }
+        const btn = document.getElementById('asgn-submit-btn');
+        const status = document.getElementById('asgn-ai-status');
+        btn.disabled = true; btn.textContent = 'Generating…';
+        status.classList.remove('hidden');
+        try {
+          await api('POST', `/assignments/course/${courseId}/generate`, {
+            topic,
+            num_questions: parseInt(fd.get('ai_num_q')) || 4,
+            max_score: parseFloat(fd.get('ai_max_score')) || 100,
+            due_date: fd.get('due_date') || null,
+          });
+          closeModal(); toast('Assignment generated!'); navigate('course', {id: courseId});
+        } catch(err) { toast(err.message, 'error'); btn.disabled = false; btn.textContent = t('create'); status.classList.add('hidden'); }
+      } else {
+        try {
+          await api('POST', `/assignments/course/${courseId}`,
+            { title: fd.get('title'), description: fd.get('description') || null,
+              due_date: fd.get('due_date') || null, max_score: parseFloat(fd.get('max_score')) || 100 });
+          closeModal(); toast(t('create') + '!'); navigate('course', {id: courseId});
+        } catch(err) { toast(err.message, 'error'); }
+      }
     });
+}
+
+function asgnSwitchTab(tab) {
+  document.getElementById('asgn-tab-manual').classList.toggle('active', tab === 'manual');
+  document.getElementById('asgn-tab-ai').classList.toggle('active', tab === 'ai');
+  document.getElementById('asgn-pane-manual').classList.toggle('hidden', tab !== 'manual');
+  document.getElementById('asgn-pane-ai').classList.toggle('hidden', tab !== 'ai');
+  const manualTitle = document.querySelector('#asgn-pane-manual input[name="title"]');
+  if (manualTitle) manualTitle.required = (tab === 'manual');
 }
 
 async function openEditAssignmentModal(assignmentId, courseId) {
@@ -1803,7 +2111,7 @@ async function openEditAssignmentModal(assignmentId, courseId) {
 }
 
 async function deleteAssignment(assignmentId, courseId) {
-  if (!confirm('Delete this assignment? This will also remove all student submissions and cannot be undone.')) return;
+  if (!await showConfirm('Delete this assignment? This will also remove all student submissions and cannot be undone.')) return;
   try {
     await api('DELETE', `/assignments/${assignmentId}`);
     toast('Assignment deleted.');
@@ -1826,8 +2134,8 @@ async function renderAssignmentDetail(assignmentId, el) {
           ${a.due_date ? `<small class="text-muted">${t('due_date')}: ${fmtDateTime(a.due_date)}</small>` : ''}
           <small class="text-muted">${t('max_score')}: ${a.max_score} ${t('pts')}</small>
           ${canGrade ? `<div style="display:flex;gap:6px">
-            <button class="btn btn-sm btn-secondary" onclick="openEditAssignmentModal(${a.id},${a.course_id})">✏ Edit Assignment</button>
-            <button class="btn btn-sm btn-danger" onclick="deleteAssignment(${a.id},${a.course_id})">🗑 Delete</button>
+            <button class="btn btn-sm btn-secondary" onclick="openEditAssignmentModal(${a.id},${a.course_id})"> Edit Assignment</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteAssignment(${a.id},${a.course_id})"> Delete</button>
           </div>` : ''}
         </div>
       </div>
@@ -1842,9 +2150,9 @@ async function renderAssignmentDetail(assignmentId, el) {
                 ${a.my_submission.content ? `<div class="submission-content"><p>${htmlEsc(a.my_submission.content)}</p></div>` : ''}
                 ${a.my_submission.file_name ? `
                   <div class="submission-file">
-                    <span>📎 ${htmlEsc(a.my_submission.file_name)}</span>
+                    <span> ${htmlEsc(a.my_submission.file_name)}</span>
                     <a class="btn btn-sm" href="/api/assignments/submissions/${a.my_submission.id}/file?dl_token=${encodeURIComponent(state.token)}"
-                       download="${htmlEsc(a.my_submission.file_name)}">⬇ Download</a>
+                       download="${htmlEsc(a.my_submission.file_name)}"> Download</a>
                   </div>` : ''}
                 <small class="text-muted">${fmtDateTime(a.my_submission.submitted_at)}</small>
                 ${a.my_submission.score!=null
@@ -1880,9 +2188,9 @@ async function renderAssignmentDetail(assignmentId, el) {
                 ${s.content ? `<div class="submission-content"><p>${htmlEsc(s.content)}</p></div>` : ''}
                 ${s.file_name ? `
                   <div class="submission-file">
-                    <span>📎 ${htmlEsc(s.file_name)}</span>
+                    <span> ${htmlEsc(s.file_name)}</span>
                     <a class="btn btn-sm" href="/api/assignments/submissions/${s.id}/file?dl_token=${encodeURIComponent(state.token)}"
-                       download="${htmlEsc(s.file_name)}">⬇ Download</a>
+                       download="${htmlEsc(s.file_name)}"> Download</a>
                   </div>` : ''}
                 <div class="grade-form">
                   <div class="form-row">
@@ -1959,7 +2267,7 @@ async function showPostSubmitModal(submittedId) {
     if (pending.length === 0) {
       openModal(t('well_done'), `
         <div class="post-submit-empty">
-          <div class="post-submit-trophy">🏆</div>
+          <div class="post-submit-trophy"></div>
           <p class="post-submit-congrats">${t('no_outstanding')}</p>
         </div>
         <div class="form-actions" style="justify-content:center">
@@ -1974,13 +2282,13 @@ async function showPostSubmitModal(submittedId) {
             const due = a.due_date ? new Date(a.due_date) : null;
             const isOverdue = due && due < now;
             const dueTxt = due
-              ? `${t('due_date')}: <strong class="${isOverdue?'text-danger':''}">${fmtDate(a.due_date)}</strong>${isOverdue?' ⚠️':''}`
+              ? `${t('due_date')}: <strong class="${isOverdue?'text-danger':''}">${fmtDate(a.due_date)}</strong>${isOverdue?' ':''}`
               : '';
             return `
               <div class="outstanding-item">
                 <div class="outstanding-info">
                   <span class="outstanding-title">${htmlEsc(a.title)}</span>
-                  <span class="outstanding-course">📚 ${htmlEsc(a.course_title)}</span>
+                  <span class="outstanding-course"> ${htmlEsc(a.course_title)}</span>
                   ${dueTxt ? `<span class="outstanding-due">${dueTxt}</span>` : ''}
                 </div>
                 <button class="btn btn-sm btn-primary"
@@ -2015,11 +2323,11 @@ function openNewSessionModal(courseId) {
         <input name="title" class="form-control" required placeholder="e.g. Week 3 Lecture"></div>
       <div class="form-group"><label>${t('session_type')} *</label>
         <select name="session_type" class="form-control" onchange="updateSessionForm(this.value)">
-          <option value="virtual">💻 ${t('virtual')}</option>
-          <option value="physical">🏫 ${t('physical')}</option>
+          <option value="virtual"> ${t('virtual')}</option>
+          <option value="physical"> ${t('physical')}</option>
         </select>
       </div>
-      <div class="form-group"><label>📅 Date &amp; Time *</label>
+      <div class="form-group"><label> Date &amp; Time *</label>
         <input name="date" type="datetime-local" class="form-control" required></div>
       <div class="form-group"><label>${t('duration')}</label>
         <input name="duration_minutes" type="number" class="form-control" value="60" min="10"></div>
@@ -2060,7 +2368,7 @@ function updateSessionForm(type) {
 }
 
 async function deleteSession(sessionId, courseId) {
-  if (!confirm(t('delete')+'?')) return;
+  if (!await showConfirm(t('delete')+'?')) return;
   try { await api('DELETE',`/sessions/${sessionId}`); toast(t('delete')); navigate('course',{id:courseId}); }
   catch(err) { toast(err.message,'error'); }
 }
@@ -2098,7 +2406,7 @@ function openNewQuizModal(courseId) {
 }
 
 async function deleteQuiz(quizId, courseId) {
-  if (!confirm(t('delete')+'?')) return;
+  if (!await showConfirm(t('delete')+'?')) return;
   try { await api('DELETE',`/quizzes/${quizId}`); toast(t('delete')); navigate('course',{id:courseId}); }
   catch(err) { toast(err.message,'error'); }
 }
@@ -2111,10 +2419,10 @@ async function renderQuizBuilder(quizId, el) {
   try {
     const quiz = await api('GET',`/quizzes/${quizId}`);
     const pubBadge = quiz.is_published
-      ? `<span class="badge badge-success">✓ ${t('quiz_published')}</span>`
-      : `<span class="badge badge-warning">✏️ ${t('quiz_draft')}</span>`;
+      ? `<span class="badge badge-success"> ${t('quiz_published')}</span>`
+      : `<span class="badge badge-warning"> ${t('quiz_draft')}</span>`;
     const examBadge = quiz.is_exam ? `<span class="exam-badge">EXAM</span>` : '';
-    const unlockBadge = quiz.unlock_all_materials ? `<span class="badge badge-info" style="font-size:11px">🔒 ${t('unlock_after_all_materials')}</span>` : '';
+    const unlockBadge = quiz.unlock_all_materials ? `<span class="badge badge-info" style="font-size:11px"> ${t('unlock_after_all_materials')}</span>` : '';
     el.innerHTML = `
       <div class="page-header">
         <div>
@@ -2137,7 +2445,7 @@ async function renderQuizBuilder(quizId, el) {
       </div>
       ${!quiz.is_published ? `
         <div class="alert alert-warning" style="margin-bottom:16px">
-          📋 ${t('quiz_draft')} — ${t('publish_quiz').toLowerCase()} when you\'re ready for students to see it.
+           ${t('quiz_draft')} — ${t('publish_quiz').toLowerCase()} when you\'re ready for students to see it.
         </div>` : ''}
       <div id="question-list">
         ${quiz.questions.length ? quiz.questions.map((q,i)=>questionBuilderCard(q,i,quizId)).join('')
@@ -2152,7 +2460,7 @@ async function renderQuizBuilder(quizId, el) {
       if (!attempts.length) { attemptsEl.innerHTML = ''; return; }
       const needsGrading = attempts.filter(a => a.needs_grading);
       attemptsEl.innerHTML = `
-        <h3 style="margin-bottom:12px">📋 Student Submissions
+        <h3 style="margin-bottom:12px"> Student Submissions
           ${needsGrading.length ? `<span class="badge badge-warning" style="font-size:12px;margin-left:8px">${needsGrading.length} ${t('needs_grading')}</span>` : ''}
         </h3>
         <div style="overflow-x:auto">
@@ -2167,8 +2475,8 @@ async function renderQuizBuilder(quizId, el) {
             const status = !a.submitted_at
               ? `<span class="badge">In Progress</span>`
               : a.needs_grading
-                ? `<span class="badge badge-warning">⏳ ${t('needs_grading')}</span>`
-                : `<span class="badge badge-success">✓ Graded</span>`;
+                ? `<span class="badge badge-warning"> ${t('needs_grading')}</span>`
+                : `<span class="badge badge-success"> Graded</span>`;
             const gradeBtn = a.submitted_at
               ? `<button class="btn btn-sm btn-primary" onclick="openGradingPanel(${quizId},${a.id})">${t('grade_responses')}</button>`
               : '';
@@ -2206,13 +2514,13 @@ async function openEditQuizModal(quizId) {
       <div class="form-group" style="display:flex;align-items:center;gap:10px;padding:10px 0">
         <input type="checkbox" name="is_exam" id="chk-is-exam" value="1"${quiz.is_exam?' checked':''} style="width:18px;height:18px;accent-color:var(--danger);flex-shrink:0">
         <label for="chk-is-exam" style="font-size:13px;font-weight:600;color:var(--text);cursor:pointer;margin:0">
-          📝 ${t('is_exam')}
+           ${t('is_exam')}
         </label>
       </div>
       <div class="form-group" style="display:flex;align-items:center;gap:10px;padding:10px 0">
         <input type="checkbox" name="unlock_all_materials" id="chk-unlock-all" value="1"${quiz.unlock_all_materials?' checked':''} style="width:18px;height:18px;accent-color:var(--info);flex-shrink:0">
         <label for="chk-unlock-all" style="font-size:13px;font-weight:600;color:var(--text);cursor:pointer;margin:0">
-          🔒 ${t('unlock_after_all_materials')}
+           ${t('unlock_after_all_materials')}
         </label>
       </div>
       <div class="form-actions">
@@ -2244,7 +2552,7 @@ async function openEditQuizModal(quizId) {
 async function togglePublishQuiz(quizId, isPublished, courseId) {
   try {
     await api('PATCH', `/quizzes/${quizId}/publish`, { is_published: !isPublished });
-    toast(!isPublished ? '✅ ' + t('publish_quiz') : t('unpublish_quiz'));
+    toast(!isPublished ? ' ' + t('publish_quiz') : t('unpublish_quiz'));
     if (state.currentPage === 'quiz-builder') {
       navigate('quiz-builder', {id: quizId});
     } else {
@@ -2267,7 +2575,7 @@ function questionBuilderCard(q, idx, quizId) {
       ${q.options.length ? `<div class="question-options">
         ${q.options.map(o=>`
           <div class="option-row${o.is_correct?' correct':''}">
-            <span>${o.is_correct ? '✓' : '○'}</span> ${htmlEsc(o.option_text)}
+            <span>${o.is_correct ? '' : ''}</span> ${htmlEsc(o.option_text)}
           </div>`).join('')}
       </div>` : `<p class="text-muted" style="font-size:12px;margin-top:4px">${q.question_type === 'long_answer' ? t('long_manual') : t('short_manual')}</p>`}
     </div>`;
@@ -2315,7 +2623,7 @@ function updateQTypeUI() {
       </div>`;
   } else {
     area.innerHTML = `
-      <div class="form-group"><label>${t('options')} <small class="text-muted">(mark correct with ○)</small></label>
+      <div class="form-group"><label>${t('options')} <small class="text-muted">(mark correct with )</small></label>
         ${[0,1,2,3].map(i=>`
           <div class="mc-option">
             <input type="radio" name="mc-correct" value="${i}">
@@ -2354,7 +2662,7 @@ async function submitAddQuestion(quizId) {
 }
 
 async function deleteQuestion(questionId, quizId) {
-  if (!confirm(t('delete')+'?')) return;
+  if (!await showConfirm(t('delete')+'?')) return;
   try { await api('DELETE',`/quizzes/questions/${questionId}`); toast(t('delete')); navigate('quiz-builder',{id:quizId}); }
   catch(err) { toast(err.message,'error'); }
 }
@@ -2413,7 +2721,7 @@ async function openAIGenerateModal(quizId, courseId, autoOpen) {
           </div>
         </div>
         <p id="ai-gen-hint" style="display:none;color:var(--muted);font-size:12px;margin-bottom:8px">
-          ⏳ This may take a few minutes — please wait…
+           This may take a few minutes — please wait…
         </p>
         <div class="form-actions">
           <button type="button" class="btn" onclick="${closeAction}">${t('cancel')}</button>
@@ -2679,7 +2987,7 @@ async function renderQuizTake(quizId, el) {
           ${q.question_type === 'short_answer' ? `
             <textarea class="form-control" id="sa-${q.id}" rows="4" placeholder="…"></textarea>` :
           q.question_type === 'long_answer' ? `
-            <div style="font-size:12px;color:var(--muted);margin-bottom:6px">✍️ ${t('long_manual')}</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:6px"> ${t('long_manual')}</div>
             <textarea class="form-control" id="sa-${q.id}" rows="7" placeholder="Write your response here…"></textarea>` : `
             <div class="quiz-options">
               ${q.options.map(o=>`
@@ -2766,7 +3074,7 @@ async function renderExams(el) {
     const isTeacher = state.user.role !== 'student';
 
     let html = `<div class="page-header">
-      <div><h2>📝 ${t('exams')}</h2><p class="text-muted">${isTeacher ? 'Manage your course exams' : 'Your scheduled exams'}</p></div>
+      <div><h2> ${t('exams')}</h2><p class="text-muted">${isTeacher ? 'Manage your course exams' : 'Your scheduled exams'}</p></div>
     </div>`;
 
     if (!allExams.length) {
@@ -2790,7 +3098,7 @@ async function renderExams(el) {
           actionBtn = `<button class="btn btn-sm btn-primary" onclick="navigate('quiz-builder',{id:${q.id}})">${t('edit_quiz')}</button>`;
         } else if (!submitted) {
           actionBtn = started
-            ? `<button class="btn btn-sm btn-warning" onclick="startExam(${q.id})">▶ ${t('resume_quiz')}</button>`
+            ? `<button class="btn btn-sm btn-warning" onclick="startExam(${q.id})"> ${t('resume_quiz')}</button>`
             : `<button class="btn btn-sm btn-primary" onclick="startExam(${q.id})">${t('start_now')}</button>`;
         } else {
           actionBtn = `<button class="btn btn-sm" onclick="navigate('exam-take',{id:${q.id}})">${t('quiz_results')}</button>`;
@@ -2805,8 +3113,8 @@ async function renderExams(el) {
             </div>
             <div style="font-size:12px;color:var(--muted);margin-top:3px">${htmlEsc(q.course_title)}</div>
             <div class="exam-meta">
-              ${q.time_limit ? `<small>⏱ ${q.time_limit} ${t('minutes')}</small>` : ''}
-              ${q.due_date   ? `<small>📅 ${t('due_date')}: ${fmtDateTime(q.due_date)}</small>` : ''}
+              ${q.time_limit ? `<small> ${q.time_limit} ${t('minutes')}</small>` : ''}
+              ${q.due_date   ? `<small> ${t('due_date')}: ${fmtDateTime(q.due_date)}</small>` : ''}
               ${q.question_count ? `<small>${q.question_count} questions · ${q.total_points} ${t('pts')}</small>` : ''}
             </div>
           </div>
@@ -2888,7 +3196,7 @@ async function renderExamTake(examId, el) {
       </div>
       <div class="exam-body">
         <div class="exam-warning-banner">
-          🔒 ${t('exam_warning')}
+           ${t('exam_warning')}
         </div>
         ${quiz.questions.map((q, i) => `
           <div class="quiz-question-block">
@@ -2939,7 +3247,7 @@ function startExamTimer(seconds, onExpire) {
 }
 
 async function submitExam(examId) {
-  if (!confirm(t('exam_submit_confirm'))) return;
+  if (!await showConfirm(t('exam_submit_confirm'), { okLabel: t('submit') })) return;
   await _doSubmitExam(examId);
 }
 
@@ -3016,7 +3324,7 @@ async function showPostQuizModal(quizId, result) {
 
     const scoreHtml = hasShort
       ? `<div class="pq-score-pending">
-           <span class="pq-pending-icon">📝</span>
+           <span class="pq-pending-icon"></span>
            <p>${t('pending_grading')}</p>
          </div>`
       : `<div class="pq-score-ring" style="--ring-clr:${ringColor};--ring-pct:${pct}">
@@ -3036,7 +3344,7 @@ async function showPostQuizModal(quizId, result) {
     // ── Outstanding section ──
     const outHtml = pending.length === 0
       ? `<div class="post-submit-empty" style="padding:16px 0 8px">
-           <div class="post-submit-trophy">🎉</div>
+           <div class="post-submit-trophy"></div>
            <p class="post-submit-congrats">${t('no_outstanding_quizzes')}</p>
          </div>`
       : `<p class="post-submit-subtitle">${t('outstanding_quizzes_msg')}</p>
@@ -3045,14 +3353,14 @@ async function showPostQuizModal(quizId, result) {
              const due = q.due_date ? new Date(q.due_date) : null;
              const overdue = due && due < now;
              const dueTxt = due
-               ? `${t('due_date')}: <strong class="${overdue?'text-danger':''}">${fmtDate(q.due_date)}${overdue?' ⚠️':''}</strong>`
+               ? `${t('due_date')}: <strong class="${overdue?'text-danger':''}">${fmtDate(q.due_date)}${overdue?' ':''}</strong>`
                : '';
              const resume = q.my_attempt && !q.my_attempt.submitted_at;
              return `
                <div class="outstanding-item">
                  <div class="outstanding-info">
-                   <span class="outstanding-title">📋 ${htmlEsc(q.title)}</span>
-                   <span class="outstanding-course">📚 ${htmlEsc(q.course_title)}</span>
+                   <span class="outstanding-title"> ${htmlEsc(q.title)}</span>
+                   <span class="outstanding-course"> ${htmlEsc(q.course_title)}</span>
                    ${dueTxt ? `<span class="outstanding-due">${dueTxt}</span>` : ''}
                  </div>
                  <button class="btn btn-sm btn-primary"
@@ -3070,7 +3378,7 @@ async function showPostQuizModal(quizId, result) {
         </div>
         <div class="pq-divider"></div>
         <div class="pq-outstanding-section">
-          <h4 class="pq-section-title">📋 ${t('outstanding_quizzes')}</h4>
+          <h4 class="pq-section-title"> ${t('outstanding_quizzes')}</h4>
           ${outHtml}
         </div>
       </div>
@@ -3127,15 +3435,15 @@ async function loadUrgentQuizzes(enrolled) {
       return `
         <div class="urgent-quiz-item">
           <div class="urgent-quiz-info">
-            <span class="urgent-quiz-title">📋 ${htmlEsc(q.title)}</span>
-            <span class="urgent-quiz-course">📚 ${htmlEsc(q.course_title)}</span>
+            <span class="urgent-quiz-title"> ${htmlEsc(q.title)}</span>
+            <span class="urgent-quiz-course"> ${htmlEsc(q.course_title)}</span>
             ${due ? `<span class="urgent-quiz-due${overdue?' text-danger':''}">
-              ${t('due_date')}: ${fmtDate(q.due_date)}${overdue?' ⚠️':''}
+              ${t('due_date')}: ${fmtDate(q.due_date)}${overdue?' ':''}
             </span>` : ''}
           </div>
           <button class="btn btn-sm btn-primary"
             onclick="${resume ? `navigate('quiz-take',{id:${q.id}})` : `startQuiz(${q.id})`}">
-            ⚡ ${resume ? t('resume_quiz') : t('start_now')}
+             ${resume ? t('resume_quiz') : t('start_now')}
           </button>
         </div>`;
     }).join('');
@@ -3161,7 +3469,7 @@ function renderQuizResults(quiz, el) {
             <div class="stat-number">${attempt.score}</div>
             <div class="stat-label">${t('your_score')} / ${fmtPts(quiz.total_points)}</div>
            </div>`
-        : `<span class="badge badge-warning">⏳ ${t('pending_teacher_grade')}</span>`}
+        : `<span class="badge badge-warning"> ${t('pending_teacher_grade')}</span>`}
     </div>
     ${quiz.questions.map((q,i) => {
       const myAns = answerMap[q.id];
@@ -3176,8 +3484,8 @@ function renderQuizResults(quiz, el) {
               <strong>${t('your_answer')}:</strong> ${htmlEsc(myText || '—')}
             </div>
             ${myAns?.teacher_score != null
-              ? `<p style="font-size:13px;color:var(--success)">✓ ${fmtPts(myAns.teacher_score)} / ${fmtPts(q.points)} pts${myAns.teacher_feedback ? ` — ${htmlEsc(myAns.teacher_feedback)}` : ''}</p>`
-              : `<p class="text-muted" style="font-size:12px">⏳ ${t('pending_teacher_grade')}</p>`}` : `
+              ? `<p style="font-size:13px;color:var(--success)"> ${fmtPts(myAns.teacher_score)} / ${fmtPts(q.points)} pts${myAns.teacher_feedback ? ` — ${htmlEsc(myAns.teacher_feedback)}` : ''}</p>`
+              : `<p class="text-muted" style="font-size:12px"> ${t('pending_teacher_grade')}</p>`}` : `
             <div class="quiz-options" style="pointer-events:none">
               ${q.options.map(o => {
                 let cls = '';
@@ -3187,8 +3495,8 @@ function renderQuizResults(quiz, el) {
                 return `<div class="quiz-option ${cls}">
                   <input type="radio" ${myOptId===o.id?'checked':''} disabled>
                   <label>${htmlEsc(o.option_text)}
-                    ${o.is_correct ? ' ✓' : ''}
-                    ${myOptId===o.id && !o.is_correct ? ' ✗' : ''}
+                    ${o.is_correct ? ' ' : ''}
+                    ${myOptId===o.id && !o.is_correct ? ' ' : ''}
                   </label>
                 </div>`;
               }).join('')}
@@ -3243,7 +3551,7 @@ function openAnnouncementModal(courseId) {
 }
 
 async function deleteAnnouncement(id, courseId) {
-  if (!confirm(t('delete')+'?')) return;
+  if (!await showConfirm(t('delete')+'?')) return;
   try {
     await api('DELETE',`/announcements/${id}`); toast(t('delete'));
     courseId ? navigate('course',{id:courseId}) : navigate('announcements');
@@ -3258,16 +3566,17 @@ async function renderUsers(el) {
   try {
     const users = await api('GET','/users/');
     window._users = users;
+    const isTeacher = state.user.role === 'teacher';
     el.innerHTML = `
       <div class="page-header"><h2>${t('user_management')}</h2>
         <button class="btn btn-primary" onclick="openNewUserModal()">${t('add_user')}</button>
       </div>
-      <div class="tabs">
+      ${!isTeacher ? `<div class="tabs">
         <button class="tab active" onclick="filterUsers('all',this)">${t('all')} (${users.length})</button>
         <button class="tab" onclick="filterUsers('admin',this)">${t('admins')} (${users.filter(u=>u.role==='admin').length})</button>
         <button class="tab" onclick="filterUsers('teacher',this)">${t('teachers')} (${users.filter(u=>u.role==='teacher').length})</button>
         <button class="tab" onclick="filterUsers('student',this)">${t('students')} (${users.filter(u=>u.role==='student').length})</button>
-      </div>
+      </div>` : ''}
       <div class="card"><div class="card-body">
         <table class="table">
           <thead><tr><th>${t('full_name')}</th><th>${t('email')}</th><th>${t('role')}</th><th></th></tr></thead>
@@ -3279,13 +3588,14 @@ async function renderUsers(el) {
 
 function usersRows(users, filter) {
   const list = filter==='all' ? users : users.filter(u=>u.role===filter);
+  const isAdmin = state.user.role === 'admin';
   return list.map(u=>`
     <tr>
       <td>${htmlEsc(u.name)}</td><td>${htmlEsc(u.email)}</td>
       <td><span class="badge badge-${u.role}">${u.role}</span></td>
-      <td>${u.id!==state.user.id
-        ? `<button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})">${t('delete')}</button>`
-        : `<span class="text-muted">${t('you')}</span>`}</td>
+      <td>${u.id===state.user.id
+        ? `<span class="text-muted">${t('you')}</span>`
+        : (isAdmin ? `<button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})">${t('delete')}</button>` : '')}</td>
     </tr>`).join('');
 }
 
@@ -3296,6 +3606,16 @@ function filterUsers(filter, btn) {
 }
 
 function openNewUserModal() {
+  const isTeacher = state.user.role === 'teacher';
+  const roleField = isTeacher
+    ? `<input type="hidden" name="role" value="teacher">`
+    : `<div class="form-group"><label>${t('role')} *</label>
+        <select name="role" class="form-control">
+          <option value="student">${t('students')}</option>
+          <option value="teacher">${t('teachers')}</option>
+          <option value="admin">${t('admins')}</option>
+        </select>
+      </div>`;
   openModal(t('add_user'), `
     <form id="modal-form">
       <div class="form-group"><label>${t('full_name')} *</label>
@@ -3304,13 +3624,7 @@ function openNewUserModal() {
         <input name="email" type="email" class="form-control" required></div>
       <div class="form-group"><label>${t('password')} *</label>
         <input name="password" type="password" class="form-control" required minlength="6"></div>
-      <div class="form-group"><label>${t('role')} *</label>
-        <select name="role" class="form-control">
-          <option value="student">${t('students')}</option>
-          <option value="teacher">${t('teachers')}</option>
-          <option value="admin">${t('admins')}</option>
-        </select>
-      </div>
+      ${roleField}
       <div class="form-actions">
         <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
         <button type="submit" class="btn btn-primary">${t('create')}</button>
@@ -3326,7 +3640,7 @@ function openNewUserModal() {
 }
 
 async function deleteUser(id) {
-  if (!confirm(t('delete')+'?')) return;
+  if (!await showConfirm(t('delete')+'?')) return;
   try { await api('DELETE',`/users/${id}`); toast(t('delete')); navigate('users'); }
   catch(err) { toast(err.message,'error'); }
 }
@@ -3351,7 +3665,7 @@ async function renderGradebook(el) {
         </div>
         ${!hasGrades ? `
           <div class="gb-empty-state">
-            <div class="gb-empty-icon">📊</div>
+            <div class="gb-empty-icon"></div>
             <p class="gb-empty-title">No grades yet</p>
             <p class="gb-empty-sub">Your grades will appear here once your teacher has graded your submissions.</p>
           </div>` :
@@ -3369,7 +3683,7 @@ async function renderGradebook(el) {
             ${scores.length === 0 ? `
             <div class="card-body">
               <div class="gb-empty-state" style="padding:32px 24px">
-                <div class="gb-empty-icon" style="font-size:32px">📝</div>
+                <div class="gb-empty-icon" style="font-size:32px"></div>
                 <p class="gb-empty-title" style="font-size:14px">No graded work yet</p>
                 <p class="gb-empty-sub" style="font-size:12.5px">Assignments will appear here once graded.</p>
               </div>
@@ -3407,7 +3721,7 @@ async function renderGradebook(el) {
         el.innerHTML = `
           <div class="page-header"><h2>${t('gradebook')}</h2></div>
           <div class="gb-empty-state">
-            <div class="gb-empty-icon">📊</div>
+            <div class="gb-empty-icon"></div>
             <p class="gb-empty-title">No courses yet</p>
             <p class="gb-empty-sub">Create a course and add assignments to start tracking grades.</p>
           </div>`;
@@ -3467,7 +3781,7 @@ function scoreToLetter(score, max) {
 function renderGradebookTable(gb) {
   if (!gb.students.length) return `
     <div class="gb-empty-state">
-      <div class="gb-empty-icon">🎓</div>
+      <div class="gb-empty-icon"></div>
       <p class="gb-empty-title">No students enrolled</p>
       <p class="gb-empty-sub">Students who enroll in this course will appear here with their grades.</p>
     </div>`;
@@ -3479,7 +3793,7 @@ function renderGradebookTable(gb) {
       </div>
       <div class="card-body">
         <div class="gb-empty-state" style="padding:36px 24px">
-          <div class="gb-empty-icon" style="font-size:36px">📝</div>
+          <div class="gb-empty-icon" style="font-size:36px"></div>
           <p class="gb-empty-title" style="font-size:15px">No assignments yet</p>
           <p class="gb-empty-sub">Add assignments to this course to start tracking grades.</p>
         </div>
@@ -3497,7 +3811,7 @@ function renderGradebookTable(gb) {
             <thead>
               <tr>
                 <th>Student</th>
-                ${assignments.map(a => `<th><a class="table-link" onclick="navigate('assignment',{id:${a.id}})" title="${htmlEsc(a.title)}">${htmlEsc(a.title).substring(0,14)}${a.title.length>14?'…':''}${a.is_extra_credit?' ⭐':''}</a></th>`).join('')}
+                ${assignments.map(a => `<th><a class="table-link" onclick="navigate('assignment',{id:${a.id}})" title="${htmlEsc(a.title)}">${htmlEsc(a.title).substring(0,14)}${a.title.length>14?'…':''}${a.is_extra_credit?' ':''}</a></th>`).join('')}
                 <th>Avg %</th><th>Grade</th>
               </tr>
             </thead>
@@ -3576,7 +3890,7 @@ function renderGradebookStudent(gb, studentId) {
       ${assignments.length === 0 ? `
         <div class="card-body">
           <div class="gb-empty-state" style="padding:36px">
-            <div class="gb-empty-icon">📝</div>
+            <div class="gb-empty-icon"></div>
             <p class="gb-empty-title">No assignments yet</p>
           </div>
         </div>` : `
@@ -3610,7 +3924,7 @@ function renderGradebookStudent(gb, studentId) {
 
               return `
                 <tr>
-                  <td style="padding:12px 18px;font-weight:500"><a class="table-link" onclick="navigate('assignment',{id:${a.id}})">${htmlEsc(a.title)}</a>${a.is_extra_credit ? ' <span style="font-size:11px;color:var(--gold)">⭐ Extra credit</span>' : ''}</td>
+                  <td style="padding:12px 18px;font-weight:500"><a class="table-link" onclick="navigate('assignment',{id:${a.id}})">${htmlEsc(a.title)}</a>${a.is_extra_credit ? ' <span style="font-size:11px;color:var(--gold)"> Extra credit</span>' : ''}</td>
                   <td style="padding:12px;text-align:center">${statusBadge}</td>
                   <td style="padding:12px;text-align:center">${graded ? `<strong>${score}</strong>` : '<span class="text-muted">—</span>'}</td>
                   <td style="padding:12px;text-align:center;color:var(--muted)">${max}</td>
@@ -3662,7 +3976,7 @@ function renderGradebookStudent(gb, studentId) {
 }
 
 async function unmarkMaterialComplete(courseId, materialId, studentId) {
-  if (!confirm('Remove this completion record? The student will need to mark it complete again.')) return;
+  if (!await showConfirm('Remove this completion record? The student will need to mark it complete again.')) return;
   try {
     await api('DELETE', `/courses/${courseId}/materials/${materialId}/complete/${studentId}`);
     toast('Completion removed.');
@@ -3705,7 +4019,7 @@ async function renderCalendar(el) {
 
     window._calState = { events: allEvents, year: now.getFullYear(), month: now.getMonth(), selected: null };
 
-    const TYPE_ICON = { assignment: '📋', session: '📅', quiz: '📝' };
+    const TYPE_ICON = { assignment: '', session: '', quiz: '' };
     const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
     function drawCal() {
@@ -3748,7 +4062,7 @@ async function renderCalendar(el) {
         panelBody  = dayEvs.length
           ? dayEvs.map(ev => `
               <div class="cal-event-item">
-                <span class="cal-event-icon">${TYPE_ICON[ev.type]||'📌'}</span>
+                <span class="cal-event-icon">${TYPE_ICON[ev.type]||''}</span>
                 <div class="cal-event-detail">
                   <div class="cal-event-title">${htmlEsc(ev.title)}</div>
                   <div class="cal-event-course">${htmlEsc(ev.course)}</div>
@@ -3765,7 +4079,7 @@ async function renderCalendar(el) {
               const urgency  = daysLeft < 0 ? 'overdue' : daysLeft < 3 ? 'soon' : '';
               return `
               <div class="cal-event-item${urgency ? ' cal-event-' + urgency : ''}">
-                <span class="cal-event-icon">${TYPE_ICON[ev.type]||'📌'}</span>
+                <span class="cal-event-icon">${TYPE_ICON[ev.type]||''}</span>
                 <div class="cal-event-detail">
                   <div class="cal-event-title">${htmlEsc(ev.title)}</div>
                   <div class="cal-event-course">${htmlEsc(ev.course)}</div>
@@ -3894,7 +4208,7 @@ async function openReplyModal(recipientId, originalSubject) {
 }
 
 async function deleteMsg(id, tab) {
-  if (!confirm('Delete this message?')) return;
+  if (!await showConfirm('Delete this message?')) return;
   try {
     await api('DELETE', `/messages/${id}`);
     closeModal(); toast('Deleted'); navigate('messages', { tab });
@@ -3939,19 +4253,19 @@ async function openComposeModal() {
     let broadcastOptions = '';
     if (state.user.role === 'admin') {
       broadcastOptions += `<optgroup label="── Broadcast to Group ──">
-        <option value="broadcast:students">📢 All Students</option>
-        <option value="broadcast:teachers">📢 All Teachers</option>
-        <option value="broadcast:everyone">📢 Everyone</option>
+        <option value="broadcast:students"> All Students</option>
+        <option value="broadcast:teachers"> All Teachers</option>
+        <option value="broadcast:everyone"> Everyone</option>
       </optgroup>`;
     } else if (state.user.role === 'teacher') {
       broadcastOptions += `<optgroup label="── Broadcast ──">
-        <option value="broadcast:my_students">📢 All My Students</option>
+        <option value="broadcast:my_students"> All My Students</option>
       </optgroup>`;
     }
 
     if (broadcastCourses.length) {
       broadcastOptions += `<optgroup label="── Broadcast to Course ──">
-        ${broadcastCourses.map(c => `<option value="broadcast:course:${c.id}">📚 ${htmlEsc(c.title)}</option>`).join('')}
+        ${broadcastCourses.map(c => `<option value="broadcast:course:${c.id}"> ${htmlEsc(c.title)}</option>`).join('')}
       </optgroup>`;
     }
 
@@ -3988,7 +4302,7 @@ async function openComposeModal() {
         if (String(recipId).startsWith('broadcast:')) {
           const target = recipId.slice('broadcast:'.length); // handles "students", "course:123", etc.
           const result = await api('POST', '/messages/broadcast', { target, subject: fd.get('subject'), body: fd.get('body') });
-          closeModal(); toast(`📢 Sent to ${result.sent} recipient${result.sent !== 1 ? 's' : ''}!`);
+          closeModal(); toast(` Sent to ${result.sent} recipient${result.sent !== 1 ? 's' : ''}!`);
           navigate('messages', { tab: 'sent' });
         } else {
           await api('POST', '/messages/', { recipient_id: parseInt(recipId), subject: fd.get('subject'), body: fd.get('body') });
@@ -4102,7 +4416,7 @@ async function renderModulesTab(courseId, container, canManage) {
               <div class="module-item-row">
                 ${state.user.role === 'student' ? `
                   <div class="module-item-check${item.completed?' done':''}" onclick="completeModuleItem(${item.id},${courseId})">
-                    ${item.completed ? '✓' : ''}
+                    ${item.completed ? '' : ''}
                   </div>` : '<div style="width:20px"></div>'}
                 <div class="module-item-title">${htmlEsc(item.title)}</div>
                 <span class="module-item-type">${item.item_type}</span>
@@ -4121,7 +4435,7 @@ async function completeModuleItem(itemId, courseId) {
 }
 
 async function deleteModuleItem(itemId, courseId) {
-  if (!confirm(t('delete')+'?')) return;
+  if (!await showConfirm(t('delete')+'?')) return;
   try { await api('DELETE', `/modules/items/${itemId}`); renderModulesTab(courseId, document.getElementById('tab-modules'), true); }
   catch(err) { toast(err.message, 'error'); }
 }
@@ -4187,7 +4501,7 @@ async function renderDiscussionsTab(courseId, container, canManage) {
       ${(boards||[]).map(b => `
         <div class="card" style="margin-bottom:12px">
           <div class="card-header">
-            <h3>${b.is_pinned?'📌 ':''}${htmlEsc(b.title)}</h3>
+            <h3>${b.is_pinned?' ':''}${htmlEsc(b.title)}</h3>
             <div style="display:flex;gap:6px;align-items:center">
               <small class="text-muted">${b.post_count} posts</small>
               <button class="btn btn-sm btn-primary" onclick="navigate('discussion-board',{id:${b.id}})">View Posts</button>
@@ -4220,7 +4534,7 @@ function openNewBoardModal(courseId) {
 }
 
 async function deleteBoard(boardId, courseId) {
-  if (!confirm(t('delete')+'?')) return;
+  if (!await showConfirm(t('delete')+'?')) return;
   try { await api('DELETE', `/discussions/boards/${boardId}`); toast(t('delete')); renderDiscussionsTab(courseId, document.getElementById('tab-discussions'), true); }
   catch(err) { toast(err.message, 'error'); }
 }
@@ -4411,14 +4725,14 @@ async function renderAiTutor(el) {
     const ollamaOk = statusData?.available;
     const ollamaBanner = !ollamaOk ? `
       <div class="chat-ollama-banner">
-        ⚠️ <strong>Ollama is not running.</strong>
+         <strong>Ollama is not running.</strong>
         Start it with: <code>ollama serve</code> and make sure
         <code>ollama pull ${statusData?.model || 'llama3.2'}</code> has been run.
       </div>` : '';
 
     el.innerHTML = `
       <div class="page-header">
-        <h2>🤖 ${t('ai_tutor')}</h2>
+        <h2> ${t('ai_tutor')}</h2>
         <button class="btn btn-primary" onclick="openNewTutorSessionModal()">${t('new_chat')}</button>
       </div>
       ${ollamaBanner}
@@ -4427,7 +4741,7 @@ async function renderAiTutor(el) {
           <div class="card" style="margin-bottom:10px;cursor:pointer" onclick="navigate('ai-chat',{id:${s.id}})">
             <div class="card-body" style="display:flex;align-items:center;gap:14px;padding:14px 18px">
               <div style="font-size:1.6rem;flex-shrink:0">
-                ${s.mode === 'assignment_help' ? '📝' : '📖'}
+                ${s.mode === 'assignment_help' ? '' : ''}
               </div>
               <div style="flex:1;min-width:0">
                 <div style="font-weight:700;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
@@ -4437,13 +4751,13 @@ async function renderAiTutor(el) {
                   <span class="chat-mode-pill ${s.mode === 'assignment_help' ? 'chat-mode-assignment' : 'chat-mode-study'}">
                     ${s.mode === 'assignment_help' ? 'Assignment Help' : 'Study'}
                   </span>
-                  ${s.course_title ? `<small class="text-muted">📚 ${htmlEsc(s.course_title)}</small>` : ''}
-                  <small class="text-muted">💬 ${s.message_count} message${s.message_count !== 1 ? 's' : ''}</small>
+                  ${s.course_title ? `<small class="text-muted"> ${htmlEsc(s.course_title)}</small>` : ''}
+                  <small class="text-muted"> ${s.message_count} message${s.message_count !== 1 ? 's' : ''}</small>
                   <small class="text-muted">${fmtDate(s.created_at)}</small>
                 </div>
               </div>
               <button class="btn btn-sm btn-danger" style="flex-shrink:0"
-                onclick="event.stopPropagation();deleteTutorSession(${s.id})">🗑</button>
+                onclick="event.stopPropagation();deleteTutorSession(${s.id})"></button>
             </div>
           </div>`).join('')
         : `<div class="card"><div class="card-body">
@@ -4483,25 +4797,25 @@ async function renderAiChat(sessionId, el) {
               </h3>
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                 <span class="chat-mode-pill ${session.mode === 'assignment_help' ? 'chat-mode-assignment' : 'chat-mode-study'}">
-                  ${session.mode === 'assignment_help' ? '📝 Hint-Only Mode' : '📖 Study Mode'}
+                  ${session.mode === 'assignment_help' ? ' Hint-Only Mode' : ' Study Mode'}
                 </span>
-                ${session.course_title ? `<small class="text-muted">📚 ${htmlEsc(session.course_title)}</small>` : ''}
+                ${session.course_title ? `<small class="text-muted"> ${htmlEsc(session.course_title)}</small>` : ''}
               </div>
             </div>
             ${ollamaOk
-              ? `<span class="badge badge-success" style="flex-shrink:0">● Online</span>`
-              : `<span class="badge badge-warning" style="flex-shrink:0">⚠ Ollama offline</span>`}
+              ? `<span class="badge badge-success" style="flex-shrink:0"> Online</span>`
+              : `<span class="badge badge-warning" style="flex-shrink:0"> Ollama offline</span>`}
           </div>
 
           ${!ollamaOk ? `<div class="chat-ollama-banner">
-            ⚠️ Ollama is not running — messages will fail until you run <code>ollama serve</code>.
+             Ollama is not running — messages will fail until you run <code>ollama serve</code>.
           </div>` : ''}
 
           <div class="chat-messages" id="chat-messages-area">
             ${(messages||[]).length
               ? (messages||[]).map(m => renderChatBubble(m)).join('')
               : `<div class="chat-empty">
-                  <div class="chat-empty-icon">🤖</div>
+                  <div class="chat-empty-icon"></div>
                   <p>${t('chat_empty')}</p>
                   ${session.mode === 'assignment_help'
                     ? `<p style="font-size:12px;color:var(--muted)">${t('chat_hint_note')}</p>`
@@ -4513,7 +4827,7 @@ async function renderAiChat(sessionId, el) {
             <div class="chat-file-chips" id="chat-file-chips"></div>
             <div class="chat-input-row">
               <label class="btn btn-sm" title="${t('chat_attach')}" style="cursor:pointer;margin-bottom:0;flex-shrink:0">
-                📎
+                
                 <input type="file" id="chat-file-input" style="display:none"
                   accept=".txt,.py,.js,.ts,.jsx,.tsx,.java,.c,.cpp,.h,.cs,.go,.rb,.php,.html,.css,.md,.csv,.json,.xml,.yaml,.pdf,.docx,.jpg,.jpeg,.png,.gif,.webp"
                   onchange="handleChatFileSelect(${sessionId},this)">
@@ -4522,7 +4836,7 @@ async function renderAiChat(sessionId, el) {
                 onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage(${sessionId})}"
                 oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,140)+'px'"></textarea>
               <button class="btn btn-primary" onclick="sendChatMessage(${sessionId})" id="chat-send-btn" style="flex-shrink:0">
-                ${t('chat_send')} ▶
+                ${t('chat_send')} 
               </button>
             </div>
             <small class="text-muted" style="font-size:11px">Enter to send · Shift+Enter for new line · Max 3 files · 20 MB each</small>
@@ -4561,7 +4875,7 @@ async function handleChatFileSelect(sessionId, input) {
   formData.append('file', file);
 
   try {
-    toast('📎 Uploading…');
+    toast(' Uploading…');
     const res = await fetch(`/api/ai-tutor/sessions/${sessionId}/upload`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${state.token}` },
@@ -4579,7 +4893,7 @@ async function handleChatFileSelect(sessionId, input) {
     window._chatUploads = window._chatUploads || [];
     window._chatUploads.push({ upload_id: data.upload_id, filename: data.filename, kind: data.file_kind });
     renderChatChips();
-    toast(`📎 ${data.filename} attached`);
+    toast(` ${data.filename} attached`);
   } catch(e) { toast(e.message, 'error'); }
 }
 
@@ -4588,7 +4902,7 @@ function renderChatChips() {
   if (!el) return;
   el.innerHTML = (window._chatUploads || []).map((u, i) => `
     <span class="upload-chip">
-      ${u.kind === 'image' ? '🖼' : u.kind === 'pdf' ? '📄' : '📎'} ${htmlEsc(u.filename)}
+      ${u.kind === 'image' ? '' : u.kind === 'pdf' ? '' : ''} ${htmlEsc(u.filename)}
       <span class="chip-remove" onclick="removeChatUpload(${i})">×</span>
     </span>`).join('');
 }
@@ -4659,7 +4973,7 @@ async function sendChatMessage(sessionId) {
     errBubble.className = 'chat-bubble-wrap assistant';
     errBubble.innerHTML = `
       <div class="chat-bubble assistant" style="color:var(--danger);border-color:var(--danger)">
-        ${isQuizLock ? t('chat_locked') : `⚠️ ${htmlEsc(err.message)}`}
+        ${isQuizLock ? t('chat_locked') : ` ${htmlEsc(err.message)}`}
       </div>`;
     messagesArea?.appendChild(errBubble);
     if (messagesArea) messagesArea.scrollTop = messagesArea.scrollHeight;
@@ -4670,7 +4984,7 @@ async function sendChatMessage(sessionId) {
 }
 
 async function deleteTutorSession(id) {
-  if (!confirm('Delete this chat session and all its messages?')) return;
+  if (!await showConfirm('Delete this chat session and all its messages?')) return;
   try {
     await api('DELETE', `/ai-tutor/sessions/${id}`);
     toast('Session deleted');
@@ -4685,12 +4999,12 @@ async function openNewTutorSessionModal() {
     enrolled = courses.filter(c => c.enrolled);
   } catch(_) {}
 
-  openModal('🤖 New AI Tutor Session', `
+  openModal(' New AI Tutor Session', `
     <form id="modal-form">
       <div class="form-group"><label>Mode *</label>
         <select name="mode" class="form-control" id="tutor-mode-sel" onchange="onTutorModeChange()">
-          <option value="study">📖 Study Session</option>
-          <option value="assignment_help">📝 Assignment Help (hints only)</option>
+          <option value="study"> Study Session</option>
+          <option value="assignment_help"> Assignment Help (hints only)</option>
         </select>
       </div>
       <div class="form-group"><label>Course</label>
@@ -4709,7 +5023,7 @@ async function openNewTutorSessionModal() {
       </div>
       <div class="form-actions">
         <button type="button" class="btn" onclick="closeModal()">${t('cancel')}</button>
-        <button type="submit" class="btn btn-primary">Start Chat ▶</button>
+        <button type="submit" class="btn btn-primary">Start Chat </button>
       </div>
     </form>`,
     async (fd) => {
@@ -5134,7 +5448,7 @@ async function renderTeacherReportCards(el) {
   };
 
   window.rcDelete = async (id) => {
-    if (!confirm(t('rc_delete') + '?')) return;
+    if (!await showConfirm(t('rc_delete') + '?')) return;
     try {
       await api('DELETE', `/report-cards/${id}`);
       toast(t('rc_deleted'), 'success');

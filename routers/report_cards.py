@@ -314,7 +314,7 @@ def publish_report_card(
     rc.updated_at   = datetime.utcnow()
     notify(
         db, rc.student_id, "report_card",
-        "📄 Your report card has been published",
+        "Your report card has been published",
         f"{rc.course.title}" if rc.course else "",
         link=f"report_cards",
     )

@@ -35,16 +35,16 @@ document.addEventListener('DOMContentLoaded', () => {
       ask_question:    'Ask a Question',
       post_anon:       'Post anonymously',
       mark_resolved:   'Mark resolved',
-      endorse:         'Endorse ✓',
-      endorsed:        '✓ Endorsed',
+      endorse:         'Endorse ',
+      endorsed:        ' Endorsed',
       answer:          'Answer',
       post_answer:     'Post Answer',
       no_questions:    'No questions yet — be the first to ask!',
       resolved:        'Resolved',
       open_q:          'Open',
-      upvote:          '▲',
-      upvoted:         'Upvoted ▲',
-      upvote_it:       '▲ Upvote',
+      upvote:          '',
+      upvoted:         'Upvoted ',
+      upvote_it:       ' Upvote',
       // Knowledge Graph
       knowledge_graph: 'Knowledge Map',
       add_concept:     '+ Add Concept',
@@ -56,15 +56,15 @@ document.addEventListener('DOMContentLoaded', () => {
       // Study Groups
       study_groups:    'Study Groups',
       new_group:       '+ New Group',
-      auto_match:      '⚡ Auto-Match',
+      auto_match:      ' Auto-Match',
       join_group:      'Join',
       leave_group:     'Leave',
       group_size:      'Group size',
       members:         'members',
       auto_matched:    'Auto-matched',
       // Confusion
-      confused_btn:    '😕 I\'m confused',
-      clear_btn:       '✅ I\'m following',
+      confused_btn:    ' I\'m confused',
+      clear_btn:       ' I\'m following',
       confusion_meter: 'Confusion Meter',
       confused_pct:    '% confused',
       reset_signals:   'Reset',
@@ -87,15 +87,15 @@ document.addEventListener('DOMContentLoaded', () => {
       post_anon:       'گمنام پوسٹ کریں',
       mark_resolved:   'حل شدہ',
       endorse:         'تصدیق کریں',
-      endorsed:        '✓ تصدیق شدہ',
+      endorsed:        ' تصدیق شدہ',
       answer:          'جواب',
       post_answer:     'جواب دیں',
       no_questions:    'ابھی کوئی سوال نہیں — پہلے پوچھیں!',
       resolved:        'حل ہو گیا',
       open_q:          'جاری',
-      upvote:          '▲',
-      upvoted:         'پسند کیا ▲',
-      upvote_it:       '▲ پسند کریں',
+      upvote:          '',
+      upvoted:         'پسند کیا ',
+      upvote_it:       ' پسند کریں',
       knowledge_graph: 'علمی نقشہ',
       add_concept:     '+ تصور شامل کریں',
       add_link:        '+ ربط شامل کریں',
@@ -105,14 +105,14 @@ document.addEventListener('DOMContentLoaded', () => {
       no_concepts:     'ابھی کوئی تصور نہیں۔',
       study_groups:    'مطالعہ گروہ',
       new_group:       '+ نیا گروہ',
-      auto_match:      '⚡ خودکار میل',
+      auto_match:      ' خودکار میل',
       join_group:      'شامل ہوں',
       leave_group:     'چھوڑیں',
       group_size:      'گروہ کا حجم',
       members:         'اراکین',
       auto_matched:    'خودکار',
-      confused_btn:    '😕 سمجھ نہیں آئی',
-      clear_btn:       '✅ سمجھ آ گئی',
+      confused_btn:    ' سمجھ نہیں آئی',
+      clear_btn:       ' سمجھ آ گئی',
       confusion_meter: 'الجھن میٹر',
       confused_pct:    '٪ الجھے ہوئے',
       reset_signals:   'ری سیٹ',
@@ -155,7 +155,7 @@ function renderSRCard(cards, idx) {
   window._srCards = cards;
   window._srIdx   = idx;
   if (idx >= cards.length) {
-    return `<div class="card"><div class="card-body text-muted">${t('sr_no_cards')} 🎉</div></div>`;
+    return `<div class="card"><div class="card-body text-muted">${t('sr_no_cards')} </div></div>`;
   }
   const c = cards[idx];
   const progress = `${idx + 1} / ${cards.length}`;
@@ -569,7 +569,7 @@ function openAddLinkModal() {
 }
 
 async function deleteConcept(id) {
-  if (!confirm(t('delete') + '?')) return;
+  if (!await showConfirm(t('delete') + '?')) return;
   try { await api('DELETE', `/graph/concepts/${id}`); toast(t('delete')); navigate('graph'); }
   catch(err) { toast(err.message, 'error'); }
 }
@@ -653,7 +653,7 @@ function openNewGroupModal(courseId) {
 }
 
 async function autoMatchGroups(courseId) {
-  if (!confirm(`${t('auto_match')} — this will regenerate auto-matched groups. Continue?`)) return;
+  if (!await showConfirm(`${t('auto_match')} — this will regenerate auto-matched groups. Continue?`)) return;
   try {
     const res = await api('POST', `/study-groups/course/${courseId}/auto-match?group_size=3`);
     toast(`${res.groups_created} groups created!`);
@@ -667,13 +667,13 @@ async function joinGroup(groupId, courseId) {
 }
 
 async function leaveGroup(groupId, courseId) {
-  if (!confirm(t('leave_group') + '?')) return;
+  if (!await showConfirm(t('leave_group') + '?')) return;
   try { await api('DELETE', `/study-groups/${groupId}/leave`); toast(t('leave_group')); navigate('course', { id: courseId }); }
   catch(err) { toast(err.message, 'error'); }
 }
 
 async function deleteGroup(groupId, courseId) {
-  if (!confirm(t('delete') + '?')) return;
+  if (!await showConfirm(t('delete') + '?')) return;
   try { await api('DELETE', `/study-groups/${groupId}`); toast(t('delete')); navigate('course', { id: courseId }); }
   catch(err) { toast(err.message, 'error'); }
 }

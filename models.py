@@ -50,6 +50,19 @@ class Course(Base):
     discussion_boards = relationship("DiscussionBoard", back_populates="course", cascade="all, delete")
     modules = relationship("CourseModule", back_populates="course", cascade="all, delete")
     surveys = relationship("Survey", back_populates="course", cascade="all, delete")
+    co_teachers = relationship("CourseTeacher", back_populates="course", cascade="all, delete")
+
+
+class CourseTeacher(Base):
+    """Many-to-many: additional teachers assigned to a course (beyond the owner)."""
+    __tablename__ = "course_teachers"
+    id = Column(Integer, primary_key=True)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    teacher_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    added_at = Column(DateTime, default=datetime.utcnow)
+
+    course = relationship("Course", back_populates="co_teachers")
+    teacher = relationship("User")
 
 
 class Enrollment(Base):
@@ -76,8 +89,6 @@ class Material(Base):
     file_path     = Column(String(500))                  # server-side stored path
     file_size     = Column(Integer)                      # bytes
     file_mime     = Column(String(100))                  # MIME type
-    # v11: assessment unlock key — completing this material counts toward unlocking the quiz
-    unlock_quiz_id = Column(Integer, ForeignKey("quizzes.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     course = relationship("Course", back_populates="materials")
@@ -479,7 +490,7 @@ class Badge(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False)
     description = Column(Text)
-    icon = Column(String(10), default="🏅")
+    icon = Column(String(10), default="")
     course_id = Column(Integer, ForeignKey("courses.id"), nullable=True)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)

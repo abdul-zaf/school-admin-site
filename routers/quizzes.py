@@ -27,6 +27,7 @@ from routers.notifications import notify as push_notif
 router = APIRouter()
 
 
+
 # ── Schemas ──────────────────────────────────────────────────────────────────
 
 class QuizCreate(BaseModel):
@@ -127,39 +128,15 @@ def list_quizzes(
 ):
     quizzes = db.query(models.Quiz).filter(models.Quiz.course_id == course_id).all()
 
-    # Build per-student unlock state: which quiz ids are still locked
-    locked_quiz_ids: set = set()
-    lock_requirements: dict = {}  # quiz_id -> list of required material titles
+    # Build per-student unlock state
     all_materials_completed: bool = False  # True when student has finished every material
     if current_user.role == "student":
-        # ── Per-material unlock (unlock_quiz_id on Material) ─────────────────
-        key_mats = db.query(models.Material).filter(
-            models.Material.course_id == course_id,
-            models.Material.unlock_quiz_id.isnot(None),
-        ).all()
-        if key_mats:
-            completed_ids = {
-                c.material_id for c in db.query(models.MaterialCompletion).filter(
-                    models.MaterialCompletion.student_id == current_user.id,
-                    models.MaterialCompletion.material_id.in_([m.id for m in key_mats]),
-                ).all()
-            }
-            from collections import defaultdict
-            required: dict = defaultdict(list)
-            for m in key_mats:
-                required[m.unlock_quiz_id].append(m)
-            for qid, mats in required.items():
-                missing = [m for m in mats if m.id not in completed_ids]
-                if missing:
-                    locked_quiz_ids.add(qid)
-                    lock_requirements[qid] = [m.title for m in missing]
-
-        # ── All-materials unlock (unlock_all_materials on Quiz) ───────────────
-        all_mats = db.query(models.Material).filter(
-            models.Material.course_id == course_id,
-        ).all()
-        if all_mats:
-            all_mat_ids = {m.id for m in all_mats}
+        all_mat_ids = {
+            m.id for m in db.query(models.Material).filter(
+                models.Material.course_id == course_id,
+            ).all()
+        }
+        if all_mat_ids:
             done_ids = {
                 c.material_id for c in db.query(models.MaterialCompletion).filter(
                     models.MaterialCompletion.student_id == current_user.id,
@@ -179,10 +156,6 @@ def list_quizzes(
 
         # Hide all-materials-gated exams from students who haven't finished all materials
         if current_user.role == "student" and q.unlock_all_materials and not all_materials_completed:
-            continue
-
-        # Hide per-material-gated quizzes from students who haven't completed the required material
-        if current_user.role == "student" and q.id in locked_quiz_ids:
             continue
 
         my_attempt = None
@@ -213,9 +186,6 @@ def list_quizzes(
             "attempts_used": sum(1 for a in q.attempts if a.student_id == current_user.id)
                              if current_user.role == "student" else None,
             "my_attempt": my_attempt,
-            # Unlock fields (students only)
-            "is_locked": q.id in locked_quiz_ids,
-            "lock_requires": lock_requirements.get(q.id, []),
         })
     return result
 
@@ -260,26 +230,14 @@ def get_quiz(
     is_teacher = current_user.role in ("admin", "teacher")
 
     if current_user.role == "student":
-        # Gate: per-material-gated quiz — locked until the student completes the required material
-        gate_mat = db.query(models.Material).filter(
-            models.Material.course_id == q.course_id,
-            models.Material.unlock_quiz_id == q.id,
-        ).first()
-        if gate_mat:
-            completed = db.query(models.MaterialCompletion).filter(
-                models.MaterialCompletion.student_id == current_user.id,
-                models.MaterialCompletion.material_id == gate_mat.id,
-            ).first()
-            if not completed:
-                raise HTTPException(404, "Quiz not found")
-
-        # Gate: all-materials-gated exam — locked until the student finishes every material
+        # Gate: all-materials-gated exam — locked until the student completes all materials
         if q.unlock_all_materials:
-            all_mats = db.query(models.Material).filter(
-                models.Material.course_id == q.course_id,
-            ).all()
-            if all_mats:
-                all_mat_ids = {m.id for m in all_mats}
+            all_mat_ids = {
+                m.id for m in db.query(models.Material).filter(
+                    models.Material.course_id == q.course_id,
+                ).all()
+            }
+            if all_mat_ids:
                 done_ids = {
                     c.material_id for c in db.query(models.MaterialCompletion).filter(
                         models.MaterialCompletion.student_id == current_user.id,
@@ -380,7 +338,7 @@ def toggle_publish(
         enrollments = db.query(models.Enrollment).filter(models.Enrollment.course_id == q.course_id).all()
         for enr in enrollments:
             push_notif(db, enr.student_id, "quiz",
-                       f"📝 New quiz available: {q.title}",
+                       f"New quiz available: {q.title}",
                        course_title,
                        link=f"quiz:{q.id}")
         db.commit()

@@ -22,7 +22,7 @@ router = APIRouter()
 class BadgeCreate(BaseModel):
     name: str
     description: Optional[str] = None
-    icon: str = "🏅"
+    icon: str = ""
     course_id: Optional[int] = None
 
 

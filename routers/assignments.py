@@ -58,6 +58,13 @@ class AssignmentEdit(BaseModel):
     max_submissions: int = 1
 
 
+class AssignmentGenerate(BaseModel):
+    topic: str
+    num_questions: int = 4
+    max_score: float = 100.0
+    due_date: Optional[datetime] = None
+
+
 class GradeSubmission(BaseModel):
     score: float
     feedback: Optional[str] = None
@@ -121,6 +128,12 @@ def create_assignment(
     current_user: models.User = Depends(security.require_role("admin", "teacher")),
 ):
     security.require_course_access(course_id, current_user, db)
+    exists = db.query(models.Assignment).filter(
+        models.Assignment.course_id == course_id,
+        models.Assignment.title.ilike(data.title.strip()),
+    ).first()
+    if exists:
+        raise HTTPException(409, f"An assignment named '{data.title.strip()}' already exists in this course.")
     a = models.Assignment(
         course_id=course_id,
         title=data.title,
@@ -145,12 +158,133 @@ def create_assignment(
     course_title = course.title if course else "your course"
     for enr in enrollments:
         push_notif(db, enr.student_id, "assignment",
-                   f"📋 New assignment: {a.title}",
+                   f"New assignment: {a.title}",
                    f"{course_title}{due_str}",
                    link=f"assignment:{a.id}")
     db.commit()
 
     return {"id": a.id, "title": a.title}
+
+
+@router.post("/course/{course_id}/generate")
+def generate_assignment(
+    course_id: int,
+    data: AssignmentGenerate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("admin", "teacher")),
+):
+    """AI-generate an assignment for a course based on a topic."""
+    from services.ollama import chat as ollama_chat, is_available as ollama_available
+    import json, re as _re
+
+    security.require_course_access(course_id, current_user, db)
+    course = db.query(models.Course).filter(models.Course.id == course_id).first()
+
+    if not ollama_available():
+        raise HTTPException(503, "AI service is not available right now. Please create the assignment manually.")
+
+    # Block if a same-topic generated assignment already exists (avoids accidental double-click duplicates)
+    topic_clean = data.topic.strip()
+    expected_title_prefix = f"Assessment: {topic_clean}"
+    duplicate = db.query(models.Assignment).filter(
+        models.Assignment.course_id == course_id,
+        models.Assignment.title.ilike(expected_title_prefix),
+    ).first()
+    if duplicate:
+        raise HTTPException(409, f"An assessment for '{topic_clean}' already exists in this course.")
+
+    urdu_keywords = {"urdu", "اردو"}
+    course_fields = " ".join(filter(None, [course.title, course.subject, course.description])).lower()
+    is_urdu_course = any(kw in course_fields for kw in urdu_keywords)
+
+    urdu_instruction = (
+        "IMPORTANT: This is an Urdu language course. "
+        "Write the entire assessment — title, objective, and all questions — in Urdu script (اردو). "
+    ) if is_urdu_course else ""
+
+    num_q = max(1, min(data.num_questions, 10))
+
+    system_prompt = (
+        "You are an experienced teacher creating a written assessment. "
+        f"The description must contain ONLY: a one-sentence objective, then exactly {num_q} numbered questions. "
+        "Do NOT include: grading criteria, point values, marking schemes, administrative notes, "
+        "due dates, or any metadata. Questions should clearly test understanding of the topic. "
+        f"{urdu_instruction}"
+        "Output ONLY a valid JSON object with exactly two keys: "
+        '{"title": "...", "description": "..."} '
+        "where `title` is a short assessment title and `description` is plain text using \\n for newlines. "
+        "Do not include any text or markdown outside the JSON object."
+    )
+
+    course_context = f"Course: {course.title}"
+    if course.subject:
+        course_context += f" (Subject: {course.subject})"
+    if course.description:
+        course_context += f"\nCourse description: {course.description}"
+
+    user_prompt = (
+        f"{course_context}\n\n"
+        f"Create an assessment on the topic: \"{data.topic.strip()}\". "
+        f"Generate {num_q} questions that test a student's understanding of this topic."
+    )
+
+    try:
+        raw = ollama_chat(
+            [{"role": "user", "content": user_prompt}],
+            system=system_prompt,
+            temperature=0.4,
+            max_tokens=1024,
+        )
+    except Exception as exc:
+        raise HTTPException(503, f"AI generation failed: {exc}")
+
+    title = f"Assessment: {data.topic.strip()}"
+    description = raw.strip()
+    match = _re.search(r'\{.*\}', raw, _re.DOTALL)
+    if match:
+        try:
+            parsed = json.loads(match.group(0))
+            title = parsed.get("title", title)
+            description = parsed.get("description", description)
+        except json.JSONDecodeError:
+            pass
+
+    description = description.strip()
+    description = _re.sub(r'\[insert date[^\]]*\]', '', description, flags=_re.IGNORECASE)
+    description = _re.sub(r'^\s*\{.*?"description"\s*:\s*"', '', description, flags=_re.DOTALL)
+    description = _re.sub(r'"\s*\}\s*$', '', description, flags=_re.DOTALL)
+    description = description.strip().strip('"').strip()
+
+    title_duplicate = db.query(models.Assignment).filter(
+        models.Assignment.course_id == course_id,
+        models.Assignment.title.ilike(title.strip()),
+    ).first()
+    if title_duplicate:
+        raise HTTPException(409, f"An assignment named '{title.strip()}' already exists in this course.")
+
+    a = models.Assignment(
+        course_id=course_id,
+        title=title,
+        description=description,
+        due_date=data.due_date,
+        max_score=data.max_score,
+    )
+    db.add(a)
+    db.flush()
+    index_assignment(db, a)
+    db.commit()
+    db.refresh(a)
+
+    enrollments = db.query(models.Enrollment).filter(models.Enrollment.course_id == course_id).all()
+    due_str = f" — due {a.due_date.strftime('%d %b')}" if a.due_date else ""
+    for enr in enrollments:
+        push_notif(db, enr.student_id, "assignment",
+                   f"New assignment: {a.title}",
+                   f"{course.title}{due_str}",
+                   link=f"assignment:{a.id}")
+    db.commit()
+
+    return {"id": a.id, "title": a.title, "description": a.description}
 
 
 @router.get("/{assignment_id}")

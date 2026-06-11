@@ -38,12 +38,12 @@
       <div id="login-form-wrap">
         <form id="login-form" class="login-form">
           <div class="form-group">
-            <label>📧 Email Address</label>
+            <label>Email Address</label>
             <input type="email" id="login-email" class="form-control"
               placeholder="you@school.edu" required autocomplete="email">
           </div>
           <div class="form-group">
-            <label>🔒 Password</label>
+            <label>Password</label>
             <input type="password" id="login-password" class="form-control"
               placeholder="••••••••" required autocomplete="current-password">
           </div>
@@ -54,7 +54,7 @@
         </form>
 <p class="forgot-link-wrap">
           <button class="btn-link" onclick="showLoginSection('forgot-wrap')">
-            🔑 Forgot password?
+            Forgot password?
           </button>
         </p>
       </div>
@@ -66,7 +66,7 @@
           Enter your school email address and we'll send you a reset link.
         </p>
         <div class="form-group">
-          <label>📧 Email Address</label>
+          <label>Email Address</label>
           <input type="email" id="forgot-email" class="form-control"
             placeholder="you@school.edu" autocomplete="email">
         </div>
@@ -84,7 +84,7 @@
 
       <!-- ── Email sent confirmation ──────────────────────────── -->
       <div id="forgot-success" class="hidden login-sub-section">
-        <div class="reset-state-icon">📬</div>
+        <div class="reset-state-icon"></div>
         <h3 class="reset-section-title">Check your inbox!</h3>
         <p class="reset-section-desc">
           If that email address is registered, a reset link is on its way.<br>
@@ -98,7 +98,7 @@
 
       <!-- ── New-password form (shown when ?reset=TOKEN in URL) ── -->
       <div id="reset-form-wrap" class="hidden login-sub-section">
-        <h3 class="reset-section-title">🔒 Set a new password</h3>
+        <h3 class="reset-section-title">Set a new password</h3>
         <input type="hidden" id="reset-token-val">
         <div class="form-group">
           <label>New Password</label>
@@ -121,7 +121,7 @@
 
       <!-- ── Reset success ─────────────────────────────────────── -->
       <div id="reset-success" class="hidden login-sub-section">
-        <div class="reset-state-icon">✅</div>
+        <div class="reset-state-icon"></div>
         <h3 class="reset-section-title">Password changed!</h3>
         <p class="reset-section-desc">
           Your password has been updated. You can now log in with your new password.
@@ -134,7 +134,7 @@
 
       <!-- ── Reset link invalid / expired ─────────────────────── -->
       <div id="reset-invalid" class="hidden login-sub-section">
-        <div class="reset-state-icon">⚠️</div>
+        <div class="reset-state-icon"></div>
         <h3 class="reset-section-title">Link expired</h3>
         <p class="reset-section-desc">
           This reset link is invalid or has expired — links are only valid for 1 hour.
@@ -146,10 +146,10 @@
       </div>
 
       <div class="login-footer-badges">
-        <span class="login-badge">🎓 Students</span>
-        <span class="login-badge">🧑‍🏫 Teachers</span>
-        <span class="login-badge">🛡️ Admins</span>
-        <span class="login-badge">👨‍👩‍👦 Parents</span>
+        <span class="login-badge">Students</span>
+        <span class="login-badge">Teachers</span>
+        <span class="login-badge">Admins</span>
+        <span class="login-badge">Parents</span>
       </div>
     </div>
   </div>
@@ -182,7 +182,7 @@
         <div class="notif-bell-wrapper" id="notif-bell-wrapper"
              onmouseenter="showNotifPanel(this)" onmouseleave="_scheduleNotifHide()">
           <button class="notif-bell-btn">
-            🔔 <span>Notifications</span>
+            <span>Notifications</span>
             <span id="notif-count-badge" class="notif-unread-badge" style="display:none">0</span>
           </button>
         </div>
@@ -193,7 +193,7 @@
             <span id="user-role-badge" class="role-badge"></span>
           </div>
         </div>
-        <button id="logout-btn" class="btn-logout">⬡ Sign out</button>
+        <button id="logout-btn" class="btn-logout">Sign out</button>
       </div>
     </aside>
 
@@ -210,6 +210,22 @@
         <button class="modal-close" onclick="closeModal()">&times;</button>
       </div>
       <div id="modal-body" class="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ── Confirm Dialog ────────────────────────────────────────── -->
+  <div id="confirm-overlay" class="modal-overlay hidden">
+    <div class="modal" style="max-width:400px">
+      <div class="modal-header">
+        <h3 id="confirm-title">Confirm</h3>
+      </div>
+      <div class="modal-body">
+        <p id="confirm-message" style="margin:0 0 20px;line-height:1.5"></p>
+        <div style="display:flex;justify-content:flex-end;gap:8px">
+          <button class="btn" id="confirm-cancel-btn">Cancel</button>
+          <button class="btn btn-danger" id="confirm-ok-btn">Confirm</button>
+        </div>
+      </div>
     </div>
   </div>
 

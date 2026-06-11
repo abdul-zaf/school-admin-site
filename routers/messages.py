@@ -201,7 +201,7 @@ def broadcast_message(
         )
         db.add(msg)
         notify(db, rid, "message",
-               f"📨 Message from {current_user.name}",
+               f"Message from {current_user.name}",
                data.subject, link="messages")
         count += 1
 

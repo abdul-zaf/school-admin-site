@@ -94,10 +94,13 @@ class UserUpdate(BaseModel):
 def list_users(
     role: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(security.require_role("admin")),
+    current_user: models.User = Depends(security.require_role("admin", "teacher")),
 ):
     q = db.query(models.User)
-    if role:
+    if current_user.role == "teacher":
+        # Teachers can only see teacher accounts
+        q = q.filter(models.User.role == "teacher")
+    elif role:
         q = q.filter(models.User.role == role)
     return q.all()
 
@@ -106,9 +109,13 @@ def list_users(
 def create_user(
     data: UserCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(security.require_role("admin")),
+    current_user: models.User = Depends(security.require_role("admin", "teacher")),
 ):
-    if data.role not in ("admin", "teacher", "student", "parent"):
+    if current_user.role == "teacher":
+        # Teachers can only create teacher accounts
+        if data.role != "teacher":
+            raise HTTPException(403, "Teachers can only create teacher accounts")
+    elif data.role not in ("admin", "teacher", "student", "parent"):
         raise HTTPException(400, "Invalid role — must be admin, teacher, student, or parent")
     if db.query(models.User).filter(models.User.email == data.email).first():
         raise HTTPException(400, "Email already registered")
@@ -133,12 +140,13 @@ def get_me(current_user: models.User = Depends(security.get_current_user)):
 def get_user(
     user_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(security.require_role("admin")),
+    current_user: models.User = Depends(security.require_role("admin", "teacher")),
 ):
-    """Get a specific user by ID (admin only)."""
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         raise HTTPException(404, "User not found")
+    if current_user.role == "teacher" and user.role != "teacher":
+        raise HTTPException(403, "Teachers can only view teacher accounts")
     return user
 
 

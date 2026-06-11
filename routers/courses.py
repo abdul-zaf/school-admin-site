@@ -44,6 +44,18 @@ def _ensure_upload_dir() -> Path:
 router = APIRouter()
 
 
+def _is_course_teacher(course: models.Course, user: models.User, db: Session) -> bool:
+    """Return True if user is the course owner or an assigned co-teacher."""
+    if user.role == "admin":
+        return True
+    if course.teacher_id == user.id:
+        return True
+    return db.query(models.CourseTeacher).filter(
+        models.CourseTeacher.course_id == course.id,
+        models.CourseTeacher.teacher_id == user.id,
+    ).first() is not None
+
+
 class CourseCreate(BaseModel):
     title: str
     description: Optional[str] = None
@@ -57,7 +69,6 @@ class MaterialCreate(BaseModel):
     title: str
     content: Optional[str] = None
     url: Optional[str] = None
-    unlock_quiz_id: Optional[int] = None
 
 
 class AttendanceRecord(BaseModel):
@@ -142,17 +153,18 @@ def get_course(
             .first()
             is not None
         )
-    # Only the course's own teacher (or an admin) may see the enrolled student list.
-    # Another teacher browsing the catalogue has no need to see student data.
-    is_course_teacher = (
-        current_user.role == "teacher" and course.teacher_id == current_user.id
-    )
+    # Only the course teacher, co-teachers, or admin may see the enrolled student list.
+    can_manage = _is_course_teacher(course, current_user, db)
     students = []
-    if current_user.role == "admin" or is_course_teacher:
+    if can_manage:
         students = [
             {"id": e.student.id, "name": e.student.name, "email": e.student.email}
             for e in course.enrollments
         ]
+    co_teacher_list = [
+        {"id": ct.teacher.id, "name": ct.teacher.name, "email": ct.teacher.email}
+        for ct in course.co_teachers
+    ]
     return {
         "id": course.id,
         "title": course.title,
@@ -164,6 +176,7 @@ def get_course(
         "teacher_name": course.teacher.name if course.teacher else None,
         "enrolled": enrolled,
         "students": students,
+        "co_teachers": co_teacher_list,
     }
 
 
@@ -176,7 +189,7 @@ def list_course_students(
     course = db.query(models.Course).filter(models.Course.id == course_id).first()
     if not course:
         raise HTTPException(404, "Course not found")
-    if current_user.role == "teacher" and course.teacher_id != current_user.id:
+    if current_user.role == "teacher" and not _is_course_teacher(course, current_user, db):
         raise HTTPException(403, "Not your course")
     return [
         {"id": e.student.id, "name": e.student.name, "email": e.student.email}
@@ -194,7 +207,7 @@ def update_course(
     course = db.query(models.Course).filter(models.Course.id == course_id).first()
     if not course:
         raise HTTPException(404, "Course not found")
-    if current_user.role == "teacher" and course.teacher_id != current_user.id:
+    if current_user.role == "teacher" and not _is_course_teacher(course, current_user, db):
         raise HTTPException(403, "Not your course")
     course.title = data.title
     course.description = data.description
@@ -215,7 +228,7 @@ def delete_course(
     course = db.query(models.Course).filter(models.Course.id == course_id).first()
     if not course:
         raise HTTPException(404, "Course not found")
-    if current_user.role == "teacher" and course.teacher_id != current_user.id:
+    if current_user.role == "teacher" and not _is_course_teacher(course, current_user, db):
         raise HTTPException(403, "Not your course")
 
     # ── Pre-deletion cleanup ───────────────────────────────────────────────────
@@ -274,6 +287,78 @@ def delete_course(
 
     db.flush()
     db.delete(course)
+    db.commit()
+    return {"ok": True}
+
+
+# Co-teachers
+
+@router.get("/{course_id}/teachers")
+def list_co_teachers(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("admin", "teacher")),
+):
+    course = db.query(models.Course).filter(models.Course.id == course_id).first()
+    if not course:
+        raise HTTPException(404, "Course not found")
+    if current_user.role == "teacher" and not _is_course_teacher(course, current_user, db):
+        raise HTTPException(403, "Not your course")
+    return [
+        {"id": ct.teacher.id, "name": ct.teacher.name, "email": ct.teacher.email}
+        for ct in course.co_teachers
+    ]
+
+
+@router.post("/{course_id}/teachers/{teacher_id}")
+def add_co_teacher(
+    course_id: int,
+    teacher_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("admin", "teacher")),
+):
+    course = db.query(models.Course).filter(models.Course.id == course_id).first()
+    if not course:
+        raise HTTPException(404, "Course not found")
+    if current_user.role == "teacher" and not _is_course_teacher(course, current_user, db):
+        raise HTTPException(403, "Not your course")
+    teacher = db.query(models.User).filter(
+        models.User.id == teacher_id, models.User.role == "teacher"
+    ).first()
+    if not teacher:
+        raise HTTPException(404, "Teacher not found")
+    if teacher_id == course.teacher_id:
+        raise HTTPException(400, "That teacher is already the course owner")
+    existing = db.query(models.CourseTeacher).filter(
+        models.CourseTeacher.course_id == course_id,
+        models.CourseTeacher.teacher_id == teacher_id,
+    ).first()
+    if existing:
+        raise HTTPException(400, "Teacher already assigned to this course")
+    db.add(models.CourseTeacher(course_id=course_id, teacher_id=teacher_id))
+    db.commit()
+    return {"ok": True}
+
+
+@router.delete("/{course_id}/teachers/{teacher_id}")
+def remove_co_teacher(
+    course_id: int,
+    teacher_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("admin", "teacher")),
+):
+    course = db.query(models.Course).filter(models.Course.id == course_id).first()
+    if not course:
+        raise HTTPException(404, "Course not found")
+    if current_user.role == "teacher" and not _is_course_teacher(course, current_user, db):
+        raise HTTPException(403, "Not your course")
+    row = db.query(models.CourseTeacher).filter(
+        models.CourseTeacher.course_id == course_id,
+        models.CourseTeacher.teacher_id == teacher_id,
+    ).first()
+    if not row:
+        raise HTTPException(404, "Teacher not assigned to this course")
+    db.delete(row)
     db.commit()
     return {"ok": True}
 
@@ -421,7 +506,6 @@ def list_materials(
             "file_name": m.file_name,
             "file_size": m.file_size,
             "file_mime": m.file_mime,
-            "unlock_quiz_id": m.unlock_quiz_id,
             "completed": m.id in completed_ids,
             "created_at": str(m.created_at),
         }
@@ -444,7 +528,6 @@ def add_material(
         content=data.content,
         url=data.url,
         material_type=mat_type,
-        unlock_quiz_id=data.unlock_quiz_id,
     )
     db.add(m)
     db.flush()   # need m.id before indexing
@@ -459,7 +542,6 @@ async def upload_material(
     course_id: int,
     title: str = Form(...),
     file: UploadFile = FFile(...),
-    unlock_quiz_id: Optional[int] = Form(None),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(security.require_role("admin", "teacher")),
 ):
@@ -489,7 +571,6 @@ async def upload_material(
         file_path=str(stored_path),
         file_size=len(content),
         file_mime=mime,
-        unlock_quiz_id=unlock_quiz_id,
     )
     db.add(m)
     db.flush()   # need m.id before indexing
@@ -561,6 +642,34 @@ def serve_material_file(
 
 
 
+class MaterialUpdate(BaseModel):
+    title: str
+    content: Optional[str] = None
+    url: Optional[str] = None
+
+
+@router.put("/{course_id}/materials/{material_id}")
+def update_material(
+    course_id: int,
+    material_id: int,
+    data: MaterialUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.require_role("admin", "teacher")),
+):
+    security.require_course_access(course_id, current_user, db)
+    m = db.query(models.Material).filter(
+        models.Material.id == material_id, models.Material.course_id == course_id
+    ).first()
+    if not m:
+        raise HTTPException(404, "Material not found")
+    m.title = data.title
+    m.content = data.content
+    if m.material_type == "link":
+        m.url = data.url
+    db.commit()
+    return {"ok": True}
+
+
 @router.delete("/{course_id}/materials/{material_id}")
 def delete_material(
     course_id: int,
@@ -602,9 +711,19 @@ def _ai_generate_assignment_for_material(material_id: int, course_id: int, stude
         if not m or not course:
             return
 
-        # Build material content
+        # Detect if this is a video material (YouTube link or uploaded video file)
+        is_youtube = (
+            m.material_type == "link" and m.url and
+            ("youtube.com" in m.url.lower() or "youtu.be" in m.url.lower())
+        )
+        is_video_file = (
+            m.material_type == "file" and m.file_mime and m.file_mime.startswith("video/")
+        )
+        is_video = is_youtube or is_video_file
+
+        # Build material content for text-based materials
         text = m.content or ""
-        if m.material_type == "file" and m.file_path:
+        if m.material_type == "file" and m.file_path and not is_video:
             from pathlib import Path as _Path
             fpath = _Path(m.file_path)
             if fpath.exists():
@@ -612,7 +731,9 @@ def _ai_generate_assignment_for_material(material_id: int, course_id: int, stude
                     text = fpath.read_text(encoding="utf-8", errors="ignore")[:4000]
                 except Exception:
                     pass
-        if not text.strip():
+
+        # For video materials, generate based on title alone; for others, require text
+        if not is_video and not text.strip():
             print(f"[AI Assignment] No text content for material {material_id} — skipping", file=sys.stderr)
             return
 
@@ -628,21 +749,17 @@ def _ai_generate_assignment_for_material(material_id: int, course_id: int, stude
         ) if is_urdu_course else ""
 
         system_prompt = (
-            "You are an experienced teacher creating a written assignment based on course material. "
-            "Your task is to produce a single, well-structured assignment that tests the student's "
-            "understanding of the provided material. "
-            "The assignment MUST be appropriate for the course subject provided — all questions and tasks "
-            "must relate directly to that subject area and the specific material content. "
-            "The assignment must include: a clear title, a concise objective statement, "
-            "3–5 specific task prompts or questions the student must answer, "
-            "and grading criteria (what earns full marks). "
-            "Base everything strictly on the provided material — do not invent topics not covered. "
-            "Do NOT include due date placeholders like '[insert date]' or 'due on X' — omit dates entirely. "
-            "Do NOT include notes about late submissions or administrative policies. "
+            "You are an experienced teacher creating a written assessment for a student. "
+            "The assessment must be appropriate for the course subject and specific topic. "
+            "The description must contain ONLY: a one-sentence objective, then 3–5 numbered questions. "
+            "Do NOT include: grading criteria, point values, marking schemes, administrative notes, "
+            "due dates, late submission policies, or any metadata. "
+            "Questions should be clear and test understanding of the topic directly. "
             f"{urdu_instruction}"
             "Output ONLY a valid JSON object with exactly two keys: "
             '{"title": "...", "description": "..."} '
-            "where `description` is a plain-text string using \\n for newlines. "
+            "where `title` is a short assessment title and `description` is a plain-text string "
+            "using \\n for newlines containing only the objective sentence and numbered questions. "
             "Do not include any text, markdown, or explanation outside the JSON object."
         )
 
@@ -652,11 +769,20 @@ def _ai_generate_assignment_for_material(material_id: int, course_id: int, stude
         if course.description:
             course_context += f"\nCourse description: {course.description}"
 
-        user_prompt = (
-            f"{course_context}\n\n"
-            f"Create an assignment based on the following course material titled \"{m.title}\":\n\n"
-            f"{text[:4000]}"
-        )
+        if is_video:
+            video_source = "a YouTube video" if is_youtube else "a video"
+            user_prompt = (
+                f"{course_context}\n\n"
+                f"A student just watched {video_source} titled \"{m.title}\". "
+                f"Create an assessment with questions that test the student's understanding of the topic: \"{m.title}\". "
+                f"Base all questions directly on what a student would learn from studying this topic."
+            )
+        else:
+            user_prompt = (
+                f"{course_context}\n\n"
+                f"Create an assignment based on the following course material titled \"{m.title}\":\n\n"
+                f"{text[:4000]}"
+            )
 
         try:
             raw = ollama_chat(
@@ -704,7 +830,7 @@ def _ai_generate_assignment_for_material(material_id: int, course_id: int, stude
         # Notify only the student who completed the material
         notify(
             db, student_id, "assignment",
-            f"📋 New assignment: {title}",
+            f"New assignment: {title}",
             f"{course.title} — generated from \"{m.title}\"",
             link=f"assignment:{assignment.id}",
         )
@@ -745,37 +871,23 @@ def complete_material(
         # Fire AI assignment generation once (first completion of this material by this student)
         background_tasks.add_task(_ai_generate_assignment_for_material, material_id, course_id, current_user.id)
 
-        # Notify student if this material unlocks a unit quiz
+        # Check if the student has now completed ALL materials in the course
         from routers.notifications import notify as _notify
         course_obj = db.query(models.Course).filter(models.Course.id == course_id).first()
         course_title = course_obj.title if course_obj else "your course"
-        if m.unlock_quiz_id:
-            unlocked_quiz = db.query(models.Quiz).filter(
-                models.Quiz.id == m.unlock_quiz_id,
-                models.Quiz.is_published == True,
-            ).first()
-            if unlocked_quiz:
-                _notify(
-                    db, current_user.id, "quiz",
-                    f"📝 Quiz unlocked: {unlocked_quiz.title}",
-                    f"{course_title} — complete \"{m.title}\" done",
-                    link=f"quiz:{unlocked_quiz.id}",
-                )
-                db.commit()
-
-        # Check if the student has now completed ALL materials in the course
-        all_mat_ids = {
-            row.id for row in db.query(models.Material.id)
-            .filter(models.Material.course_id == course_id).all()
+        all_course_mat_ids = {
+            row.id for row in db.query(models.Material.id).filter(
+                models.Material.course_id == course_id
+            ).all()
         }
         done_ids = {
             row.material_id for row in db.query(models.MaterialCompletion.material_id)
             .filter(
                 models.MaterialCompletion.student_id == current_user.id,
-                models.MaterialCompletion.material_id.in_(list(all_mat_ids)),
+                models.MaterialCompletion.material_id.in_(list(all_course_mat_ids)),
             ).all()
-        }
-        if all_mat_ids and all_mat_ids.issubset(done_ids):
+        } if all_course_mat_ids else set()
+        if all_course_mat_ids and all_course_mat_ids.issubset(done_ids):
             # Notify the student about every published exam locked behind all-materials
             exams = db.query(models.Quiz).filter(
                 models.Quiz.course_id == course_id,
@@ -785,8 +897,8 @@ def complete_material(
             for exam in exams:
                 _notify(
                     db, current_user.id, "quiz",
-                    f"🎓 Exam unlocked: {exam.title}",
-                    f"{course_title} — you have completed all materials",
+                    f"Exam unlocked: {exam.title}",
+                    f"{course_title} — you have completed all course materials",
                     link=f"quiz:{exam.id}",
                 )
             db.commit()

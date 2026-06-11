@@ -77,7 +77,7 @@ def _send_reset_email(to_email: str, to_name: str, token: str) -> None:
     <html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
       <div style="background:linear-gradient(135deg,#1e1b4b,#4f46e5);
                   padding:30px;border-radius:12px 12px 0 0;text-align:center">
-        <h1 style="color:#fff;margin:0;font-size:28px">🎓 EduPortal</h1>
+        <h1 style="color:#fff;margin:0;font-size:28px">EduPortal</h1>
         <p style="color:rgba(255,255,255,.75);margin:6px 0 0;font-size:14px">
           School Learning Management System
         </p>
@@ -99,8 +99,8 @@ def _send_reset_email(to_email: str, to_name: str, token: str) -> None:
           </a>
         </div>
         <p style="color:#6b7280;font-size:13px;line-height:1.6">
-          ⏰ This link expires in <strong>1 hour</strong>.<br>
-          🔒 If you did not request a password reset you can safely ignore this email —
+          This link expires in <strong>1 hour</strong>.<br>
+          If you did not request a password reset you can safely ignore this email —
           your password will not change.
         </p>
         <hr style="border:none;border-top:1px solid #e0e7ff;margin:24px 0">
