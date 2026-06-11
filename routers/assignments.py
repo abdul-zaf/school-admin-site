@@ -258,6 +258,7 @@ def generate_assignment(
     description = _re.sub(r'^\s*\{.*?"description"\s*:\s*"', '', description, flags=_re.DOTALL)
     description = _re.sub(r'"\s*\}\s*$', '', description, flags=_re.DOTALL)
     description = description.strip().strip('"').strip()
+    description = description.replace('\\n', '\n').replace('\\t', '\t')
 
     title_duplicate = db.query(models.Assignment).filter(
         models.Assignment.course_id == course_id,

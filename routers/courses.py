@@ -819,6 +819,7 @@ def _ai_generate_assignment_for_material(material_id: int, course_id: int, stude
         description = _re.sub(r'^\s*\{.*?"description"\s*:\s*"', '', description, flags=_re.DOTALL)
         description = _re.sub(r'"\s*\}\s*$', '', description, flags=_re.DOTALL)
         description = description.strip().strip('"').strip()
+        description = description.replace('\\n', '\n').replace('\\t', '\t')
 
         # Create assignment
         assignment = models.Assignment(
