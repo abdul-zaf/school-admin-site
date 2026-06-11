@@ -280,20 +280,7 @@ def _build_system_prompt(
         lines.append(
             "\nYou are in STUDY mode: help the student learn and understand concepts. "
             "Be thorough and educational. "
-            "Do not solve graded assignments or quizzes for the student.\n"
-            "TEACHING RULES you must ALWAYS follow:\n"
-            "1. When a student asks about a topic, IMMEDIATELY explain it with a clear definition, "
-            "   worked examples, and — for math/science — concrete equations and calculations. "
-            "   Do NOT respond by asking the student questions like 'What do you already know?' "
-            "   or 'What would you like to focus on?'. Dive straight into teaching.\n"
-            "2. For MATH topics: always include the general formula, at least two fully worked "
-            "   numerical examples with step-by-step arithmetic, and a practice problem the student "
-            "   can try. Show the equation inline (e.g. f(x) = 2x² - 3x + 5).\n"
-            "3. For SCIENCE topics: include the relevant formula(s), units, and a worked example.\n"
-            "4. Structure your response: definition → formula/rule → worked example(s) → practice. "
-            "   Keep it concise but complete — aim for one thorough explanation, not a back-and-forth.\n"
-            "5. Only ask the student a question at the END of your response, and only one — "
-            "   offer a follow-up topic or ask if they want more practice problems."
+            "Do not solve graded assignments or quizzes for the student."
         )
 
     # ── Knowledge base context ───────────────────────────────────────────────

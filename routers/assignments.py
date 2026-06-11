@@ -209,6 +209,10 @@ def generate_assignment(
         f"The description must contain ONLY: a one-sentence objective, then exactly {num_q} numbered questions. "
         "Do NOT include: grading criteria, point values, marking schemes, administrative notes, "
         "due dates, or any metadata. Questions should clearly test understanding of the topic. "
+        "For math or science topics: questions MUST include actual equations, expressions, or numerical "
+        "values — e.g. 'Simplify: 3x² + 2x - 5 + x² - 4x + 1' or 'Solve for x: 2x + 7 = 15'. "
+        "Do NOT ask abstract questions like 'What is a polynomial?' — ask the student to work with "
+        "specific expressions, solve problems, or apply formulas directly. "
         f"{urdu_instruction}"
         "Output ONLY a valid JSON object with exactly two keys: "
         '{"title": "...", "description": "..."} '

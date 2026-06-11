@@ -755,6 +755,10 @@ def _ai_generate_assignment_for_material(material_id: int, course_id: int, stude
             "Do NOT include: grading criteria, point values, marking schemes, administrative notes, "
             "due dates, late submission policies, or any metadata. "
             "Questions should be clear and test understanding of the topic directly. "
+            "For math or science topics: questions MUST include actual equations, expressions, or numerical "
+            "values — e.g. 'Simplify: 3x² + 2x - 5 + x² - 4x + 1' or 'Solve for x: 2x + 7 = 15'. "
+            "Do NOT ask abstract questions like 'What is a polynomial?' — ask the student to work with "
+            "specific expressions, solve problems, or apply formulas directly. "
             f"{urdu_instruction}"
             "Output ONLY a valid JSON object with exactly two keys: "
             '{"title": "...", "description": "..."} '
