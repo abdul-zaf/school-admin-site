@@ -1292,7 +1292,7 @@ async function renderCourseDetail(courseId, el) {
           <div class="card-header"><h3>${t('course_materials')}</h3>
             ${canManage ? `<button class="btn btn-sm btn-primary" onclick="openAddMaterialModal(${courseId})">${t('add_material')}</button>` : ''}</div>
           <div class="card-body">
-            ${(() => { window._matData = {}; materials.forEach(m => { window._matData[m.id] = m; }); return ''; })()}
+            ${(() => { window._matData = {}; window._ytPendingInit = []; materials.forEach(m => { window._matData[m.id] = m; }); return ''; })()}
             ${materials.length ? materials.map(m => {
               const mtype = m.material_type || (m.url ? 'link' : 'text');
               const icon = mtype === 'file' ? fileMimeIcon(m.file_mime) : (mtype === 'link' ? '' : '');
@@ -1327,7 +1327,9 @@ async function renderCourseDetail(courseId, el) {
                 const ytId = getYouTubeId(m.url);
                 if (ytId) {
                   const ytIframeId = `yt-player-${m.id}`;
-                  const needsTracking = (role === 'student' && !m.completed);
+                  if (role === 'student' && !m.completed) {
+                    window._ytPendingInit.push({iframeId: ytIframeId, courseId, matId: m.id});
+                  }
                   body = (m.content ? `<p class="mat-content">${htmlEsc(m.content)}</p>` : '') +
                     `<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:8px;margin-top:8px">
                       <iframe id="${ytIframeId}"
@@ -1336,8 +1338,7 @@ async function renderCourseDetail(courseId, el) {
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowfullscreen>
                       </iframe>
-                    </div>` +
-                    (needsTracking ? `<script>attachYTPlayer('${ytIframeId}',${courseId},${m.id})<\/script>` : '');
+                    </div>`;
                 } else {
                   body = (m.content ? `<p class="mat-content">${htmlEsc(m.content)}</p>` : '') +
                          `<a class="link mat-link" href="${htmlEsc(m.url)}" target="_blank" rel="noopener"${linkAutoComplete}>${htmlEsc(m.url)}</a>`;
@@ -1473,6 +1474,9 @@ async function renderCourseDetail(courseId, el) {
           completeMaterial(courseId, m.id);
         }
       });
+      // Init YouTube tracking now that iframes are in the DOM
+      (window._ytPendingInit || []).forEach(p => attachYTPlayer(p.iframeId, p.courseId, p.matId));
+      window._ytPendingInit = [];
     }
   } catch(err) { el.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
 }
