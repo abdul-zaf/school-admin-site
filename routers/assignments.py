@@ -486,7 +486,7 @@ async def submit_assignment(
                 notify(db, course.teacher_id, "submission",
                        f"{current_user.name} resubmitted an assignment",
                        f'"{assignment.title}" in {course.title}',
-                       f"gradebook?course_id={course.id}&student_id={current_user.id}")
+                       f"assignment:{assignment_id}")
             db.commit()
         except Exception:
             pass
@@ -516,7 +516,7 @@ async def submit_assignment(
             notify(db, course.teacher_id, "submission",
                    f"{current_user.name} submitted an assignment",
                    f'"{assignment.title}" in {course.title}',
-                   f"gradebook?course_id={course.id}&student_id={current_user.id}")
+                   f"assignment:{assignment_id}")
         db.commit()
     except Exception:
         pass
