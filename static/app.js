@@ -1820,10 +1820,6 @@ function viewMaterialFile(event, el) {
           src="${fileUrl}">
           Your browser does not support this media type.
         </${tag}>
-        <br><br>
-        <a class="btn btn-sm btn-primary" href="${fileUrl}" download="${fileName||'download'}">
-           Download
-        </a>
       </div>`
     );
   } else if (isPdf) {
