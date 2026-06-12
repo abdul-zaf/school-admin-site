@@ -695,6 +695,171 @@ def delete_material(
     return {"ok": True}
 
 
+def _ai_generate_exam_for_course(course_id: int, student_id: int) -> None:
+    """Background task: generate a 30-question MC exam from all course materials and notify the student."""
+    db = SessionLocal()
+    try:
+        from services.ollama import chat as ollama_chat, is_available as ollama_available
+        from routers.notifications import notify
+        import json, re as _re
+
+        if not ollama_available():
+            print(f"[AI Exam] Ollama not available — skipping for course {course_id}", file=sys.stderr)
+            return
+
+        course = db.query(models.Course).filter(models.Course.id == course_id).first()
+        if not course:
+            return
+
+        # Guard: only generate once per course (check for existing AI-generated exam)
+        existing_exam = db.query(models.Quiz).filter(
+            models.Quiz.course_id == course_id,
+            models.Quiz.is_exam == True,
+            models.Quiz.unlock_all_materials == True,
+        ).first()
+        if existing_exam:
+            # Exam already exists — just notify the student
+            from routers.notifications import notify as _notify
+            _notify(db, student_id, "quiz",
+                    f"Exam unlocked: {existing_exam.title}",
+                    f"{course.title} — you have completed all course materials",
+                    link=f"quiz:{existing_exam.id}")
+            db.commit()
+            return
+
+        # Collect content from all materials in the course
+        materials = db.query(models.Material).filter(models.Material.course_id == course_id).all()
+        material_summaries = []
+        for m in materials:
+            text = m.content or ""
+            if m.material_type == "file" and m.file_path:
+                from pathlib import Path as _Path
+                fpath = _Path(m.file_path)
+                if fpath.exists():
+                    try:
+                        text = fpath.read_text(encoding="utf-8", errors="ignore")[:2000]
+                    except Exception:
+                        pass
+            if text.strip():
+                material_summaries.append(f"[{m.title}]\n{text[:2000]}")
+            else:
+                material_summaries.append(f"[{m.title}]")
+
+        combined_content = "\n\n".join(material_summaries)[:12000]
+
+        urdu_keywords = {"urdu", "اردو"}
+        course_fields = " ".join(filter(None, [course.title, course.subject, course.description])).lower()
+        is_urdu_course = any(kw in course_fields for kw in urdu_keywords)
+
+        urdu_instruction = (
+            "IMPORTANT: This is an Urdu language course. Write the entire exam — title and all questions — in Urdu script (اردو). "
+        ) if is_urdu_course else ""
+
+        system_prompt = (
+            "You are an experienced teacher creating a comprehensive final exam. "
+            f"{urdu_instruction}"
+            "Generate exactly 30 multiple-choice questions that test understanding of the provided course materials. "
+            "Each question must have exactly 4 answer options (A, B, C, D) with exactly one correct answer. "
+            "Questions should cover the full breadth of the material — vary difficulty from recall to application. "
+            "For math or science topics, include actual equations and numerical values in questions. "
+            "Output ONLY a valid JSON object in this exact format, with no text outside the JSON:\n"
+            '{"title": "Final Exam: <course name>", "questions": ['
+            '{"question": "...", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "correct": 0}, '
+            '... (30 total)]}\n'
+            "The `correct` field is the 0-based index of the correct option (0=A, 1=B, 2=C, 3=D)."
+        )
+
+        user_prompt = (
+            f"Course: {course.title}"
+            + (f" (Subject: {course.subject})" if course.subject else "")
+            + (f"\nDescription: {course.description}" if course.description else "")
+            + f"\n\nCourse materials:\n{combined_content}\n\n"
+            "Generate 30 multiple-choice questions covering all of the above material."
+        )
+
+        try:
+            raw = ollama_chat(
+                [{"role": "user", "content": user_prompt}],
+                system=system_prompt,
+                temperature=0.3,
+                max_tokens=6000,
+            )
+        except Exception as exc:
+            print(f"[AI Exam] Ollama error: {exc}", file=sys.stderr)
+            return
+
+        # Parse JSON from response
+        parsed = None
+        match = _re.search(r'\{.*\}', raw, _re.DOTALL)
+        if match:
+            try:
+                parsed = json.loads(match.group(0))
+            except json.JSONDecodeError:
+                pass
+
+        if not parsed or not isinstance(parsed.get("questions"), list):
+            print(f"[AI Exam] Failed to parse exam JSON for course {course_id}", file=sys.stderr)
+            return
+
+        questions = parsed["questions"]
+        if len(questions) < 5:
+            print(f"[AI Exam] Too few questions ({len(questions)}) for course {course_id}", file=sys.stderr)
+            return
+
+        exam_title = parsed.get("title") or f"Final Exam: {course.title}"
+
+        # Create the exam (quiz with is_exam=True, 2-hour timer, all-materials gate)
+        exam = models.Quiz(
+            course_id=course_id,
+            title=exam_title,
+            description="This exam covers all course materials. You have 2 hours to complete it.",
+            time_limit=120,
+            is_exam=True,
+            unlock_all_materials=True,
+            shuffle=True,
+            is_published=True,
+        )
+        db.add(exam)
+        db.flush()
+
+        for i, q in enumerate(questions[:30]):
+            question_text = q.get("question", "").strip()
+            options_raw = q.get("options", [])
+            correct_idx = q.get("correct", 0)
+            if not question_text or len(options_raw) < 2:
+                continue
+            question = models.QuizQuestion(
+                quiz_id=exam.id,
+                question_text=question_text,
+                question_type="multiple_choice",
+                points=1.0,
+                order_num=i,
+            )
+            db.add(question)
+            db.flush()
+            for j, opt_text in enumerate(options_raw[:4]):
+                db.add(models.QuizOption(
+                    question_id=question.id,
+                    option_text=str(opt_text).strip(),
+                    is_correct=(j == correct_idx),
+                ))
+
+        db.commit()
+        db.refresh(exam)
+
+        notify(db, student_id, "quiz",
+               f"Exam unlocked: {exam.title}",
+               f"{course.title} — you have completed all course materials",
+               link=f"quiz:{exam.id}")
+        db.commit()
+        print(f"[AI Exam] Created exam {exam.id} for course {course_id}", file=sys.stderr)
+    except Exception as exc:
+        print(f"[AI Exam] Unexpected error: {exc}", file=sys.stderr)
+        db.rollback()
+    finally:
+        db.close()
+
+
 def _ai_generate_assignment_for_material(material_id: int, course_id: int, student_id: int) -> None:
     """Background task: generate an AI assignment from a completed material and notify the completing student."""
     db = SessionLocal()
@@ -877,9 +1042,6 @@ def complete_material(
         background_tasks.add_task(_ai_generate_assignment_for_material, material_id, course_id, current_user.id)
 
         # Check if the student has now completed ALL materials in the course
-        from routers.notifications import notify as _notify
-        course_obj = db.query(models.Course).filter(models.Course.id == course_id).first()
-        course_title = course_obj.title if course_obj else "your course"
         all_course_mat_ids = {
             row.id for row in db.query(models.Material.id).filter(
                 models.Material.course_id == course_id
@@ -893,20 +1055,8 @@ def complete_material(
             ).all()
         } if all_course_mat_ids else set()
         if all_course_mat_ids and all_course_mat_ids.issubset(done_ids):
-            # Notify the student about every published exam locked behind all-materials
-            exams = db.query(models.Quiz).filter(
-                models.Quiz.course_id == course_id,
-                models.Quiz.unlock_all_materials == True,
-                models.Quiz.is_published == True,
-            ).all()
-            for exam in exams:
-                _notify(
-                    db, current_user.id, "quiz",
-                    f"Exam unlocked: {exam.title}",
-                    f"{course_title} — you have completed all course materials",
-                    link=f"quiz:{exam.id}",
-                )
-            db.commit()
+            # Generate (or unlock) the AI final exam for this course in the background
+            background_tasks.add_task(_ai_generate_exam_for_course, course_id, current_user.id)
     return {"ok": True}
 
 
