@@ -19,9 +19,10 @@ POST   /api/courses/{id}/duplicate       Clone course with all content
 import os
 import uuid
 import mimetypes
+import threading
 from pathlib import Path
 import sys
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, File as FFile, Form
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, UploadFile, File as FFile, Form
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -31,6 +32,10 @@ from database import get_db, SessionLocal
 import models
 import security
 from services.knowledge_base import index_material, remove_material_index
+
+# Limit concurrent AI background tasks to avoid exhausting the DB connection pool.
+# Each task holds a SessionLocal() open for the entire Ollama call duration.
+_AI_SEMAPHORE = threading.Semaphore(3)
 
 # ── Upload directory ──────────────────────────────────────────────────────────
 _UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "./uploads/materials"))
@@ -584,21 +589,18 @@ async def upload_material(
 def serve_material_file(
     course_id: int,
     material_id: int,
+    request: Request,
     db: Session = Depends(get_db),
-    # dl_token lets the browser open the URL directly (no custom headers needed).
-    # Falls back to the standard Authorization header when dl_token is absent.
     dl_token: Optional[str] = None,
-    current_user: models.User = Depends(security.get_current_user_optional),
 ):
     """Serve an uploaded material file with range-request support (streaming)."""
-    # Resolve identity: prefer Authorization header; fall back to ?dl_token=
-    user = current_user
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header.removeprefix("Bearer ").strip() or dl_token
+    if not token:
+        raise HTTPException(401, "Authentication required")
+    user = security.get_user_from_token(token, db)
     if user is None:
-        if not dl_token:
-            raise HTTPException(401, "Authentication required")
-        user = security.get_user_from_token(dl_token, db)
-        if user is None:
-            raise HTTPException(401, "Invalid or expired token")
+        raise HTTPException(401, "Invalid or expired token")
 
     m = db.query(models.Material).filter(
         models.Material.id == material_id,
@@ -633,7 +635,11 @@ def serve_material_file(
     disposition = "inline" if viewable else "attachment"
     safe_name = (m.file_name or "download").replace('"', "'")
 
-    # FileResponse supports HTTP Range requests automatically — videos stream
+    # Release the DB connection before streaming — FileResponse streams the file
+    # after this function returns, so holding the session ties up a pool slot for
+    # the entire transfer duration (can be minutes for large videos).
+    db.close()
+
     return FileResponse(
         path=str(path),
         media_type=mime,
@@ -697,6 +703,7 @@ def delete_material(
 
 def _ai_generate_exam_for_course(course_id: int, student_id: int) -> None:
     """Background task: generate a 30-question MC exam from all course materials and notify the student."""
+    _AI_SEMAPHORE.acquire()
     db = SessionLocal()
     try:
         from services.ollama import chat as ollama_chat, is_available as ollama_available
@@ -718,13 +725,14 @@ def _ai_generate_exam_for_course(course_id: int, student_id: int) -> None:
             models.Quiz.unlock_all_materials == True,
         ).first()
         if existing_exam:
-            # Exam already exists — just notify the student
-            from routers.notifications import notify as _notify
-            _notify(db, student_id, "quiz",
-                    f"Exam unlocked: {existing_exam.title}",
-                    f"{course.title} — you have completed all course materials",
-                    link=f"quiz:{existing_exam.id}")
-            db.commit()
+            # Exam already exists and is published — notify the student
+            if existing_exam.is_published:
+                from routers.notifications import notify as _notify
+                _notify(db, student_id, "quiz",
+                        f"Exam unlocked: {existing_exam.title}",
+                        f"{course.title} — you have completed all course materials",
+                        link=f"quiz:{existing_exam.id}")
+                db.commit()
             return
 
         # Collect content from all materials in the course
@@ -745,7 +753,7 @@ def _ai_generate_exam_for_course(course_id: int, student_id: int) -> None:
             else:
                 material_summaries.append(f"[{m.title}]")
 
-        combined_content = "\n\n".join(material_summaries)[:12000]
+        combined_content = "\n\n".join(material_summaries)[:4000]
 
         urdu_keywords = {"urdu", "اردو"}
         course_fields = " ".join(filter(None, [course.title, course.subject, course.description])).lower()
@@ -756,25 +764,33 @@ def _ai_generate_exam_for_course(course_id: int, student_id: int) -> None:
         ) if is_urdu_course else ""
 
         system_prompt = (
-            "You are an experienced teacher creating a comprehensive final exam. "
-            f"{urdu_instruction}"
-            "Generate exactly 30 multiple-choice questions that test understanding of the provided course materials. "
-            "Each question must have exactly 4 answer options (A, B, C, D) with exactly one correct answer. "
-            "Questions should cover the full breadth of the material — vary difficulty from recall to application. "
-            "For math or science topics, include actual equations and numerical values in questions. "
-            "Output ONLY a valid JSON object in this exact format, with no text outside the JSON:\n"
-            '{"title": "Final Exam: <course name>", "questions": ['
-            '{"question": "...", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "correct": 0}, '
-            '... (30 total)]}\n'
-            "The `correct` field is the 0-based index of the correct option (0=A, 1=B, 2=C, 3=D)."
+            "You are a JSON API. You output only valid JSON, never prose or markdown. "
+            "Do not include any text, explanation, or formatting outside the JSON object."
         )
 
+        # Determine how many questions to request based on available content
+        has_text_content = any(s for s in material_summaries if len(s) > len(f"[{s.split(chr(10))[0].strip('[]')}]") + 5)
+        num_questions = 20 if has_text_content else 10
+
+        json_format = (
+            '{"title": "Final Exam: Course Name", "questions": ['
+            '{"question": "Question text?", "options": ["A. option", "B. option", "C. option", "D. option"], "correct": 0}'
+            f', ... {num_questions} total]}}'
+        )
+
+        topic_list = "\n".join(f"- {m.title}" for m in materials)
+
         user_prompt = (
+            f"Create a {num_questions}-question multiple-choice final exam.\n"
             f"Course: {course.title}"
-            + (f" (Subject: {course.subject})" if course.subject else "")
+            + (f" | Subject: {course.subject}" if course.subject else "")
             + (f"\nDescription: {course.description}" if course.description else "")
-            + f"\n\nCourse materials:\n{combined_content}\n\n"
-            "Generate 30 multiple-choice questions covering all of the above material."
+            + f"\nTopics covered:\n{topic_list}\n"
+            + (f"\nAdditional content:\n{combined_content}\n" if combined_content.strip() else "")
+            + f"\n{urdu_instruction}"
+            f"Requirements: exactly {num_questions} questions, 4 options each (A/B/C/D), one correct answer, "
+            f"'correct' is 0-based index, include equations/numbers for math topics.\n\n"
+            f"Respond with ONLY valid JSON, no other text:\n{json_format}"
         )
 
         try:
@@ -782,33 +798,55 @@ def _ai_generate_exam_for_course(course_id: int, student_id: int) -> None:
                 [{"role": "user", "content": user_prompt}],
                 system=system_prompt,
                 temperature=0.3,
-                max_tokens=6000,
+                max_tokens=3000,
             )
         except Exception as exc:
             print(f"[AI Exam] Ollama error: {exc}", file=sys.stderr)
             return
 
-        # Parse JSON from response
+        # Parse JSON from response — try full match first, then recover partial question list
         parsed = None
-        match = _re.search(r'\{.*\}', raw, _re.DOTALL)
+        raw_stripped = raw.strip()
+        # Strip markdown fences if present
+        if raw_stripped.startswith("```"):
+            raw_stripped = _re.sub(r'^```[a-z]*\n?', '', raw_stripped)
+            raw_stripped = _re.sub(r'\n?```$', '', raw_stripped.strip())
+        match = _re.search(r'\{.*\}', raw_stripped, _re.DOTALL)
         if match:
             try:
                 parsed = json.loads(match.group(0))
             except json.JSONDecodeError:
                 pass
+        # Fallback: extract individual question objects from a partial/truncated response
+        if not parsed or not isinstance(parsed.get("questions"), list):
+            q_matches = _re.findall(
+                r'\{"question"\s*:.*?"correct"\s*:\s*\d\s*\}',
+                raw_stripped,
+                _re.DOTALL,
+            )
+            if q_matches:
+                questions_recovered = []
+                for qm in q_matches:
+                    try:
+                        questions_recovered.append(json.loads(qm))
+                    except json.JSONDecodeError:
+                        pass
+                if questions_recovered:
+                    parsed = {"title": f"Final Exam: {course.title}", "questions": questions_recovered}
 
         if not parsed or not isinstance(parsed.get("questions"), list):
             print(f"[AI Exam] Failed to parse exam JSON for course {course_id}", file=sys.stderr)
+            print(f"[AI Exam] Raw response (first 500): {raw[:500]!r}", file=sys.stderr)
             return
 
         questions = parsed["questions"]
-        if len(questions) < 5:
+        if len(questions) < 3:
             print(f"[AI Exam] Too few questions ({len(questions)}) for course {course_id}", file=sys.stderr)
             return
 
         exam_title = parsed.get("title") or f"Final Exam: {course.title}"
 
-        # Create the exam (quiz with is_exam=True, 2-hour timer, all-materials gate)
+        # Create the exam as a draft — teacher reviews/edits before publishing to students
         exam = models.Quiz(
             course_id=course_id,
             title=exam_title,
@@ -817,7 +855,7 @@ def _ai_generate_exam_for_course(course_id: int, student_id: int) -> None:
             is_exam=True,
             unlock_all_materials=True,
             shuffle=True,
-            is_published=True,
+            is_published=False,
         )
         db.add(exam)
         db.flush()
@@ -847,21 +885,33 @@ def _ai_generate_exam_for_course(course_id: int, student_id: int) -> None:
         db.commit()
         db.refresh(exam)
 
-        notify(db, student_id, "quiz",
-               f"Exam unlocked: {exam.title}",
-               f"{course.title} — you have completed all course materials",
-               link=f"quiz:{exam.id}")
+        # Notify the course teacher(s) to review and publish the exam
+        teachers = db.query(models.User).join(
+            models.CourseTeacher, models.User.id == models.CourseTeacher.teacher_id
+        ).filter(models.CourseTeacher.course_id == course_id).all()
+        # Fall back to course.teacher_id if no co-teacher rows
+        if not teachers:
+            teacher = db.query(models.User).filter(models.User.id == course.teacher_id).first()
+            if teacher:
+                teachers = [teacher]
+        for teacher in teachers:
+            notify(db, teacher.id, "quiz",
+                   f"AI exam ready for review: {exam.title}",
+                   f"{course.title} — a student completed all materials. Review and publish when ready.",
+                   link=f"quiz-builder:{exam.id}")
         db.commit()
-        print(f"[AI Exam] Created exam {exam.id} for course {course_id}", file=sys.stderr)
+        print(f"[AI Exam] Created exam {exam.id} for course {course_id} (draft, pending teacher review)", file=sys.stderr)
     except Exception as exc:
         print(f"[AI Exam] Unexpected error: {exc}", file=sys.stderr)
         db.rollback()
     finally:
         db.close()
+        _AI_SEMAPHORE.release()
 
 
 def _ai_generate_assignment_for_material(material_id: int, course_id: int, student_id: int) -> None:
     """Background task: generate an AI assignment from a completed material and notify the completing student."""
+    _AI_SEMAPHORE.acquire()
     db = SessionLocal()
     try:
         from services.ollama import chat as ollama_chat, is_available as ollama_available
@@ -1011,6 +1061,7 @@ def _ai_generate_assignment_for_material(material_id: int, course_id: int, stude
         print(f"[AI Assignment] Unexpected error: {exc}", file=sys.stderr)
     finally:
         db.close()
+        _AI_SEMAPHORE.release()
 
 
 @router.post("/{course_id}/materials/{material_id}/complete")
@@ -1054,6 +1105,8 @@ def complete_material(
                 models.MaterialCompletion.material_id.in_(list(all_course_mat_ids)),
             ).all()
         } if all_course_mat_ids else set()
+        # Include this completion explicitly in case the session hasn't flushed yet
+        done_ids.add(material_id)
         if all_course_mat_ids and all_course_mat_ids.issubset(done_ids):
             # Generate (or unlock) the AI final exam for this course in the background
             background_tasks.add_task(_ai_generate_exam_for_course, course_id, current_user.id)

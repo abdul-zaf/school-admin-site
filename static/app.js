@@ -923,9 +923,10 @@ async function _notifClick(id, link) {
   // Parse link format: "assignment:123", "quiz:456", "course:789", "announcements", "messages"
   const [type, idStr] = link.split(':');
   const targetId = parseInt(idStr, 10);
-  if      (type === 'assignment')   navigate('assignment',  { id: targetId });
-  else if (type === 'quiz')         navigate('quiz-take',   { id: targetId });
-  else if (type === 'course')       navigate('course',      { id: targetId });
+  if      (type === 'assignment')    navigate('assignment',    { id: targetId });
+  else if (type === 'quiz-builder')  navigate('quiz-builder',  { id: targetId });
+  else if (type === 'quiz')          navigate('quiz-take',     { id: targetId });
+  else if (type === 'course')        navigate('course',        { id: targetId });
   else if (type === 'announcements' || link === 'announcements') navigate('announcements');
   else if (type === 'messages'      || link === 'messages')      navigate('messages');
 }

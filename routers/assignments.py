@@ -13,7 +13,7 @@ import os
 import uuid
 import mimetypes
 from pathlib import Path
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, File as FFile, Form
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, UploadFile, File as FFile, Form
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -527,15 +527,15 @@ async def submit_assignment(
 @router.get("/submissions/{submission_id}/file")
 def serve_submission_file(
     submission_id: int,
+    request: Request,
     dl_token: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(security.get_current_user_optional),
 ):
-    user = current_user
-    if user is None:
-        if not dl_token:
-            raise HTTPException(401, "Authentication required")
-        user = security.get_user_from_token(dl_token, db)
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header.removeprefix("Bearer ").strip() or dl_token
+    if not token:
+        raise HTTPException(401, "Authentication required")
+    user = security.get_user_from_token(token, db)
     if user is None:
         raise HTTPException(401, "Invalid token")
 
@@ -556,10 +556,15 @@ def serve_submission_file(
     if not path.exists():
         raise HTTPException(404, "File not found on server")
 
+    file_mime = s.file_mime or "application/octet-stream"
+    file_name = s.file_name or path.name
+
+    db.close()
+
     return FileResponse(
         path=str(path),
-        media_type=s.file_mime or "application/octet-stream",
-        filename=s.file_name or path.name,
+        media_type=file_mime,
+        filename=file_name,
     )
 
 
